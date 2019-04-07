@@ -19,3 +19,13 @@ C:\Users\fcb\Desktop\os-diag-tool-dev\os-diag-tool\OSDiagTool\bin\Debug\Microsof
 C:\Users\fcb\Desktop\os-diag-tool-dev\os-diag-tool\OSDiagTool\bin\Debug\Microsoft.Diagnostics.Runtime.pdb
 C:\Users\fcb\Desktop\os-diag-tool-dev\os-diag-tool\OSDiagTool\bin\Debug\Microsoft.Diagnostics.Runtime.xml
 C:\Users\fcb\Desktop\os-diag-tool-dev\os-diag-tool\OSDiagTool\obj\Debug\OSDiagTool.csprojResolveAssemblyReference.cache
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\bin\Debug\OSDiagTool.exe.config
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.exe
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.pdb
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\bin\Debug\procdump64.exe
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\bin\Debug\OSDiagTool.exe
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\bin\Debug\OSDiagTool.pdb
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\bin\Debug\Microsoft.Diagnostics.Runtime.dll
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\bin\Debug\Microsoft.Diagnostics.Runtime.pdb
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\bin\Debug\Microsoft.Diagnostics.Runtime.xml
+C:\Users\jat\Documents\GitHub\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.csprojResolveAssemblyReference.cache

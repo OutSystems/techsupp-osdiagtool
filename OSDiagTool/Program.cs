@@ -6,6 +6,8 @@ using System.Text;
 using Microsoft.Win32;
 using System.Xml.Linq;
 using System.Linq;
+using OSDiagTool.Utils;
+using OSDiagTool.Platform.ConfigFiles;
 
 namespace OSDiagTool
 {
@@ -14,7 +16,7 @@ namespace OSDiagTool
         private static string _windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
         private static string _tempFolderPath = Path.Combine(Directory.GetCurrentDirectory(),"collect_data"); 
         private static string _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + ".zip");
-        private static string _osInstallationFolder = @"c:\Program Files\OutSystems\Platform Server";
+        private static string _osInstallationFolder = @"C:\Program Files\OutSystems\Platform Server";
         private static string _osServerRegistry = @"SOFTWARE\OutSystems\Installer\Server";
         private static string _sslProtocolsRegistryPath = @"SYSTEM\CurrentControlSet\Control\SecurityProviders\Schannel\Protocols";
         private static string _iisRegistryPath = @"SOFTWARE\Microsoft\InetStp";
@@ -338,10 +340,46 @@ namespace OSDiagTool
             }
         }
 
+        private static void GetServiceCenterLogs(string platformInstallationFolder)
+        {
+            string privateKeyFilepath = Path.Combine(platformInstallationFolder, "private.key");
+            string platformConfigurationFilepath = Path.Combine(platformInstallationFolder, "server.hsconf");
+
+            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath);
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+            Console.Write("Getting Service Center logs: TODO!!!...");
+
+            /*
+            // Oracle
+            Console.WriteLine(platformDBInfo.DBMS);
+            Console.WriteLine(platformDBInfo.GetProperty("Host").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("Port").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("ServiceName").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("AdminUser").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath)));
+            Console.ReadKey();
+
+            // SQL Server
+            Console.WriteLine(platformDBInfo.DBMS);
+            Console.WriteLine(platformDBInfo.GetProperty("Server").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("Catalog").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("AdminUser").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").Value);
+            Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath)));
+            Console.ReadKey();
+            */
+
+            Console.WriteLine("DONE");
+
+            return;
+        }
+
         private static void PrintEnd()
         {
             Console.WriteLine();
-            Console.WriteLine("collect_stats has finished. Resulting zip file path:");
+            Console.WriteLine("OSDiagTool data collection has finished. Resulting zip file path:");
             Console.WriteLine(_targetZipFile);
             Console.WriteLine();
         }
