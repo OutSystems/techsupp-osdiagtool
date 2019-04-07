@@ -12,11 +12,19 @@ namespace OSDiagTool
     class DBConnection
     {
         // SQL Server DB Connection
-        public static void SQLDBConnection(string dataSource, string initialCatalog, string userId, string pwd, string queryString)
+        public static string SQLDBConnection(string dataSource, string initialCatalog, string userId, string pwd)
         {
             string connectionStringSQL = String.Format("Data Source={0};Initial Catalog={1};User id={2};Password={3};", dataSource, initialCatalog, userId, pwd);
 
-            using (SqlConnection connection = new SqlConnection(connectionStringSQL))
+            return connectionStringSQL;
+        }
+
+        // SQL Reader
+        public void SQLReader(string dataSource, string initialCatalog, string userId, string pwd, string queryString)
+        {
+            string connectionString = SQLDBConnection(dataSource, initialCatalog, userId, pwd);
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 SqlCommand command = new SqlCommand(queryString, connection);
 
@@ -36,16 +44,25 @@ namespace OSDiagTool
                     Console.WriteLine("Unable to retrieve SQL DB information" + e.Message);
                 }
             }
-
         }
 
-        public static void OracleDBConnection(string host, string port, string serviceName, string userId, string pwd)
+
+        // Oracle DB Connection
+        public static string OracleDBConnection(string host, string port, string serviceName, string userId, string pwd)
         {
             string connectionStringORCL = String.Format("SERVER=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={0})(PORT={1}))(CONNECT_DATA=(SERVICE_NAME={2})));uid = {3}; pwd = {4};", host, port, serviceName, userId, pwd);
 
-            using (OracleConnection connection = new OracleConnection(connectionStringORCL))
+            return connectionStringORCL;
+        }
+
+        // Oracle Reader
+        public void OracleReader(string host, string port, string serviceName, string userId, string pwd, string queryString)
+        {
+            string connectionString = OracleDBConnection(host, port, serviceName, userId, pwd);
+
+            using (OracleConnection connection = new OracleConnection(connectionString))
             {
-                OracleCommand command = new OracleCommand();
+                OracleCommand command = new OracleCommand(queryString, connection);
 
                 try
                 {
@@ -63,7 +80,6 @@ namespace OSDiagTool
                     Console.WriteLine("Unable to retrieve Oracle DB Information" + e.Message);
                 }
             }
-
         }
       
     }
