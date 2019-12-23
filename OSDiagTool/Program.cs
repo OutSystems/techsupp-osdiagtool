@@ -54,8 +54,8 @@ namespace OSDiagTool
             // Create error dump file to log all exceptions during script execution
             using (var errorTxtFile = File.Create(_errorDumpFile));
 
-            // Finding Installation folder
-                try
+            // Finding Installation folder 
+              /*  try
             {
                 FileLogger.TraceLog("Finding OutSystems Platform Installation Path...");
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
@@ -68,7 +68,12 @@ namespace OSDiagTool
                 FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message);
                 WriteExitLines();
                 return;
-            }
+            } */
+
+            //GetServiceCenterLogs(_osInstallationFolder);
+            GetServiceCenterLogs("C:\\Users\\fcb\\Desktop\\OSDiagTool\\techsupp-osdiagtool-dev\\techsupp-osdiagtool-dev\\OSDiagTool\\bin");
+            Console.ReadKey();
+
 
             Object obj = RegistryClass.GetRegistryValue(_osServerRegistry, ""); // The "Defaut" values are empty strings.
 
@@ -350,16 +355,16 @@ namespace OSDiagTool
 
             Console.Write("Getting Service Center logs: TODO!!!...");
 
-            /*
+            
             // Oracle
-            Console.WriteLine(platformDBInfo.DBMS);
+            /*Console.WriteLine(platformDBInfo.DBMS);
             Console.WriteLine(platformDBInfo.GetProperty("Host").Value);
             Console.WriteLine(platformDBInfo.GetProperty("Port").Value);
             Console.WriteLine(platformDBInfo.GetProperty("ServiceName").Value);
             Console.WriteLine(platformDBInfo.GetProperty("AdminUser").Value);
             Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").Value);
             Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath)));
-            Console.ReadKey();
+            Console.ReadKey();*/
 
             // SQL Server
             Console.WriteLine(platformDBInfo.DBMS);
@@ -369,7 +374,7 @@ namespace OSDiagTool
             Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").Value);
             Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath)));
             Console.ReadKey();
-            */
+            
 
             Console.WriteLine("DONE");
 

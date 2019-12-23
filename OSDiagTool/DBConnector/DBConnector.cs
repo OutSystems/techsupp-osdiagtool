@@ -5,19 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using System.Data.OracleClient;
+//using Oracle.ManagedDataAccess.Client;
+
 
 namespace OSDiagTool.DBConnector
 {
     class SLQDBConnector : ISQLDBConnector
     {
-        public string dataSource { get; set; }
-
-        public string initialCatalog { get; set; }
-
-        public string userId { get; set; }
-
-        public string pwd { get; set; }
-
         // SQL Open Connection       
         public SqlConnection SQLOpenConnection(OSDiagTool.DBConnector.SQLConnStringModel SQLConnectionString)
         {
@@ -50,7 +44,7 @@ namespace OSDiagTool.DBConnector
         }
 
         // SQL Close Connection
-        public static void SQLCloseConnection(SqlConnection connection)
+        public void SQLCloseConnection(SqlConnection connection)
         {
             connection.Close();
         }
@@ -60,15 +54,6 @@ namespace OSDiagTool.DBConnector
 
     class OracleDBConnector : IOracleDBConnector
     {
-        public string host { get; set; }
-
-        public string port { get; set; }
-
-        public string serviceName { get; set; }
-
-        public string userId { get; set; }
-
-        public string pwd { get; set; }
 
         public OracleConnection OracleOpenConnection(DBConnector.OracleConnStringModel OracleConnectionString)
         {
@@ -101,7 +86,7 @@ namespace OSDiagTool.DBConnector
 
 
         // Oracle Close Connection
-        public static void OracleCloseConnection(OracleConnection connection)
+        public void OracleCloseConnection(OracleConnection connection)
         {
             connection.Close();
         }
