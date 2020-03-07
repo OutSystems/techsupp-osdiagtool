@@ -13,7 +13,7 @@ namespace OSDiagTool.DBConnector
     class SLQDBConnector : ISQLDBConnector
     {
         // SQL Open Connection       
-        public SqlConnection SQLOpenConnection(OSDiagTool.DBConnector.SQLConnStringModel SQLConnectionString)
+        public SqlConnection SQLOpenConnection(DBConnector.SQLConnStringModel SQLConnectionString)
         {
             string connectionString = SQLConnString(SQLConnectionString);
 
@@ -35,7 +35,7 @@ namespace OSDiagTool.DBConnector
         }
 
         // SQL Server DB Connection String
-        public string SQLConnString(OSDiagTool.DBConnector.SQLConnStringModel SQLConnectionString)
+        public string SQLConnString(DBConnector.SQLConnStringModel SQLConnectionString)
         {
             string connectionStringSQL = String.Format("Data Source={0};Initial Catalog={1};User id={2};Password={3};",
                 SQLConnectionString.dataSource, SQLConnectionString.initialCatalog, SQLConnectionString.userId, SQLConnectionString.pwd);

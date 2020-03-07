@@ -6,21 +6,107 @@ using System.Text;
 using System.Threading.Tasks;
 using OSDiagTool.DBConnector;
 using OSDiagTool.Platform.ConfigFiles;
+using OSDiagTool.Utils;
+using System.Xml.Linq;
+using OSDiagTool.OSDiagTool;
 
 namespace OSDiagTool.Tests
 {
     class Class1
     {
+        public static string PlatformDatabaseConfigurationElement = "PlatformDatabaseConfiguration";
+        public static string _oSDiagToolConfPath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\OSDiagTool.exe.config";
+
+
+
         static void Main(string[] args)
         {
-            var connString = new DBConnector.SQLConnStringModel();
+            /*var connString = new DBConnector.SQLConnStringModel();
             connString.dataSource = "<Hostname>";
             connString.initialCatalog = "<Catalog>";
             connString.userId = "<user>";
             connString.pwd = "<pwd>";
 
-            OSDiagTool.DBConnector.DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");
+            OSDiagTool.DBConnector.DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");*/
 
+            OSDiagToolConfReader test = new OSDiagToolConfReader();
+            List<string> tableNames = test.GetTableNames(true);
+            int bla = test.GetIISLogsNrDays();
+            
+
+            List<string> list1 = new List<string>()
+            {
+                "Server",
+                "Catalog",
+                "AdminUser",
+                "AdminPassword"
+            };
+
+
+            HsconfReader(list1);
+
+        
+        }
+
+        // TODO
+
+        private static void OSDiagConfReader()
+        {
+
+            XDocument xml = XDocument.Load(_oSDiagToolConfPath);
+
+            var nodes = (from n in xml.Descendants("configuration")
+                            select n.Element("infoToRetrieve").Element("databaseTables").Element("ossys").Elements()).ToList();
+
+            foreach (XElement el in nodes[0]) {
+
+                string tableName = el.Attribute("name").Value;
+
+            }
+
+
+            //var xmlString = XDocument.Load(_oSDiagToolConfPath);
+
+
+            /*// Querying the data
+            var query = from p in xmlString.Descendants("configuration")
+                        select new
+                        {
+                            test = p.Element("queryTimeout").Value
+                            //test = p.Element("OSDiagToolConf").Attribute("queryTimeout").Value,
+                        };
+
+            string test = query.First().test.ToLower();*/
+
+            //return test;
+        }
+
+        // must still be added to the Tool code
+        private static void HsconfReader(List<string> HsconfPropertiesList)
+        {
+            //IDictionary<string,string> HsConfPropertiesVal;
+            ConfigFileReader confFileParser = new ConfigFileReader("<ServerHsConfLocation>");
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            string _propValue;
+
+            IDictionary<string, string> HsConfPropertiesVal = new Dictionary<string, string>();
+
+            foreach (string HsconfProperty in HsconfPropertiesList)
+            {
+                bool isEncrypted = platformDBInfo.GetProperty(HsconfProperty).IsEncrypted; // checking if prop is encrypted
+
+                if (isEncrypted)
+                {
+                    _propValue = platformDBInfo.GetProperty(HsconfProperty).GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile("<ServerHsConfLocation>"));
+                }
+                else
+                {
+                    _propValue = platformDBInfo.GetProperty(HsconfProperty).Value;
+                }
+
+                HsConfPropertiesVal.Add(HsconfProperty, _propValue);
+                Console.WriteLine(HsconfProperty + " " + _propValue);
+            }
         }
     }
 }

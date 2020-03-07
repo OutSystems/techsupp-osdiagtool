@@ -11,7 +11,7 @@ namespace OSDiagTool.DBConnector
     class DBReader
     {
         // SQL Reader
-        public static void SQLReader(OSDiagTool.DBConnector.SQLConnStringModel SQLConnectionString, string queryString)
+        public static void SQLReader(DBConnector.SQLConnStringModel SQLConnectionString, string queryString)
         {
             var connector = new DBConnector.SLQDBConnector();
             SqlConnection connection = connector.SQLOpenConnection(SQLConnectionString);

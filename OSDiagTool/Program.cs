@@ -55,7 +55,7 @@ namespace OSDiagTool
             using (var errorTxtFile = File.Create(_errorDumpFile));
 
             // Finding Installation folder 
-              /*  try
+                try
             {
                 FileLogger.TraceLog("Finding OutSystems Platform Installation Path...");
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
@@ -68,11 +68,11 @@ namespace OSDiagTool
                 FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message);
                 WriteExitLines();
                 return;
-            } */
+            } 
 
             //GetServiceCenterLogs(_osInstallationFolder);
-            GetServiceCenterLogs("C:\\Users\\fcb\\Desktop\\OSDiagTool\\techsupp-osdiagtool-dev\\techsupp-osdiagtool-dev\\OSDiagTool\\bin");
-            Console.ReadKey();
+            //GetServiceCenterLogs("");
+            //Console.ReadKey();
 
 
             Object obj = RegistryClass.GetRegistryValue(_osServerRegistry, ""); // The "Defaut" values are empty strings.
@@ -374,6 +374,7 @@ namespace OSDiagTool
             Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").Value);
             Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath)));
             Console.ReadKey();
+            bool test = platformDBInfo.GetProperty("bla").IsEncrypted;
             
 
             Console.WriteLine("DONE");
