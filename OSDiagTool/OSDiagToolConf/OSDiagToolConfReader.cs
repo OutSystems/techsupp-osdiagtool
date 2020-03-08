@@ -33,11 +33,23 @@ namespace OSDiagTool.OSDiagTool {
         private static string _nameAttribute = "name";
 
 
-        public List<string> GetTableNames(bool isLifeTimeEnv) {
-
-            List<string> tableNames = new List<string> ();
+        public OSDiagToolConf.ConfModel.strConfModel GetOsDiagToolConfigurations(bool isLifeTimeEnv) {
 
             XDocument xml = XDocument.Load(_osDiagToolConfigPath);
+
+            var configuration = new OSDiagToolConf.ConfModel.strConfModel();
+
+            configuration.queryTimeout = GetQueryTimeout(xml);
+            configuration.IISLogsNrDays = GetIISLogsNrDays(xml);
+            configuration.tableNames = GetTableNames(isLifeTimeEnv, xml); 
+
+            return configuration;
+
+        }
+        
+        public List<string> GetTableNames(bool isLifeTimeEnv, XDocument xml) {
+
+            List<string> tableNames = new List<string> ();
 
             // Reading OSSYS table names
             var ossysNodes = (from n in xml.Descendants(_rootElement)
@@ -51,48 +63,58 @@ namespace OSDiagTool.OSDiagTool {
                 foreach (XElement el in osltmNodes[0]) {
 
                     string tableName = el.Attribute(_nameAttribute).Value;
-                    tableNames.Add(tableName);
-
+                    // Check if table name in configuration file matchs prefix of table
+                    if (tableName.ToLower().StartsWith(_l3_osltm)) {
+                        tableNames.Add(tableName);
+                    }
+                    
                 }
             }
 
             foreach (XElement el in ossysNodes[0]) {
 
                 string tableName = el.Attribute(_nameAttribute).Value;
-                tableNames.Add(tableName);
-
+                // Check if table name in configuration file matchs prefix of table
+                if (tableName.ToLower().StartsWith(_l3_ossys)) {
+                    tableNames.Add(tableName);
+                }
+                
             }
 
             return tableNames;
 
         }
 
-        public int GetIISLogsNrDays() {
-            
-            XDocument xml = XDocument.Load(_osDiagToolConfigPath);
+        public int GetIISLogsNrDays(XDocument xml) {
 
             var query = from n in xml.Descendants(_rootElement)
                         select new {
                             daysOfLogs = n.Element(_l1_iisConf).Element(_l2_iisLogsNrDays).Value,
                         };
-
-            int iisLogsNrDays = Convert.ToInt32(query.First().daysOfLogs);
-            return iisLogsNrDays;
+            try {
+                int iisLogsNrDays = Convert.ToInt32(query.First().daysOfLogs);
+                return iisLogsNrDays;
+            } catch (Exception e){
+                int iisLogsNrDays = 3;
+                return iisLogsNrDays;
+            }
 
         }
 
-        public int GetQueryTimeout() {
-
-            XDocument xml = XDocument.Load(_osDiagToolConfigPath);
+        public int GetQueryTimeout(XDocument xml) {
 
             var query = from n in xml.Descendants(_rootElement)
                         select new {
                             qTimeout = n.Element(_l1_osDiagToolConf).Element(_l2_queryTimeout).Value,
                         };
+            try {
+                int queryTimeout = Convert.ToInt32(query.First().qTimeout);
+                return queryTimeout;
+            } catch (Exception e) {
+                int queryTimeout = 30;
+                return queryTimeout;
+            }
 
-            int queryTimeout = Convert.ToInt32(query.First().qTimeout);
-
-            return queryTimeout;
         }
     }
 }

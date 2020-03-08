@@ -30,10 +30,10 @@ namespace OSDiagTool.Tests
             OSDiagTool.DBConnector.DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");*/
 
             OSDiagToolConfReader test = new OSDiagToolConfReader();
-            List<string> tableNames = test.GetTableNames(true);
-            int bla = test.GetIISLogsNrDays();
-            
+            var configurations = test.GetOsDiagToolConfigurations(true);
 
+
+            
             List<string> list1 = new List<string>()
             {
                 "Server",

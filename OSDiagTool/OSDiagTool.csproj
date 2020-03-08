@@ -74,6 +74,9 @@
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.OracleClient" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -93,6 +96,7 @@
     <Compile Include="FileSystemHelper.cs" />
     <Compile Include="DBConnector\IDBConnector.cs" />
     <Compile Include="IISHelper.cs" />
+    <Compile Include="OSDiagToolConf\ConfModel.cs" />
     <Compile Include="OSDiagToolConf\OSDiagToolConfReader.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileDBInfo.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileProperty.cs" />
