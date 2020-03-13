@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
-using System.Data.OracleClient;
+//using System.Data.OracleClient;
 using System.IO;
+using Oracle.ManagedDataAccess.Client;
 
 namespace OSDiagTool.DatabaseExporter {
     class CSVExporter {
@@ -14,6 +15,7 @@ namespace OSDiagTool.DatabaseExporter {
         
         public static void SQLToCSVExport(DBConnector.SQLConnStringModel SQLConnectionString, string tableName, string csvFilePath, int queryTimeout) {
 
+            // connection needs to passed, not opened every time
             var connector = new DBConnector.SLQDBConnector();
             SqlConnection connection = connector.SQLOpenConnection(SQLConnectionString);
 
@@ -46,7 +48,7 @@ namespace OSDiagTool.DatabaseExporter {
                         }
                         
                     } catch (Exception e){
-                        Console.WriteLine("Unable to read data from SQL DB: " + tableName, e);
+                        FileLogger.LogError("Unable to read data from SQL DB: " + tableName, e.Message, writeToConsole:false, writeDateTime:false);
                     }
                                        
             }
@@ -89,7 +91,7 @@ namespace OSDiagTool.DatabaseExporter {
                         }
 
                     } catch (Exception e) {
-                        Console.WriteLine("Unable to read data from SQL DB: " + tableName, e);
+                        FileLogger.LogError("Unable to read data from SQL DB: " + tableName, e.Message, writeToConsole: false, writeDateTime: false);
                     }
 
                 }

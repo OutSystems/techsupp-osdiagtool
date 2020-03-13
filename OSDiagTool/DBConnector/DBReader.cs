@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
-using System.Data.OracleClient;
+//using System.Data.OracleClient;
+using Oracle.ManagedDataAccess.Client;
 
 namespace OSDiagTool.DBConnector
 {
@@ -46,6 +47,7 @@ namespace OSDiagTool.DBConnector
         public static void OracleReader(DBConnector.OracleConnStringModel OracleConnectionString, string queryString)
         {
             var connector = new DBConnector.OracleDBConnector();
+
             OracleConnection connection = connector.OracleOpenConnection(OracleConnectionString);
 
             using (connection)

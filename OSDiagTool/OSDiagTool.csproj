@@ -85,7 +85,6 @@
   <ItemGroup>
     <Compile Include="DatabaseExporter\CSVExporter.cs" />
     <Compile Include="DBConnector\ConnStringModel.cs" />
-    <Compile Include="DBConnector\DBConnection.cs" />
     <Compile Include="CmdHelper.cs" />
     <Compile Include="CmdLineCommand.cs" />
     <Compile Include="DBConnector\DBConnector.cs" />

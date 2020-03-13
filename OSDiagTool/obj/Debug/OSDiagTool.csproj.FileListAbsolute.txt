@@ -40,3 +40,5 @@ C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug\Microsoft.
 C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.csproj.CopyComplete
 C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.exe
 C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.pdb
+C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug\Oracle.ManagedDataAccess.dll
+C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.csprojAssemblyReference.cache

@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
-using System.Data.OracleClient;
-//using Oracle.ManagedDataAccess.Client;
+//using System.Data.OracleClient;
+using Oracle.ManagedDataAccess.Client;
 
 
 namespace OSDiagTool.DBConnector

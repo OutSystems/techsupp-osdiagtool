@@ -14,18 +14,18 @@ namespace OSDiagTool
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
 
 
-        public static void LogError(string customMessage, string errorMessage)
+        public static void LogError(string customMessage, string errorMessage, bool writeToConsole = true, bool writeDateTime = true)
         {
-            Console.WriteLine("[ERROR] " + customMessage + ": " + errorMessage);
-            File.AppendAllText(_errorDumpFile, DateTime.Now + "\t" + "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine);
+            if(writeToConsole) Console.WriteLine("[ERROR] " + customMessage + ": " + errorMessage);
+            File.AppendAllText(_errorDumpFile, writeDateTime ? DateTime.Now + "\t" + "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine : "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine);
         }
 
-        public static void TraceLog(string traceMessage, bool isTaskFinished = false)
+        public static void TraceLog(string traceMessage, bool isTaskFinished = false, bool writeDateTime = true)
         {
             if (isTaskFinished == false)
             {
                 Console.Write(traceMessage);
-                File.AppendAllText(_errorDumpFile, DateTime.Now + "\t" + traceMessage);
+                File.AppendAllText(_errorDumpFile, writeDateTime ? DateTime.Now + "\t" + traceMessage : traceMessage);
             }
             else if (isTaskFinished == true)
             {

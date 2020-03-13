@@ -31,7 +31,7 @@ namespace OSDiagTool.Tests
             //DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");
 
             OSDiagToolConfReader test = new OSDiagToolConfReader();
-            var configurations = test.GetOsDiagToolConfigurations(true);
+            var configurations = test.GetOsDiagToolConfigurations();
 
             foreach(string table in configurations.tableNames) {
                 CSVExporter.SQLToCSVExport(connString, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);

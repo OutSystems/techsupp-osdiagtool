@@ -2,6 +2,7 @@
 using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
 using System.IO;
+using System;
 
 namespace OSDiagTool
 {
@@ -46,8 +47,14 @@ namespace OSDiagTool
         }
 
         // Use this function to copy all the contents of a path. Set the copySubDirs to True if you want to copy as well all subfolders contents
-        public void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+        public void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs, int daysToFetch = 3)
         {
+            var dtNow = new DateTime();
+            var dtSubLastWrite = new DateTime();
+            dtNow = DateTime.Now;
+            dtSubLastWrite = dtNow.AddDays(-daysToFetch);
+
+
             // Get the subdirectories for the specified directory.
             DirectoryInfo dir = new DirectoryInfo(sourceDirName);
 
@@ -69,8 +76,10 @@ namespace OSDiagTool
             FileInfo[] files = dir.GetFiles();
             foreach (FileInfo file in files)
             {
-                string temppath = Path.Combine(destDirName, file.Name);
-                file.CopyTo(temppath, false);
+                if (file.LastWriteTime > dtSubLastWrite) {
+                    string temppath = Path.Combine(destDirName, file.Name);
+                    file.CopyTo(temppath, false);
+                }
             }
 
             // If copying subdirectories, copy them and their contents to new location.

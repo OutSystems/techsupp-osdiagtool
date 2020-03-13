@@ -10,6 +10,7 @@ using OSDiagTool.Utils;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
+using OSDiagTool;
 
 namespace OSDiagTool
 {
@@ -72,10 +73,6 @@ namespace OSDiagTool
                 return;
             } 
 
-            //GetServiceCenterLogs(_osInstallationFolder);
-            //GetServiceCenterLogs("");
-            //Console.ReadKey();
-
 
             Object obj = RegistryClass.GetRegistryValue(_osServerRegistry, ""); // The "Defaut" values are empty strings.
 
@@ -89,47 +86,22 @@ namespace OSDiagTool
 
             ExecuteCommands();
 
+
+
+            // Reading OSDGTool config file
+            string privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
+            string platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+
+            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath);
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+            OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
+            var configurations = dgtConfReader.GetOsDiagToolConfigurations();
+
             //Retrieving IIS access logs
-            try
-            {
-                FileLogger.TraceLog("Retrieving IIS Access logs... ");
-                // Loading Xml text from the file. Note: 32 bit processes will redirect \System32 to \SysWOW64: http://www.samlogic.net/articles/sysnative-folder-64-bit-windows.htm
-                if (Environment.Is64BitOperatingSystem == false)
-                {
-                    _iisApplicationHostPath = _iisApplicationHostPath.Replace("system32", "Sysnative");
-                }
-                var xmlString = XDocument.Load(_iisApplicationHostPath);
-
-                // Querying the data and finding the Access logs path
-                var query = from p in xmlString.Descendants("siteDefaults")
-                            select new
-                            {
-                                LogsFilePath = p.Element("logFile").Attribute("directory").Value,
-                            };
-                
-                string iisAccessLogsPath = query.First().LogsFilePath.ToLower();
-
-                if (iisAccessLogsPath.Contains("%systemdrive%"))
-                {
-                    iisAccessLogsPath = iisAccessLogsPath.Replace("%systemdrive%\\", Path.GetPathRoot(Environment.SystemDirectory));
-                    if ((Environment.Is64BitOperatingSystem == false) && iisAccessLogsPath.Contains("system32"))
-                    {
-                        iisAccessLogsPath = iisAccessLogsPath.Replace("system32", "Sysnative");
-                    }
-                }
-
-                //Copies all the contents from the path iisAcessLogsPath, including contents in subfolder
-                fsHelper.DirectoryCopy(iisAccessLogsPath, Path.Combine(_tempFolderPath, "IISAccessLogs"), true);
-
-                FileLogger.TraceLog("DONE", true);
-            }
-            catch (Exception e)
-            {
-                FileLogger.LogError("Attempted to retrieve IIS Access logs but failed...", e.Message);
-            }
+            IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, configurations.IISLogsNrDays);
 
             // Export Registry information
-
             // Create directory for Registry information
             Directory.CreateDirectory(Path.Combine(_tempFolderPath, "RegistryInformation"));
             string registryInformationPath = Path.Combine(_tempFolderPath, "RegistryInformation");
@@ -152,19 +124,11 @@ namespace OSDiagTool
                 FileLogger.LogError("Failed to export Registry:", e.Message);
             }
 
-            // IN PROGRESS: Export DB Tables -- fix trace logs
-
-            string privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
-            string platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
-
-            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
-
-            OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
-            var configurations = dgtConfReader.GetOsDiagToolConfigurations(true);
-
-                // SQL Export
+            // IN PROGRESS: Export DB Tables 
+            // SQL Export
             try {
+
+                
                 string dbEngine = platformDBInfo.DBMS;
                 if (dbEngine.ToLower().Equals("sqlserver")) {
 
@@ -174,14 +138,14 @@ namespace OSDiagTool
                     sqlConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
                     sqlConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
 
-                    FileLogger.TraceLog("Starting exporting tables");
+                    FileLogger.TraceLog("Starting exporting tables: ");
                     foreach (string table in configurations.tableNames) {
-                        CSVExporter.SQLToCSVExport(sqlConnString, table, _tempFolderPath, configurations.queryTimeout);
-                        FileLogger.TraceLog(" " + table, true);
+                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                        CSVExporter.SQLToCSVExport(sqlConnString, table, _tempFolderPath, configurations.queryTimeout);                        
                     }
 
 
-                }   // Oracle Export
+                }   // Oracle Export -- NOT WORKING --> its getting the SQL conn string
                 else if (dbEngine.ToLower().Equals("oracle")) {
                     var orclConnString = new DBConnector.OracleConnStringModel();
 
@@ -193,6 +157,7 @@ namespace OSDiagTool
 
                     FileLogger.TraceLog("Starting exporting tables");
                     foreach (string table in configurations.tableNames) {
+                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
                         CSVExporter.ORCLToCsvExport(orclConnString, table, _tempFolderPath, configurations.queryTimeout);
                     }
                 }
@@ -322,9 +287,9 @@ namespace OSDiagTool
                 { "pagefile", new CmdLineCommand("wmic pagefile", Path.Combine(_windowsInfoDest, "pagefile")) },
                 { "partition", new CmdLineCommand("wmic partition", Path.Combine(_windowsInfoDest, "partition")) },
                 { "startup", new CmdLineCommand("wmic startup", Path.Combine(_windowsInfoDest, "startup")) },
-                { "app_evtx", new CmdLineCommand("WEVTUtil export-log Application " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx")) },
-                { "sys_evtx", new CmdLineCommand("WEVTUtil export-log System " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx")) },
-                { "sec_evtx", new CmdLineCommand("WEVTUtil export-log Security " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx")) }
+                { "app_evtx", new CmdLineCommand("WEVTUtil epl Application " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx")) },
+                { "sys_evtx", new CmdLineCommand("WEVTUtil epl System " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx")) },
+                { "sec_evtx", new CmdLineCommand("WEVTUtil epl Security " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx")) }
             };
 
             foreach (KeyValuePair<string, CmdLineCommand> commandEntry in commands)

@@ -34,7 +34,7 @@ namespace OSDiagTool.OSDiagToolConf {
         private static string _nameAttribute = "name";
 
 
-        public OSDiagToolConf.ConfModel.strConfModel GetOsDiagToolConfigurations(bool isLifeTimeEnv) {
+        public OSDiagToolConf.ConfModel.strConfModel GetOsDiagToolConfigurations() {
 
             XDocument xml = XDocument.Load(_osDiagToolConfigPath);
 
@@ -42,13 +42,13 @@ namespace OSDiagTool.OSDiagToolConf {
 
             configuration.queryTimeout = GetQueryTimeout(xml);
             configuration.IISLogsNrDays = GetIISLogsNrDays(xml);
-            configuration.tableNames = GetTableNames(isLifeTimeEnv, xml); 
+            configuration.tableNames = GetTableNames(xml); 
 
             return configuration;
 
         }
         
-        public List<string> GetTableNames(bool isLifeTimeEnv, XDocument xml) {
+        public List<string> GetTableNames(XDocument xml) {
 
             List<string> tableNames = new List<string> ();
 
@@ -57,24 +57,25 @@ namespace OSDiagTool.OSDiagToolConf {
                          select n.Element(_l1_infoToRetrieve).Element(_l2_databaseTables).Element(_l3_ossys).Elements()).ToList();
 
             // Read OSLTM tables if it's LT environment
-            if (isLifeTimeEnv) {
-                var osltmNodes = (from n in xml.Descendants(_rootElement)
-                                  select n.Element(_l1_infoToRetrieve).Element(_l2_databaseTables).Element(_l3_osltm).Elements()).ToList();
+            
+            var osltmNodes = (from n in xml.Descendants(_rootElement)
+                                select n.Element(_l1_infoToRetrieve).Element(_l2_databaseTables).Element(_l3_osltm).Elements()).ToList();
 
-                foreach (XElement el in osltmNodes[0]) {
+            foreach (XElement el in osltmNodes[0]) {
 
-                    string tableName = el.Attribute(_nameAttribute).Value;
-                    // Check if table name in configuration file matchs prefix of table
-                    if (tableName.ToLower().StartsWith(_l3_osltm)) {
-                        tableNames.Add(tableName);
-                    }
-                    
+                string tableName = el.Attribute(_nameAttribute).Value;
+                tableName.Replace(" ", ""); // protect sql, no spaces are expected for the table name
+                // Check if table name in configuration file matchs prefix of table
+                if (tableName.ToLower().StartsWith(_l3_osltm)) {
+                    tableNames.Add(tableName);
+                                       
                 }
             }
 
             foreach (XElement el in ossysNodes[0]) {
 
                 string tableName = el.Attribute(_nameAttribute).Value;
+                tableName.Replace(" ", ""); // protect sql, no spaces are expected for the table name
                 // Check if table name in configuration file matchs prefix of table and delete everything after space and comma to protect from SQLI
                 if (tableName.ToLower().StartsWith(_l3_ossys)) {
                     tableNames.Add(tableName);
