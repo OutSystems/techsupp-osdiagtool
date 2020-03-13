@@ -8,6 +8,8 @@ using System.Xml.Linq;
 using System.Linq;
 using OSDiagTool.Utils;
 using OSDiagTool.Platform.ConfigFiles;
+using OSDiagTool.DatabaseExporter;
+using OSDiagTool.OSDiagToolConf;
 
 namespace OSDiagTool
 {
@@ -149,6 +151,71 @@ namespace OSDiagTool
             {
                 FileLogger.LogError("Failed to export Registry:", e.Message);
             }
+
+            // IN PROGRESS: Export DB Tables -- fix trace logs
+
+            string privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
+            string platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+
+            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath);
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+            OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
+            var configurations = dgtConfReader.GetOsDiagToolConfigurations(true);
+
+                // SQL Export
+            try {
+                string dbEngine = platformDBInfo.DBMS;
+                if (dbEngine.ToLower().Equals("sqlserver")) {
+
+                    var sqlConnString = new DBConnector.SQLConnStringModel();
+                    sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
+                    sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
+                    sqlConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
+                    sqlConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+
+                    FileLogger.TraceLog("Starting exporting tables");
+                    foreach (string table in configurations.tableNames) {
+                        CSVExporter.SQLToCSVExport(sqlConnString, table, _tempFolderPath, configurations.queryTimeout);
+                        FileLogger.TraceLog(" " + table, true);
+                    }
+
+
+                }   // Oracle Export
+                else if (dbEngine.ToLower().Equals("oracle")) {
+                    var orclConnString = new DBConnector.OracleConnStringModel();
+
+                    orclConnString.host = platformDBInfo.GetProperty("Host").Value;
+                    orclConnString.port = platformDBInfo.GetProperty("Port").Value;
+                    orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
+                    orclConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
+                    orclConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+
+                    FileLogger.TraceLog("Starting exporting tables");
+                    foreach (string table in configurations.tableNames) {
+                        CSVExporter.ORCLToCsvExport(orclConnString, table, _tempFolderPath, configurations.queryTimeout);
+                    }
+                }
+                
+            } catch (Exception e) {
+
+                FileLogger.LogError("Unable to export database tables", e.Message);
+
+            }
+            FileLogger.TraceLog("DONE", true);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             // Collect thread dumps - TODO ask y/n
             CollectThreadDumps();

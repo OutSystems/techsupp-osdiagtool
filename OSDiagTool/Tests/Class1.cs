@@ -8,7 +8,8 @@ using OSDiagTool.DBConnector;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.Utils;
 using System.Xml.Linq;
-using OSDiagTool.OSDiagTool;
+using OSDiagTool.OSDiagToolConf;
+using OSDiagTool.DatabaseExporter;
 
 namespace OSDiagTool.Tests
 {
@@ -21,16 +22,21 @@ namespace OSDiagTool.Tests
 
         static void Main(string[] args)
         {
-            /*var connString = new DBConnector.SQLConnStringModel();
-            connString.dataSource = "<Hostname>";
-            connString.initialCatalog = "<Catalog>";
+            var connString = new DBConnector.SQLConnStringModel();
+            connString.dataSource = "<host>";
+            connString.initialCatalog = "<catalog";
             connString.userId = "<user>";
             connString.pwd = "<pwd>";
 
-            OSDiagTool.DBConnector.DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");*/
+            //DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");
 
             OSDiagToolConfReader test = new OSDiagToolConfReader();
             var configurations = test.GetOsDiagToolConfigurations(true);
+
+            foreach(string table in configurations.tableNames) {
+                CSVExporter.SQLToCSVExport(connString, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);
+            }
+            
 
 
             

@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Xml.Linq;
 
-namespace OSDiagTool.OSDiagTool {
+namespace OSDiagTool.OSDiagToolConf {
     class OSDiagToolConfReader {
 
-        private static string _osDGTConfFile = "OSDiagTool.exe.config";
+        private static string _osDGTConfFile = "OSDGTool.exe.config";
         private static string _osDiagToolConfigPath = Path.Combine(Directory.GetCurrentDirectory(), _osDGTConfFile);
+
         // XML Elements
         // Root
         private static string _rootElement = "configuration";
@@ -74,7 +75,7 @@ namespace OSDiagTool.OSDiagTool {
             foreach (XElement el in ossysNodes[0]) {
 
                 string tableName = el.Attribute(_nameAttribute).Value;
-                // Check if table name in configuration file matchs prefix of table
+                // Check if table name in configuration file matchs prefix of table and delete everything after space and comma to protect from SQLI
                 if (tableName.ToLower().StartsWith(_l3_ossys)) {
                     tableNames.Add(tableName);
                 }
