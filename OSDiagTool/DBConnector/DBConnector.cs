@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
-//using System.Data.OracleClient;
 using Oracle.ManagedDataAccess.Client;
 
 
@@ -37,7 +36,7 @@ namespace OSDiagTool.DBConnector
         // SQL Server DB Connection String
         public string SQLConnString(DBConnector.SQLConnStringModel SQLConnectionString)
         {
-            string connectionStringSQL = String.Format("Data Source={0};Initial Catalog={1};User id={2};Password={3};",
+            string connectionStringSQL = String.Format("Data Source={0};Initial Catalog={1};User id={2};Password={3}; MultipleActiveResultSets=true;",
                 SQLConnectionString.dataSource, SQLConnectionString.initialCatalog, SQLConnectionString.userId, SQLConnectionString.pwd);
 
             return connectionStringSQL;
@@ -77,13 +76,12 @@ namespace OSDiagTool.DBConnector
         // Oracle DB Connection String
         public string OracleConnString(DBConnector.OracleConnStringModel OracleConnectionString)
         {
-            string connectionStringORCL = String.Format("SERVER=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={0})(PORT={1}))(CONNECT_DATA=(SERVICE_NAME={2})));uid = {3}; pwd = {4};",
+            string connectionStringORCL = String.Format("Data Source = (DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST={0})(PORT={1})))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME={2}))); User Id = {3}; Password = {4};",
                 OracleConnectionString.host, OracleConnectionString.port, OracleConnectionString.serviceName, OracleConnectionString.userId, OracleConnectionString.pwd);
 
             return connectionStringORCL;
 
         }
-
 
         // Oracle Close Connection
         public void OracleCloseConnection(OracleConnection connection)

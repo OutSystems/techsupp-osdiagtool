@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Xml.Linq;
+using System.Text.RegularExpressions;
 
 namespace OSDiagTool.OSDiagToolConf {
     class OSDiagToolConfReader {
@@ -64,7 +65,9 @@ namespace OSDiagTool.OSDiagToolConf {
             foreach (XElement el in osltmNodes[0]) {
 
                 string tableName = el.Attribute(_nameAttribute).Value;
-                tableName.Replace(" ", ""); // protect sql, no spaces are expected for the table name
+                Regex pattern = new Regex("[ -*/]|[\n]{2}/g");
+                pattern.Replace(tableName, "--");
+
                 // Check if table name in configuration file matchs prefix of table
                 if (tableName.ToLower().StartsWith(_l3_osltm)) {
                     tableNames.Add(tableName);
@@ -75,7 +78,9 @@ namespace OSDiagTool.OSDiagToolConf {
             foreach (XElement el in ossysNodes[0]) {
 
                 string tableName = el.Attribute(_nameAttribute).Value;
-                tableName.Replace(" ", ""); // protect sql, no spaces are expected for the table name
+                Regex pattern = new Regex("[ -*/]|[\n]{2}/g");
+                pattern.Replace(tableName, "--");
+
                 // Check if table name in configuration file matchs prefix of table and delete everything after space and comma to protect from SQLI
                 if (tableName.ToLower().StartsWith(_l3_ossys)) {
                     tableNames.Add(tableName);

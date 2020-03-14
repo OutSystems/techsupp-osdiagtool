@@ -17,6 +17,7 @@ namespace OSDiagTool.Tests
     {
         public static string PlatformDatabaseConfigurationElement = "PlatformDatabaseConfiguration";
         public static string _oSDiagToolConfPath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\OSDiagTool.exe.config";
+        private static string platformConfigurationFilepath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug\server.hsconf";
 
 
 
@@ -30,11 +31,16 @@ namespace OSDiagTool.Tests
 
             //DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");
 
+            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath);
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+            string dbEngine = platformDBInfo.DBMS;
+
             OSDiagToolConfReader test = new OSDiagToolConfReader();
             var configurations = test.GetOsDiagToolConfigurations();
 
             foreach(string table in configurations.tableNames) {
-                CSVExporter.SQLToCSVExport(connString, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);
+                //CSVExporter.SQLToCSVExport(connString, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);
             }
             
 

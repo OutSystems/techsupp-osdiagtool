@@ -10,7 +10,8 @@ using OSDiagTool.Utils;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
-using OSDiagTool;
+using Oracle.ManagedDataAccess.Client;
+using System.Data.SqlClient;
 
 namespace OSDiagTool
 {
@@ -124,8 +125,7 @@ namespace OSDiagTool
                 FileLogger.LogError("Failed to export Registry:", e.Message);
             }
 
-            // IN PROGRESS: Export DB Tables 
-            // SQL Export
+            // SQL Export -- fix There is already an open DataReader associated with this Command which must be closed first.
             try {
 
                 
@@ -138,28 +138,38 @@ namespace OSDiagTool
                     sqlConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
                     sqlConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
 
-                    FileLogger.TraceLog("Starting exporting tables: ");
-                    foreach (string table in configurations.tableNames) {
-                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                        CSVExporter.SQLToCSVExport(sqlConnString, table, _tempFolderPath, configurations.queryTimeout);                        
+                    var connector = new DBConnector.SLQDBConnector();
+                    SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
+
+                    using (connection) {
+                        FileLogger.TraceLog("Starting exporting tables: ");
+                        foreach (string table in configurations.tableNames) {
+                            FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                            CSVExporter.SQLToCSVExport(connection, table, _tempFolderPath, configurations.queryTimeout);
+                        }
                     }
 
-
-                }   // Oracle Export -- NOT WORKING --> its getting the SQL conn string
+                }   // Oracle Export -- AdminUser schema is necessary to query OSSYS
                 else if (dbEngine.ToLower().Equals("oracle")) {
                     var orclConnString = new DBConnector.OracleConnStringModel();
 
                     orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                     orclConnString.port = platformDBInfo.GetProperty("Port").Value;
                     orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
-                    orclConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
-                    orclConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                    orclConnString.userId = platformDBInfo.GetProperty("AdminUser").Value;
+                    orclConnString.pwd = platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
 
-                    FileLogger.TraceLog("Starting exporting tables");
-                    foreach (string table in configurations.tableNames) {
-                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                        CSVExporter.ORCLToCsvExport(orclConnString, table, _tempFolderPath, configurations.queryTimeout);
+                    var connector = new DBConnector.OracleDBConnector();
+                    OracleConnection connection = connector.OracleOpenConnection(orclConnString);
+
+                    using (connection) {
+                        FileLogger.TraceLog("Starting exporting tables: ");
+                        foreach (string table in configurations.tableNames) {
+                            FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                            CSVExporter.ORCLToCsvExport(connection, table, _tempFolderPath, configurations.queryTimeout);
+                        }
                     }
+                    
                 }
                 
             } catch (Exception e) {
@@ -168,18 +178,6 @@ namespace OSDiagTool
 
             }
             FileLogger.TraceLog("DONE", true);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
             // Collect thread dumps - TODO ask y/n
