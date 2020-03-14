@@ -16,7 +16,6 @@ namespace OSDiagTool
 
     interface IOracleDBConnector
     {
-        //OracleConnection OracleOpenConnection(DBConnector.OracleConnStringModel OracleConnectionString);
         OracleConnection OracleOpenConnection (DBConnector.OracleConnStringModel OracleConnectionString);
     }
 }

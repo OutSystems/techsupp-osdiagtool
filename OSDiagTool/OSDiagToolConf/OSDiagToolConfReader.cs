@@ -65,7 +65,7 @@ namespace OSDiagTool.OSDiagToolConf {
             foreach (XElement el in osltmNodes[0]) {
 
                 string tableName = el.Attribute(_nameAttribute).Value;
-                Regex pattern = new Regex("[ -*/]|[\n]{2}/g");
+                Regex pattern = new Regex("[ -*/()]|[\n]{2}/g");
                 pattern.Replace(tableName, "--");
 
                 // Check if table name in configuration file matchs prefix of table

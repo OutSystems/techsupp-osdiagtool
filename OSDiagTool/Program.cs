@@ -285,9 +285,9 @@ namespace OSDiagTool
                 { "pagefile", new CmdLineCommand("wmic pagefile", Path.Combine(_windowsInfoDest, "pagefile")) },
                 { "partition", new CmdLineCommand("wmic partition", Path.Combine(_windowsInfoDest, "partition")) },
                 { "startup", new CmdLineCommand("wmic startup", Path.Combine(_windowsInfoDest, "startup")) },
-                { "app_evtx", new CmdLineCommand("WEVTUtil epl Application " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx")) },
-                { "sys_evtx", new CmdLineCommand("WEVTUtil epl System " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx")) },
-                { "sec_evtx", new CmdLineCommand("WEVTUtil epl Security " + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx")) }
+                { "app_evtx", new CmdLineCommand("WEVTUtil epl Application " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx") + "\"") },
+                { "sys_evtx", new CmdLineCommand("WEVTUtil epl System " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx") + "\"") },
+                { "sec_evtx", new CmdLineCommand("WEVTUtil epl Security " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx") + "\"") }
             };
 
             foreach (KeyValuePair<string, CmdLineCommand> commandEntry in commands)
