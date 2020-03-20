@@ -23,6 +23,18 @@ namespace OSDiagTool.Tests
 
         static void Main(string[] args)
         {
+
+            //FileSystemHelper fs = new FileSystemHelper();
+            //fs.DirectoryCopy(@"", @"", true, 0);
+            
+            
+            
+            
+            
+            
+            
+            
+            
             var connString = new DBConnector.SQLConnStringModel();
             connString.dataSource = "<host>";
             connString.initialCatalog = "<catalog";

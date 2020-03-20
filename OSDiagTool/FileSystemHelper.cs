@@ -49,12 +49,9 @@ namespace OSDiagTool
         // Use this function to copy all the contents of a path. Set the copySubDirs to True if you want to copy as well all subfolders contents
         public void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs, int daysToFetch = 3)
         {
-            var dtNow = new DateTime();
-            var dtSubLastWrite = new DateTime();
-            dtNow = DateTime.Now;
-            dtSubLastWrite = dtNow.AddDays(-daysToFetch);
-
-
+            DateTime dtNow = DateTime.Now;
+            DateTime dtSubLastWrite = dtNow.AddDays(-daysToFetch);
+            
             // Get the subdirectories for the specified directory.
             DirectoryInfo dir = new DirectoryInfo(sourceDirName);
 
@@ -88,7 +85,7 @@ namespace OSDiagTool
                 foreach (DirectoryInfo subdir in dirs)
                 {
                     string temppath = Path.Combine(destDirName, subdir.Name);
-                    DirectoryCopy(subdir.FullName, temppath, copySubDirs);
+                    DirectoryCopy(subdir.FullName, temppath, copySubDirs, daysToFetch);
                 }
             }
         }
