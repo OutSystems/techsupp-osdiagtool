@@ -47,11 +47,11 @@ namespace OSDiagTool.DatabaseExporter {
             }
         }
 
-        public static void ORCLToCsvExport(OracleConnection connection, string tableName, string csvFilePath, int queryTimeout) {
+        public static void ORCLToCsvExport(OracleConnection connection, string tableName, string csvFilePath, int queryTimeout, string osAdminSchema) {
 
             using (System.IO.StreamWriter fs = new System.IO.StreamWriter(csvFilePath + "\\" + tableName + ".csv")) {
                     
-                string _selectAllQuery = "SELECT * FROM " + tableName;
+                string _selectAllQuery = "SELECT * FROM " + osAdminSchema + "." + tableName;
 
                 OracleCommand command = new OracleCommand(_selectAllQuery, connection) {
                     CommandTimeout = queryTimeout

@@ -33,6 +33,7 @@ namespace OSDiagTool
         private static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
 
+
         static void Main(string[] args)
         {
             // Change console encoding to support all characters
@@ -59,13 +60,15 @@ namespace OSDiagTool
             using (var errorTxtFile = File.Create(_errorDumpFile));
 
             // Finding Installation folder 
+            string _osPlatformVersion = null;
                 try
             {
                 FileLogger.TraceLog("Finding OutSystems Platform Installation Path...");
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
                 
                 _osInstallationFolder = (string) OSPlatformInstaller.GetValue("");
-                FileLogger.TraceLog("Found it on: " + _osInstallationFolder, true);
+                _osPlatformVersion = (string) OSPlatformInstaller.GetValue("Server");
+                FileLogger.TraceLog("Found it on: " + _osInstallationFolder + "; Version: " + _osPlatformVersion, true);
             }
             catch (Exception e)
             {
@@ -87,13 +90,11 @@ namespace OSDiagTool
 
             ExecuteCommands();
 
-
-
             // Reading OSDGTool config file
             string privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
             string platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
 
-            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath);
+            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, _osPlatformVersion);
             ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
@@ -141,32 +142,54 @@ namespace OSDiagTool
                     var connector = new DBConnector.SLQDBConnector();
                     SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
 
+                    string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
+                    
+                    SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, connection) {
+                        CommandTimeout = configurations.queryTimeout
+                    };
+                    cmd.ExecuteNonQuery();
+                    int count = (Int32)cmd.ExecuteScalar();
+
                     using (connection) {
                         FileLogger.TraceLog("Starting exporting tables: ");
                         foreach (string table in configurations.tableNames) {
-                            FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                            CSVExporter.SQLToCSVExport(connection, table, _tempFolderPath, configurations.queryTimeout);
+                            if ((count.Equals(0) & table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                                FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                                CSVExporter.SQLToCSVExport(connection, table, _tempFolderPath, configurations.queryTimeout);
+                            }
+                            
                         }
                     }
 
-                }   // Oracle Export -- AdminUser schema is necessary to query OSSYS
+                }   // Oracle Export -- RuntimeUser is used but the Admin schema is necessary to query OSSYS 
                 else if (dbEngine.ToLower().Equals("oracle")) {
                     var orclConnString = new DBConnector.OracleConnStringModel();
 
                     orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                     orclConnString.port = platformDBInfo.GetProperty("Port").Value;
                     orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
-                    orclConnString.userId = platformDBInfo.GetProperty("AdminUser").Value;
-                    orclConnString.pwd = platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                    orclConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
+                    orclConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                    string osAdminSchema = platformDBInfo.GetProperty("AdminUser").Value;
 
                     var connector = new DBConnector.OracleDBConnector();
                     OracleConnection connection = connector.OracleOpenConnection(orclConnString);
 
+                    string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM " + osAdminSchema + "." + "OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
+
+                    OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, connection) {
+                        CommandTimeout = configurations.queryTimeout
+                    };
+                    cmd.ExecuteNonQuery();
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
+
                     using (connection) {
                         FileLogger.TraceLog("Starting exporting tables: ");
                         foreach (string table in configurations.tableNames) {
-                            FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                            CSVExporter.ORCLToCsvExport(connection, table, _tempFolderPath, configurations.queryTimeout);
+                            if ((count.Equals(0) & table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                                FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                                CSVExporter.ORCLToCsvExport(connection, table, _tempFolderPath, configurations.queryTimeout, osAdminSchema);
+                            }
                         }
                     }
                     
@@ -375,12 +398,12 @@ namespace OSDiagTool
             }
         }
 
-        private static void GetServiceCenterLogs(string platformInstallationFolder)
+        /*private static void GetServiceCenterLogs(string platformInstallationFolder)
         {
             string privateKeyFilepath = Path.Combine(platformInstallationFolder, "private.key");
             string platformConfigurationFilepath = Path.Combine(platformInstallationFolder, "server.hsconf");
 
-            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath);
+            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, _osPlatformVersion);
             ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
             Console.Write("Getting Service Center logs: TODO!!!...");
@@ -397,6 +420,7 @@ namespace OSDiagTool
             Console.ReadKey();*/
 
             // SQL Server
+            /*
             Console.WriteLine(platformDBInfo.DBMS);
             Console.WriteLine(platformDBInfo.GetProperty("Server").Value);
             Console.WriteLine(platformDBInfo.GetProperty("Catalog").Value);
@@ -410,7 +434,7 @@ namespace OSDiagTool
             Console.WriteLine("DONE");
 
             return;
-        }
+        }*/
 
         private static void PrintEnd()
         {

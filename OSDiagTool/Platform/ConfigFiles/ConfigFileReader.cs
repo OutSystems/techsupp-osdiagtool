@@ -20,19 +20,21 @@ namespace OSDiagTool.Platform.ConfigFiles
         private string _configFilePath;
 
 
-        public ConfigFileReader(string filepath)
+        public ConfigFileReader(string filepath, string osPlatformVersion)
         {
             _configFilePath = filepath;
-            ReadFile();
+            ReadFile(osPlatformVersion);
         }
 
-        private void ReadFile()
+        private void ReadFile(string osPlatformVersion)
         {
             using (FileStream fs = File.OpenRead(_configFilePath))
             {
                 XElement root = XElement.Load(fs);
                 _dbPlatformDetails = ReadDbPlatformInfo(root);
-                _dbLoggingDetails = ReadDbLoggingInfo(root);
+                if (!(osPlatformVersion.StartsWith("10."))) {
+                    _dbLoggingDetails = ReadDbLoggingInfo(root);
+                }
                 _dbSessionDetails = ReadDbSessionInfo(root);
             }
         }
