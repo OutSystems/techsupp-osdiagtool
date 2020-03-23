@@ -10,6 +10,7 @@ using OSDiagTool.Utils;
 using System.Xml.Linq;
 using OSDiagTool.OSDiagToolConf;
 using OSDiagTool.DatabaseExporter;
+using System.Data.SqlClient;
 
 namespace OSDiagTool.Tests
 {
@@ -36,23 +37,26 @@ namespace OSDiagTool.Tests
             
             
             var connString = new DBConnector.SQLConnStringModel();
-            connString.dataSource = "<host>";
-            connString.initialCatalog = "<catalog";
-            connString.userId = "<user>";
-            connString.pwd = "<pwd>";
+            connString.dataSource = "";
+            connString.initialCatalog = "";
+            connString.userId = "";
+            connString.pwd = "^";
 
             //DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");
 
-            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, "test");
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            //ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, "test");
+            //ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
-            string dbEngine = platformDBInfo.DBMS;
+            //string dbEngine = platformDBInfo.DBMS;
+
+            var connector = new DBConnector.SLQDBConnector();
+            SqlConnection connection = connector.SQLOpenConnection(connString);
 
             OSDiagToolConfReader test = new OSDiagToolConfReader();
             var configurations = test.GetOsDiagToolConfigurations();
 
             foreach(string table in configurations.tableNames) {
-                //CSVExporter.SQLToCSVExport(connString, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);
+                CSVExporter.SQLToCSVExport(connection, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);
             }
             
 

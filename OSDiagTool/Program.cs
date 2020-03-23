@@ -30,6 +30,7 @@ namespace OSDiagTool
         private static string _machineConfigPath = Path.Combine(_windir, @"Microsoft.NET\Framework64\v4.0.30319\CONFIG\machine.config");
         private static string _evtVwrLogsDest = Path.Combine(_tempFolderPath, "EventViewerLogs");
         private static string _osPlatFilesDest = Path.Combine(_tempFolderPath, "OSPlatformFiles");
+        private static string _osDatabaseTablesDest = Path.Combine(_tempFolderPath, "DatabaseTables");
         private static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
 
@@ -55,6 +56,7 @@ namespace OSDiagTool
             Directory.CreateDirectory(_evtVwrLogsDest);
             Directory.CreateDirectory(_osPlatFilesDest);
             Directory.CreateDirectory(_windowsInfoDest);
+            Directory.CreateDirectory(_osDatabaseTablesDest);
 
             // Create error dump file to log all exceptions during script execution
             using (var errorTxtFile = File.Create(_errorDumpFile));
@@ -155,7 +157,7 @@ namespace OSDiagTool
                         foreach (string table in configurations.tableNames) {
                             if ((count.Equals(0) & table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                 FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                CSVExporter.SQLToCSVExport(connection, table, _tempFolderPath, configurations.queryTimeout);
+                                CSVExporter.SQLToCSVExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout);
                             }
                             
                         }
@@ -188,7 +190,7 @@ namespace OSDiagTool
                         foreach (string table in configurations.tableNames) {
                             if ((count.Equals(0) & table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                 FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                CSVExporter.ORCLToCsvExport(connection, table, _tempFolderPath, configurations.queryTimeout, osAdminSchema);
+                                CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, osAdminSchema);
                             }
                         }
                     }
