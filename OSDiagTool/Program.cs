@@ -155,7 +155,7 @@ namespace OSDiagTool
                     using (connection) {
                         FileLogger.TraceLog("Starting exporting tables: ");
                         foreach (string table in configurations.tableNames) {
-                            if ((count.Equals(0) & table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                            if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                 FileLogger.TraceLog(table + ", ", writeDateTime: false);
                                 CSVExporter.SQLToCSVExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout);
                             }
@@ -188,7 +188,7 @@ namespace OSDiagTool
                     using (connection) {
                         FileLogger.TraceLog("Starting exporting tables: ");
                         foreach (string table in configurations.tableNames) {
-                            if ((count.Equals(0) & table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                            if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                 FileLogger.TraceLog(table + ", ", writeDateTime: false);
                                 CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, osAdminSchema);
                             }

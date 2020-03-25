@@ -66,10 +66,10 @@ namespace OSDiagTool.OSDiagToolConf {
 
                 string tableName = el.Attribute(_nameAttribute).Value;
                 Regex pattern = new Regex("[ -*/()';]|[\n]{2}/g");
-                pattern.Replace(tableName, "");
+                tableName = pattern.Replace(tableName, "");
 
                 // Check if table name in configuration file matchs prefix of table
-                if (tableName.ToLower().StartsWith(_l3_osltm)) {
+                if (tableName.ToLower().StartsWith(_l3_osltm) && !(tableName.ToLower().Contains((" ")))) {
                     tableNames.Add(tableName);
                                        
                 }
@@ -79,10 +79,10 @@ namespace OSDiagTool.OSDiagToolConf {
 
                 string tableName = el.Attribute(_nameAttribute).Value;
                 Regex pattern = new Regex("[ -*/]|[\n]{2}/g");
-                pattern.Replace(tableName, "--");
+                tableName = pattern.Replace(tableName, "");
 
                 // Check if table name in configuration file matchs prefix of table and delete everything after space and comma to protect from SQLI
-                if (tableName.ToLower().StartsWith(_l3_ossys)) {
+                if (tableName.ToLower().StartsWith(_l3_ossys) && !(tableName.ToLower().Contains((" ")))) {
                     tableNames.Add(tableName);
                 }
                 

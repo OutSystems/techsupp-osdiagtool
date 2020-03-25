@@ -16,7 +16,7 @@ namespace OSDiagTool
 
         public static void LogError(string customMessage, string errorMessage, bool writeToConsole = true, bool writeDateTime = true)
         {
-            if(writeToConsole) Console.WriteLine("[ERROR] " + customMessage + ": " + errorMessage);
+            if (writeToConsole) { Console.WriteLine("[ERROR] " + customMessage + ": " + errorMessage);  };
             File.AppendAllText(_errorDumpFile, writeDateTime ? DateTime.Now + "\t" + "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine : "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine);
         }
 
