@@ -11,6 +11,7 @@ using System.Xml.Linq;
 using OSDiagTool.OSDiagToolConf;
 using OSDiagTool.DatabaseExporter;
 using System.Data.SqlClient;
+using OSDiagTool.Database.DatabaseQueries;
 
 namespace OSDiagTool.Tests
 {
@@ -27,8 +28,9 @@ namespace OSDiagTool.Tests
 
             //FileSystemHelper fs = new FileSystemHelper();
             //fs.DirectoryCopy(@"", @"", true, 0);
-            
-            
+
+            var DQ = new OracleQueries();
+            string foo = string.Format(DQ.alterSession, "test");
             
             
             
@@ -56,7 +58,7 @@ namespace OSDiagTool.Tests
             var configurations = test.GetOsDiagToolConfigurations();
 
             foreach(string table in configurations.tableNames) {
-                CSVExporter.SQLToCSVExport(connection, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);
+                //CSVExporter.SQLToCSVExport(connection, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);
             }
             
 

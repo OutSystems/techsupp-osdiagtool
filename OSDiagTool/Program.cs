@@ -130,7 +130,6 @@ namespace OSDiagTool
 
             // SQL Export -- fix There is already an open DataReader associated with this Command which must be closed first.
             try {
-
                 
                 string dbEngine = platformDBInfo.DBMS;
                 if (dbEngine.ToLower().Equals("sqlserver")) {
@@ -150,14 +149,15 @@ namespace OSDiagTool
                         CommandTimeout = configurations.queryTimeout
                     };
                     cmd.ExecuteNonQuery();
-                    int count = (Int32)cmd.ExecuteScalar();
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
 
                     using (connection) {
                         FileLogger.TraceLog("Starting exporting tables: ");
                         foreach (string table in configurations.tableNames) {
                             if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                 FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                CSVExporter.SQLToCSVExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout);
+                                string selectAllQuery = "SELECT * FROM " + table;
+                                CSVExporter.SQLToCSVExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery);
                             }
                             
                         }
@@ -190,7 +190,8 @@ namespace OSDiagTool
                         foreach (string table in configurations.tableNames) {
                             if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                 FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, osAdminSchema);
+                                string selectAllQuery = "SELECT * FROM " + osAdminSchema + "." + table;
+                                CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, osAdminSchema, selectAllQuery);
                             }
                         }
                     }

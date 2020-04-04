@@ -83,7 +83,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DatabaseExporter\CSVExporter.cs" />
+    <Compile Include="Database\DatabaseExporter\CSVExporter.cs" />
+    <Compile Include="Database\DatabaseQueries\DatabaseTroubleshoot.cs" />
+    <Compile Include="Database\DatabaseQueries\OracleQueries.cs" />
+    <Compile Include="Database\DatabaseQueries\SQLServerQueries.cs" />
     <Compile Include="DBConnector\ConnStringModel.cs" />
     <Compile Include="CmdHelper.cs" />
     <Compile Include="CmdLineCommand.cs" />

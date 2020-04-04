@@ -10,12 +10,12 @@ using Oracle.ManagedDataAccess.Client;
 namespace OSDiagTool.DatabaseExporter {
     class CSVExporter {
         
-        public static void SQLToCSVExport(SqlConnection connection, string tableName, string csvFilePath, int queryTimeout) {
+        public static void SQLToCSVExport(SqlConnection connection, string tableName, string csvFilePath, int queryTimeout, string query) {
 
             using (System.IO.StreamWriter fs = new System.IO.StreamWriter(csvFilePath + "\\" + tableName + ".csv")) {
                                
                 string _selectAllQuery = "SELECT * FROM " + tableName;
-                SqlCommand command = new SqlCommand(_selectAllQuery, connection) {
+                SqlCommand command = new SqlCommand(query, connection) {
                     CommandTimeout = queryTimeout
                 };
 
@@ -47,13 +47,11 @@ namespace OSDiagTool.DatabaseExporter {
             }
         }
 
-        public static void ORCLToCsvExport(OracleConnection connection, string tableName, string csvFilePath, int queryTimeout, string osAdminSchema) {
+        public static void ORCLToCsvExport(OracleConnection connection, string tableName, string csvFilePath, int queryTimeout, string osAdminSchema, string query) {
 
             using (System.IO.StreamWriter fs = new System.IO.StreamWriter(csvFilePath + "\\" + tableName + ".csv")) {
-                    
-                string _selectAllQuery = "SELECT * FROM " + osAdminSchema + "." + tableName;
 
-                OracleCommand command = new OracleCommand(_selectAllQuery, connection) {
+                OracleCommand command = new OracleCommand(query, connection) {
                     CommandTimeout = queryTimeout
                 };
 
