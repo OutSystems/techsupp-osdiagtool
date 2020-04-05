@@ -9,13 +9,18 @@ namespace OSDiagTool.Database.DatabaseQueries {
 
         // Use string.format to append parameters
 
-        public string sessionsSp_Who2 = @"SELECT spid, sp.[status], loginame[Login], hostname, blocked BlkBy, sd.name DBName,
+        public string sessionsSp_Who2 { get; set; } = @"SELECT spid, sp.[status], loginame[Login], hostname, blocked BlkBy, sd.name DBName,
             cmd Command, cpu CPUTime, physical_io DiskIO, last_batch LastBatch, [program_name] ProgramName
             FROM master.dbo.sysprocesses sp
             JOIN master.dbo.sysdatabases sd ON sp.dbid = sd.dbid
             ORDER BY cpu DESC";
 
-        public string costlyCPUQueries = @"SELECT TOP 20
+        public string sessionsSp_Who2_Blocked { get; set; } = @"SELECT spid, blocked BlkBy
+            FROM master.dbo.sysprocesses sp
+            JOIN master.dbo.sysdatabases sd ON sp.dbid = sd.dbid
+            ORDER BY cpu DESC";
+
+        public string costlyCPUQueries { get; set; } = @"SELECT TOP 20
             last_execution_time, qs.execution_count,
             total_CPU_inSeconds = --Converted from microseconds
                 qs.total_worker_time/1000000,
@@ -33,9 +38,15 @@ namespace OSDiagTool.Database.DatabaseQueries {
             ORDER BY
                 qs.total_worker_time DESC";
 
-        public string dbccInputBuffer = @"dbcc inputbuffer ({0})"; // {0}: SID
+        public string dbccInputBuffer { get; set; } = @"SELECT es.session_id as spid, ib.event_info, status,
+            cpu_time, memory_usage, logical_reads, writes, row_count
+            total_elapsed_time, login_time, last_request_start_time, last_request_end_time
+            host_name, program_name, login_name, open_transaction_count
+            FROM sys.dm_exec_sessions AS es
+            CROSS APPLY sys.dm_exec_input_buffer(es.session_id, NULL) AS ib
+            WHERE es.session_id IN({0})"; // {0}: SID
 
-        public string statCachedPlans = @"SELECT /* TOOLKIT */ TOP {0}
+        public string statCachedPlans { get; set; } = @"SELECT /* TOOLKIT */ TOP {0}
             qs.last_execution_time AS ""Last Execution Date""
             ,qs.execution_count AS ""Execution Count""
             , DB_NAME(qt.dbid) AS ""DB Name""

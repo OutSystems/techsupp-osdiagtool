@@ -14,7 +14,6 @@ namespace OSDiagTool.DatabaseExporter {
 
             using (System.IO.StreamWriter fs = new System.IO.StreamWriter(csvFilePath + "\\" + tableName + ".csv")) {
                                
-                string _selectAllQuery = "SELECT * FROM " + tableName;
                 SqlCommand command = new SqlCommand(query, connection) {
                     CommandTimeout = queryTimeout
                 };

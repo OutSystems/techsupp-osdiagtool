@@ -31,8 +31,8 @@ namespace OSDiagTool.Tests
 
             var DQ = new OracleQueries();
             string foo = string.Format(DQ.alterSession, "test");
-            
-            
+
+            //Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting("sqlserver", 30);
             
             
             

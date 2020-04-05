@@ -57,7 +57,7 @@
     <ApplicationManifest>app1.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>OSDiagTool.Program</StartupObject>
+    <StartupObject>OSDiagTool.Tests.Class1</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ICSharpCode.SharpZipLib">
