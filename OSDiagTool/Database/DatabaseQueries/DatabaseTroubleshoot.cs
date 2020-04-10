@@ -14,6 +14,8 @@ namespace OSDiagTool.Database.DatabaseQueries {
         public static void DatabaseTroubleshooting(string dbEngineType, int queryTimeout, string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null) {
 
+            // Needs user with sa permissions
+
             int top_statCachedPlan = 10;
             List<int> blockingAndBlockedSpids = new List<int>();
 

@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{7B232307-C985-45DC-83B6-4A421146BE3D}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>OSDiagTool</RootNamespace>
     <AssemblyName>OSDiagTool</AssemblyName>
@@ -57,7 +57,7 @@
     <ApplicationManifest>app1.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>OSDiagTool.Tests.Class1</StartupObject>
+    <StartupObject>OSDiagTool.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ICSharpCode.SharpZipLib">
@@ -74,7 +74,9 @@
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.OracleClient" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -98,12 +100,23 @@
     <Compile Include="IISHelper.cs" />
     <Compile Include="OSDiagToolConf\ConfModel.cs" />
     <Compile Include="OSDiagToolConf\OSDiagToolConfReader.cs" />
+    <Compile Include="OSDiagToolForm\OSDiagFormUI.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OSDiagToolForm\OSDiagFormUI.Designer.cs">
+      <DependentUpon>OSDiagFormUI.cs</DependentUpon>
+    </Compile>
     <Compile Include="Platform\ConfigFiles\ConfigFileDBInfo.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileProperty.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileReader.cs" />
     <Compile Include="OSServiceConfigFileParser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="RegistryClass.cs" />
     <Compile Include="Tests\Class1.cs" />
     <Compile Include="ThreadDumpCollector.cs" />
@@ -123,7 +136,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="OSDiagToolForm\OSDiagFormUI.resx">
+      <DependentUpon>OSDiagFormUI.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

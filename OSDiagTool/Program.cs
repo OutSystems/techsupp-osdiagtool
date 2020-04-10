@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.Win32;
-using System.Xml.Linq;
-using System.Linq;
 using OSDiagTool.Utils;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
 using System.Data.SqlClient;
+using System.Windows.Forms;
 
 namespace OSDiagTool
 {
@@ -35,8 +33,16 @@ namespace OSDiagTool
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
 
 
-        static void Main(string[] args)
-        {
+        static void Main(string[] args) {
+
+            Application.EnableVisualStyles();
+            Application.Run(new OSDiagToolForm.OsDiagForm());
+
+        }
+
+        public static void RunOsDiagTool() { 
+
+
             // Change console encoding to support all characters
             Console.OutputEncoding = Encoding.UTF8;
 
@@ -102,7 +108,7 @@ namespace OSDiagTool
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
-            //Retrieving IIS access logs
+            // Retrieving IIS access logs
             IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, configurations.IISLogsNrDays);
 
             // Export Registry information
