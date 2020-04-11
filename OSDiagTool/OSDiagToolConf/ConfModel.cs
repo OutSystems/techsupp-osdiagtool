@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace OSDiagTool.OSDiagToolConf {
-    class ConfModel {
+    public class ConfModel {
 
         public struct strConfModel{
 

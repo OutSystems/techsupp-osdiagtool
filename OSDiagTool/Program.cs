@@ -31,17 +31,41 @@ namespace OSDiagTool
         private static string _osDatabaseTablesDest = Path.Combine(_tempFolderPath, "DatabaseTables");
         private static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
+        private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
 
 
         static void Main(string[] args) {
 
+            OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
+            var configurations = dgtConfReader.GetOsDiagToolConfigurations();
+
+            RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
+            string _osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
+
+            ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, _osPlatformVersion);
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+            var sqlConnString = new DBConnector.SQLConnStringModel();
+            var orclConnString = new DBConnector.OracleConnStringModel();
+
+            if (platformDBInfo.DBMS.ToLower().Equals("sqlserver")) {
+
+                sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
+                sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
+
+            } else if (platformDBInfo.DBMS.ToLower().Equals("oracle")) {
+
+                orclConnString.host = platformDBInfo.GetProperty("Host").Value;
+                orclConnString.port = platformDBInfo.GetProperty("Port").Value;
+                orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
+            }
+
             Application.EnableVisualStyles();
-            Application.Run(new OSDiagToolForm.OsDiagForm());
+            Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
 
         }
 
         public static void RunOsDiagTool() { 
-
 
             // Change console encoding to support all characters
             Console.OutputEncoding = Encoding.UTF8;

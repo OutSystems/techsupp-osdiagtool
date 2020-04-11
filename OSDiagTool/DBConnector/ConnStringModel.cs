@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OSDiagTool.DBConnector
 {
-    class SQLConnStringModel
+    public class SQLConnStringModel
     {
         public string dataSource { get; set; }
 
@@ -18,7 +18,7 @@ namespace OSDiagTool.DBConnector
 
     }
 
-    class OracleConnStringModel
+    public class OracleConnStringModel
     {
         public string host { get; set; }
 
