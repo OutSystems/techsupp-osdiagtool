@@ -65,7 +65,7 @@ namespace OSDiagTool
 
         }
 
-        public static void RunOsDiagTool() { 
+        public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations) { // TODO: refactor this method for new input
 
             // Change console encoding to support all characters
             Console.OutputEncoding = Encoding.UTF8;

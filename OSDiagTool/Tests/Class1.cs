@@ -26,6 +26,8 @@ namespace OSDiagTool.Tests
         static void Main(string[] args)
         {
 
+            Test();
+
             //FileSystemHelper fs = new FileSystemHelper();
             //fs.DirectoryCopy(@"", @"", true, 0);
 
@@ -137,6 +139,17 @@ namespace OSDiagTool.Tests
                 HsConfPropertiesVal.Add(HsconfProperty, _propValue);
                 Console.WriteLine(HsconfProperty + " " + _propValue);
             }
+        }
+
+        private static bool Test() {
+
+            try {
+                OSDiagConfReader();
+            } catch {
+                return false;
+            }
+
+            return true;
         }
     }
 }

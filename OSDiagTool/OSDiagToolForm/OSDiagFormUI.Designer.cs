@@ -1,6 +1,4 @@
-﻿using OSDiagTool.OSDiagToolConf;
-
-namespace OSDiagTool.OSDiagToolForm {
+﻿namespace OSDiagTool.OSDiagToolForm {
     partial class OsDiagForm {
         /// <summary>
         /// Required designer variable.
@@ -47,6 +45,7 @@ namespace OSDiagTool.OSDiagToolForm {
             this.tb_osDiagConf = new System.Windows.Forms.TabControl();
             this.tb_osDiagGenConf = new System.Windows.Forms.TabPage();
             this.tb_databaseConf = new System.Windows.Forms.TabPage();
+            this.bt_removeMetamodelTables = new System.Windows.Forms.Button();
             this.bt_addMetamodelTables = new System.Windows.Forms.Button();
             this.label17 = new System.Windows.Forms.Label();
             this.tb_inptMetamodelTables = new System.Windows.Forms.TextBox();
@@ -283,6 +282,7 @@ namespace OSDiagTool.OSDiagToolForm {
             // 
             // tb_databaseConf
             // 
+            this.tb_databaseConf.Controls.Add(this.bt_removeMetamodelTables);
             this.tb_databaseConf.Controls.Add(this.bt_addMetamodelTables);
             this.tb_databaseConf.Controls.Add(this.label17);
             this.tb_databaseConf.Controls.Add(this.tb_inptMetamodelTables);
@@ -303,6 +303,16 @@ namespace OSDiagTool.OSDiagToolForm {
             this.tb_databaseConf.Text = "Database Configurations";
             this.tb_databaseConf.UseVisualStyleBackColor = true;
             // 
+            // bt_removeMetamodelTables
+            // 
+            this.bt_removeMetamodelTables.Location = new System.Drawing.Point(296, 410);
+            this.bt_removeMetamodelTables.Name = "bt_removeMetamodelTables";
+            this.bt_removeMetamodelTables.Size = new System.Drawing.Size(75, 23);
+            this.bt_removeMetamodelTables.TabIndex = 33;
+            this.bt_removeMetamodelTables.Text = "Remove";
+            this.bt_removeMetamodelTables.UseVisualStyleBackColor = true;
+            this.bt_removeMetamodelTables.Click += new System.EventHandler(this.bt_removeMetamodelTables_Click);
+            // 
             // bt_addMetamodelTables
             // 
             this.bt_addMetamodelTables.Location = new System.Drawing.Point(296, 348);
@@ -311,6 +321,7 @@ namespace OSDiagTool.OSDiagToolForm {
             this.bt_addMetamodelTables.TabIndex = 32;
             this.bt_addMetamodelTables.Text = "Add";
             this.bt_addMetamodelTables.UseVisualStyleBackColor = true;
+            this.bt_addMetamodelTables.Click += new System.EventHandler(this.bt_addMetamodelTables_Click);
             // 
             // label17
             // 
@@ -483,6 +494,7 @@ namespace OSDiagTool.OSDiagToolForm {
             this.bt_runOsDiagTool.TabIndex = 25;
             this.bt_runOsDiagTool.Text = "Run";
             this.bt_runOsDiagTool.UseVisualStyleBackColor = true;
+            this.bt_runOsDiagTool.Click += new System.EventHandler(this.bt_runOsDiagTool_Click);
             // 
             // OsDiagForm
             // 
@@ -554,5 +566,6 @@ namespace OSDiagTool.OSDiagToolForm {
         private System.Windows.Forms.Button bt_addMetamodelTables;
         private System.Windows.Forms.Label label17;
         private System.Windows.Forms.TextBox tb_inptMetamodelTables;
+        private System.Windows.Forms.Button bt_removeMetamodelTables;
     }
 }
