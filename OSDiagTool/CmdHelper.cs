@@ -23,8 +23,13 @@ namespace OSDiagTool
             startInfo.RedirectStandardOutput = true;
             startInfo.StandardOutputEncoding = Encoding.UTF8;
 
+            startInfo.WindowStyle = ProcessWindowStyle.Minimized;
+            startInfo.CreateNoWindow = true;
+
             process.StartInfo = startInfo;
-            process.Start();
+
+            //using (Process.Start(startInfo)) ;
+            process.Start();   
             process.WaitForExit();
             process.Close();
         }

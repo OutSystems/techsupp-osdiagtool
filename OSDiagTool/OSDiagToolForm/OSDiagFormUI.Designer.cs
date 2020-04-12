@@ -336,7 +336,7 @@
             // 
             // bt_addMetamodelTables
             // 
-            this.bt_addMetamodelTables.Location = new System.Drawing.Point(296, 337);
+            this.bt_addMetamodelTables.Location = new System.Drawing.Point(296, 342);
             this.bt_addMetamodelTables.Name = "bt_addMetamodelTables";
             this.bt_addMetamodelTables.Size = new System.Drawing.Size(75, 23);
             this.bt_addMetamodelTables.TabIndex = 32;
@@ -355,7 +355,7 @@
             // 
             // tb_inptMetamodelTables
             // 
-            this.tb_inptMetamodelTables.Location = new System.Drawing.Point(253, 302);
+            this.tb_inptMetamodelTables.Location = new System.Drawing.Point(253, 310);
             this.tb_inptMetamodelTables.Name = "tb_inptMetamodelTables";
             this.tb_inptMetamodelTables.Size = new System.Drawing.Size(172, 20);
             this.tb_inptMetamodelTables.TabIndex = 30;

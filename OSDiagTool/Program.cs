@@ -17,7 +17,7 @@ namespace OSDiagTool
     {
         private static string _windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
         private static string _tempFolderPath = Path.Combine(Directory.GetCurrentDirectory(),"collect_data"); 
-        private static string _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + ".zip");
+        private static string _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip");
         private static string _osInstallationFolder = @"C:\Program Files\OutSystems\Platform Server";
         private static string _osServerRegistry = @"SOFTWARE\OutSystems\Installer\Server";
         private static string _sslProtocolsRegistryPath = @"SYSTEM\CurrentControlSet\Control\SecurityProviders\Schannel\Protocols";
@@ -65,7 +65,7 @@ namespace OSDiagTool
 
         }
 
-        public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) { // TODO: refactor this method for new input
+        public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) { 
 
             // Change console encoding to support all characters
             ////Console.OutputEncoding = Encoding.UTF8;
@@ -105,7 +105,7 @@ namespace OSDiagTool
                 FileLogger.TraceLog("Generating log files... ");
                 welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
                 FileLogger.TraceLog("DONE", true);
-                ExecuteCommands(); // FIX: Console popup
+                ExecuteCommands(); 
 
                 // Export Registry information
                 // Create directory for Registry information
@@ -133,9 +133,6 @@ namespace OSDiagTool
 
             ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, osPlatformVersion);
             ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
-
-            ////OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
-            ////var configurations = dgtConfReader.GetOsDiagToolConfigurations();
             
             // Retrieving IIS access logs
             if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slIisLogs, out bool getIisLogs) && getIisLogs == true) {
@@ -246,7 +243,8 @@ namespace OSDiagTool
             // Generate zip file
             Console.WriteLine();
             FileLogger.TraceLog("Creating zip file... ");
-            fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true);
+            _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip"); // need to assign again in case the user runs the tool a second time
+            fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true); //fix target zip
             Console.WriteLine("DONE");
 
             // Delete temp folder
