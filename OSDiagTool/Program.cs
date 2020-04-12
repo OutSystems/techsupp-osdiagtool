@@ -65,10 +65,10 @@ namespace OSDiagTool
 
         }
 
-        public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations) { // TODO: refactor this method for new input
+        public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) { // TODO: refactor this method for new input
 
             // Change console encoding to support all characters
-            Console.OutputEncoding = Encoding.UTF8;
+            ////Console.OutputEncoding = Encoding.UTF8;
 
             // Initialize helper classes
             FileSystemHelper fsHelper = new FileSystemHelper();
@@ -91,162 +91,157 @@ namespace OSDiagTool
             // Create error dump file to log all exceptions during script execution
             using (var errorTxtFile = File.Create(_errorDumpFile));
 
-            // Finding Installation folder 
-            string _osPlatformVersion = null;
-                try
-            {
-                FileLogger.TraceLog("Finding OutSystems Platform Installation Path...");
-                RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
-                
-                _osInstallationFolder = (string) OSPlatformInstaller.GetValue("");
-                _osPlatformVersion = (string) OSPlatformInstaller.GetValue("Server");
-                FileLogger.TraceLog("Found it on: " + _osInstallationFolder + "; Version: " + _osPlatformVersion, true);
-            }
-            catch (Exception e)
-            {
-                FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message);
-                WriteExitLines();
-                return;
-            } 
 
+            Platform.PlatformVersion ps = new Platform.PlatformVersion();
+            string osPlatformVersion = ps.GetPlatformVersion(_osServerRegistry);
 
             Object obj = RegistryClass.GetRegistryValue(_osServerRegistry, ""); // The "Defaut" values are empty strings.
 
             // Process copy files
             CopyAllFiles();
 
-            // Generate Event Viewer Logs
-            FileLogger.TraceLog("Generating log files... ");
-            welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
-            FileLogger.TraceLog("DONE", true);
+            // Generate text Event Viewer Logs
+            if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slEvt, out bool getEvt) && getEvt == true) {
+                FileLogger.TraceLog("Generating log files... ");
+                welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
+                FileLogger.TraceLog("DONE", true);
+                ExecuteCommands(); // FIX: Console popup
 
-            ExecuteCommands();
+                // Export Registry information
+                // Create directory for Registry information
+                Directory.CreateDirectory(Path.Combine(_tempFolderPath, "RegistryInformation"));
+                string registryInformationPath = Path.Combine(_tempFolderPath, "RegistryInformation");
 
-            // Reading OSDGTool config file
+                // Fetch Registry key values and subkeys values
+                try {
+                    FileLogger.TraceLog("Exporting Registry information...");
+
+                    RegistryClass.RegistryCopy(_sslProtocolsRegistryPath, Path.Combine(registryInformationPath, "SSLProtocols.txt"), true);
+                    RegistryClass.RegistryCopy(_netFrameworkRegistryPath, Path.Combine(registryInformationPath, "NetFramework.txt"), true);
+                    RegistryClass.RegistryCopy(_iisRegistryPath, Path.Combine(registryInformationPath, "IIS.txt"), true);
+                    RegistryClass.RegistryCopy(_outSystemsPlatformRegistryPath, Path.Combine(registryInformationPath, "OutSystemsPlatform.txt"), true);
+
+                    FileLogger.TraceLog("DONE", true);
+                } catch (Exception e) {
+                    FileLogger.LogError("Failed to export Registry:", e.Message);
+                }
+            }
+            
+            // Reading serverhsconf and private key files
             string privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
             string platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
 
-            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, _osPlatformVersion);
+            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, osPlatformVersion);
             ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
-            OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
-            var configurations = dgtConfReader.GetOsDiagToolConfigurations();
-
+            ////OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
+            ////var configurations = dgtConfReader.GetOsDiagToolConfigurations();
+            
             // Retrieving IIS access logs
-            IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, configurations.IISLogsNrDays);
+            if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slIisLogs, out bool getIisLogs) && getIisLogs == true) {
+                
+                IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, configurations.IISLogsNrDays);
+            }
 
-            // Export Registry information
-            // Create directory for Registry information
-            Directory.CreateDirectory(Path.Combine(_tempFolderPath, "RegistryInformation"));
-            string registryInformationPath = Path.Combine(_tempFolderPath, "RegistryInformation");
 
-            // Fetch Registry key values and subkeys values
-            try
-            {
-                FileLogger.TraceLog("Exporting Registry information...");
+            // SQL Export
+            if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool getPlatformMetamodel) && getPlatformMetamodel == true) {
+                try {
 
-                RegistryClass.RegistryCopy(_sslProtocolsRegistryPath, Path.Combine(registryInformationPath, "SSLProtocols.txt"), true);
-                RegistryClass.RegistryCopy(_netFrameworkRegistryPath, Path.Combine(registryInformationPath, "NetFramework.txt"), true);
-                RegistryClass.RegistryCopy(_iisRegistryPath, Path.Combine(registryInformationPath, "IIS.txt"), true);
-                RegistryClass.RegistryCopy(_outSystemsPlatformRegistryPath, Path.Combine(registryInformationPath, "OutSystemsPlatform.txt"), true);
+                    string dbEngine = platformDBInfo.DBMS;
+                    if (dbEngine.ToLower().Equals("sqlserver")) {
 
+                        var sqlConnString = new DBConnector.SQLConnStringModel();
+                        sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
+                        sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
+                        sqlConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
+                        sqlConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+
+                        var connector = new DBConnector.SLQDBConnector();
+                        SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
+
+                        string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
+
+                        SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, connection) {
+                            CommandTimeout = configurations.queryTimeout
+                        };
+                        cmd.ExecuteNonQuery();
+                        int count = Convert.ToInt32(cmd.ExecuteScalar());
+
+                        using (connection) {
+                            FileLogger.TraceLog("Starting exporting tables: ");
+                            foreach (string table in configurations.tableNames) {
+                                if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                                    FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                                    string selectAllQuery = "SELECT * FROM " + table;
+                                    CSVExporter.SQLToCSVExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery);
+                                }
+
+                            }
+                        }
+
+                    }   // Oracle Export -- RuntimeUser is used but the Admin schema is necessary to query OSSYS 
+                    else if (dbEngine.ToLower().Equals("oracle")) {
+                        var orclConnString = new DBConnector.OracleConnStringModel();
+
+                        orclConnString.host = platformDBInfo.GetProperty("Host").Value;
+                        orclConnString.port = platformDBInfo.GetProperty("Port").Value;
+                        orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
+                        orclConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
+                        orclConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                        string osAdminSchema = platformDBInfo.GetProperty("AdminUser").Value;
+
+                        var connector = new DBConnector.OracleDBConnector();
+                        OracleConnection connection = connector.OracleOpenConnection(orclConnString);
+
+                        string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM " + osAdminSchema + "." + "OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
+
+                        OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, connection) {
+                            CommandTimeout = configurations.queryTimeout
+                        };
+                        cmd.ExecuteNonQuery();
+                        int count = Convert.ToInt32(cmd.ExecuteScalar());
+
+                        using (connection) {
+                            FileLogger.TraceLog("Starting exporting tables: ");
+                            foreach (string table in configurations.tableNames) {
+                                if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                                    FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                                    string selectAllQuery = "SELECT * FROM " + osAdminSchema + "." + table;
+                                    CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, osAdminSchema, selectAllQuery);
+                                }
+                            }
+                        }
+
+                    }
+
+                } catch (Exception e) {
+
+                    FileLogger.LogError("Unable to export database tables", e.Message);
+
+                }
                 FileLogger.TraceLog("DONE", true);
             }
+
             
-            catch (Exception e)
-            {
-                FileLogger.LogError("Failed to export Registry:", e.Message);
+            if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdIis, out bool getIisThreadDumps) && getIisThreadDumps == true) || 
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool _getOsThreadDumps) &&_getOsThreadDumps == true)) {
+
+                FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool getOsThreadDumps); // necessary because the first condition can be evaluated to true and second condition may never be checked
+                CollectThreadDumps(getIisThreadDumps, getOsThreadDumps);
             }
 
-            // SQL Export -- fix There is already an open DataReader associated with this Command which must be closed first.
-            try {
-                
-                string dbEngine = platformDBInfo.DBMS;
-                if (dbEngine.ToLower().Equals("sqlserver")) {
 
-                    var sqlConnString = new DBConnector.SQLConnStringModel();
-                    sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
-                    sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
-                    sqlConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
-                    sqlConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+            ////Console.Write("Do you want to collect memory dumps? (y/N) ");
+            if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdIis, out bool getIisMemDumps) && getIisMemDumps == true) ||
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdOsServices, out bool _getOsMemDumps) && _getOsMemDumps == true)) {
 
-                    var connector = new DBConnector.SLQDBConnector();
-                    SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
+                FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdOsServices, out bool getOsMemDumps); // necessary because the first condition can be evaluated to true and second condition may never be checked
 
-                    string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
-                    
-                    SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, connection) {
-                        CommandTimeout = configurations.queryTimeout
-                    };
-                    cmd.ExecuteNonQuery();
-                    int count = Convert.ToInt32(cmd.ExecuteScalar());
-
-                    using (connection) {
-                        FileLogger.TraceLog("Starting exporting tables: ");
-                        foreach (string table in configurations.tableNames) {
-                            if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                                FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                string selectAllQuery = "SELECT * FROM " + table;
-                                CSVExporter.SQLToCSVExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery);
-                            }
-                            
-                        }
-                    }
-
-                }   // Oracle Export -- RuntimeUser is used but the Admin schema is necessary to query OSSYS 
-                else if (dbEngine.ToLower().Equals("oracle")) {
-                    var orclConnString = new DBConnector.OracleConnStringModel();
-
-                    orclConnString.host = platformDBInfo.GetProperty("Host").Value;
-                    orclConnString.port = platformDBInfo.GetProperty("Port").Value;
-                    orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
-                    orclConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
-                    orclConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
-                    string osAdminSchema = platformDBInfo.GetProperty("AdminUser").Value;
-
-                    var connector = new DBConnector.OracleDBConnector();
-                    OracleConnection connection = connector.OracleOpenConnection(orclConnString);
-
-                    string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM " + osAdminSchema + "." + "OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
-
-                    OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, connection) {
-                        CommandTimeout = configurations.queryTimeout
-                    };
-                    cmd.ExecuteNonQuery();
-                    int count = Convert.ToInt32(cmd.ExecuteScalar());
-
-                    using (connection) {
-                        FileLogger.TraceLog("Starting exporting tables: ");
-                        foreach (string table in configurations.tableNames) {
-                            if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                                FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                string selectAllQuery = "SELECT * FROM " + osAdminSchema + "." + table;
-                                CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, osAdminSchema, selectAllQuery);
-                            }
-                        }
-                    }
-                    
-                }
-                
-            } catch (Exception e) {
-
-                FileLogger.LogError("Unable to export database tables", e.Message);
-
-            }
-            FileLogger.TraceLog("DONE", true);
-
-
-            // Collect thread dumps - TODO ask y/n
-            CollectThreadDumps();
-
-            Console.Write("Do you want to collect memory dumps? (y/N) ");
-            string mem_dump_input = Console.ReadLine().ToLower();
-
-            if (string.Equals(mem_dump_input, "y"))
-            {
                 FileLogger.TraceLog("Initiating collection of memory dumps..." + Environment.NewLine);
-                CollectMemoryDumps();
+                CollectMemoryDumps(getIisMemDumps, getOsMemDumps);
             }
+
 
             // Generate zip file
             Console.WriteLine();
@@ -259,7 +254,6 @@ namespace OSDiagTool
 
             // Print process end
             PrintEnd();
-            WriteExitLines();
         }
 
         // write a generic exit line and wait for user input
@@ -354,8 +348,20 @@ namespace OSDiagTool
             }
         }
 
-        private static void CollectThreadDumps()
+        private static void CollectThreadDumps(bool iisThreads, bool osThreads)
         {
+            List<string> processList = new List<string>();
+
+            if (iisThreads && osThreads) {
+                processList.AddRange(new List<string>() {"w3wp", "deployment_controller", "deployment_service", "scheduler", "log_service" });
+            } else if (!iisThreads && osThreads) {
+                processList.AddRange(new List<string>() {"deployment_controller", "deployment_service", "scheduler", "log_service" });
+            } else if (iisThreads && !osThreads) {
+                processList.AddRange(new List<string>() { "w3wp" });
+            } else {
+                return;
+            }
+
             string threadDumpsPath = Path.Combine(_tempFolderPath, "ThreadDumps");
             Directory.CreateDirectory(threadDumpsPath);
 
@@ -368,32 +374,47 @@ namespace OSDiagTool
                 { "w3wp", "w3wp.exe" }
             };
 
-            List<string> processList = new List<string> { "w3wp", "deployment_controller", "deployment_service", "scheduler", "log_service" };
+            try {
+                foreach (string processTag in processList) {
+                    FileLogger.TraceLog("Collecting " + processTag + " thread dumps... ");
 
-            foreach (string processTag in processList)
-            {
-                FileLogger.TraceLog("Collecting " + processTag + " thread dumps... ");
+                    string processName = processDict[processTag];
+                    List<int> pids = dc.GetProcessIdsByName(processName);
 
-                string processName = processDict[processTag];
-                List<int> pids = dc.GetProcessIdsByName(processName);
-
-                foreach (int pid in dc.GetProcessIdsByFilename(processName))
-                {
-                    string pidSuf = pids.Count > 1 ? "_" + pid : "";
-                    string filename = "threads_" + processTag + pidSuf + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".log";
-                    using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(threadDumpsPath, filename))))
-                    {
-                        writer.WriteLine(DateTime.Now.ToString());
-                        writer.WriteLine(dc.GetThreadDump(pid));
+                    foreach (int pid in dc.GetProcessIdsByFilename(processName)) {
+                        string pidSuf = pids.Count > 1 ? "_" + pid : "";
+                        string filename = "threads_" + processTag + pidSuf + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".log";
+                        using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(threadDumpsPath, filename)))) {
+                            writer.WriteLine(DateTime.Now.ToString());
+                            writer.WriteLine(dc.GetThreadDump(pid));
+                        }
                     }
+
+                    FileLogger.TraceLog("DONE", true);
                 }
-
-                FileLogger.TraceLog("DONE", true);
+            } catch (Exception e) {
+                FileLogger.LogError("Failed to get thread dump: ", e.Message);
             }
-        }
 
-        private static void CollectMemoryDumps()
+
+            }
+            
+
+        private static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
         {
+
+            List<string> processList = new List<string>();
+
+            if (iisMemDumps && osMemDumps) {
+                processList.AddRange(new List<string>() { "w3wp", "deployment_controller", "deployment_service", "scheduler", "log_service" });
+            } else if (!iisMemDumps && osMemDumps) {
+                processList.AddRange(new List<string>() { "deployment_controller", "deployment_service", "scheduler", "log_service" });
+            } else if (iisMemDumps && !osMemDumps) {
+                processList.AddRange(new List<string>() { "w3wp" });
+            } else {
+                return;
+            }
+
             string memoryDumpsPath = Path.Combine(_tempFolderPath, "MemoryDumps");
             Directory.CreateDirectory(memoryDumpsPath);
 
@@ -408,66 +429,31 @@ namespace OSDiagTool
                 { "w3wp", "w3wp.exe" }
             };
 
-            List<string> processList = new List<string> { "w3wp", "deployment_controller", "deployment_service", "scheduler", "log_service" };
+            try {
 
-            foreach (string processTag in processList)
-            {
-                FileLogger.TraceLog("Collecting " + processTag + " memory dumps... ");
+                foreach (string processTag in processList) {
+                    FileLogger.TraceLog("Collecting " + processTag + " memory dumps... ");
 
-                string processName = processDict[processTag];
-                List<int> pids = dc.GetProcessIdsByName(processName);
+                    string processName = processDict[processTag];
+                    List<int> pids = dc.GetProcessIdsByName(processName);
 
-                foreach (int pid in dc.GetProcessIdsByFilename(processName))
-                {
-                    string pidSuf = pids.Count > 1 ? "_" + pid : "";
-                    string filename = "memdump_" + processTag + pidSuf + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".dmp";
+                    foreach (int pid in dc.GetProcessIdsByFilename(processName)) {
+                        string pidSuf = pids.Count > 1 ? "_" + pid : "";
+                        string filename = "memdump_" + processTag + pidSuf + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".dmp";
 
-                    FileLogger.TraceLog(" - PID " + pid + " - " ); 
-                    command = new CmdLineCommand("procdump64.exe -ma " + pid + " /accepteula " + Path.Combine(memoryDumpsPath, filename));
-                    command.Execute();
+                        FileLogger.TraceLog(" - PID " + pid + " - ");
+                        command = new CmdLineCommand("procdump64.exe -ma " + pid + " /accepteula " + Path.Combine(memoryDumpsPath, filename));
+                        command.Execute();
+                    }
+
+                    FileLogger.TraceLog("DONE", true);
                 }
-
-                FileLogger.TraceLog("DONE", true);
+            } catch(Exception e) {
+                FileLogger.LogError("Failed to get memory dump: ", e.Message);
             }
+
+            
         }
-
-        /*private static void GetServiceCenterLogs(string platformInstallationFolder)
-        {
-            string privateKeyFilepath = Path.Combine(platformInstallationFolder, "private.key");
-            string platformConfigurationFilepath = Path.Combine(platformInstallationFolder, "server.hsconf");
-
-            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, _osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
-
-            Console.Write("Getting Service Center logs: TODO!!!...");
-
-            
-            // Oracle
-            /*Console.WriteLine(platformDBInfo.DBMS);
-            Console.WriteLine(platformDBInfo.GetProperty("Host").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("Port").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("ServiceName").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("AdminUser").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath)));
-            Console.ReadKey();*/
-
-            // SQL Server
-            /*
-            Console.WriteLine(platformDBInfo.DBMS);
-            Console.WriteLine(platformDBInfo.GetProperty("Server").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("Catalog").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("AdminUser").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").Value);
-            Console.WriteLine(platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath)));
-            Console.ReadKey();
-            bool test = platformDBInfo.GetProperty("bla").IsEncrypted;
-            
-
-            Console.WriteLine("DONE");
-
-            return;
-        }*/
 
         private static void PrintEnd()
         {

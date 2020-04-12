@@ -44,6 +44,8 @@
             this.mstrp_Exit = new System.Windows.Forms.ToolStripMenuItem();
             this.tb_osDiagConf = new System.Windows.Forms.TabControl();
             this.tb_osDiagGenConf = new System.Windows.Forms.TabPage();
+            this.nud_iisLogsNrDays = new System.Windows.Forms.NumericUpDown();
+            this.label18 = new System.Windows.Forms.Label();
             this.tb_databaseConf = new System.Windows.Forms.TabPage();
             this.bt_removeMetamodelTables = new System.Windows.Forms.Button();
             this.bt_addMetamodelTables = new System.Windows.Forms.Button();
@@ -68,6 +70,7 @@
             this.menuStrip1.SuspendLayout();
             this.tb_osDiagConf.SuspendLayout();
             this.tb_osDiagGenConf.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_iisLogsNrDays)).BeginInit();
             this.tb_databaseConf.SuspendLayout();
             this.DBCredentials.SuspendLayout();
             this.SuspendLayout();
@@ -117,7 +120,7 @@
             this.cb_osServicesThreads.AutoSize = true;
             this.cb_osServicesThreads.Checked = true;
             this.cb_osServicesThreads.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_osServicesThreads.Location = new System.Drawing.Point(218, 92);
+            this.cb_osServicesThreads.Location = new System.Drawing.Point(208, 92);
             this.cb_osServicesThreads.Name = "cb_osServicesThreads";
             this.cb_osServicesThreads.Size = new System.Drawing.Size(126, 17);
             this.cb_osServicesThreads.TabIndex = 5;
@@ -127,7 +130,7 @@
             // cb_osMemDumps
             // 
             this.cb_osMemDumps.AutoSize = true;
-            this.cb_osMemDumps.Location = new System.Drawing.Point(218, 161);
+            this.cb_osMemDumps.Location = new System.Drawing.Point(208, 161);
             this.cb_osMemDumps.Name = "cb_osMemDumps";
             this.cb_osMemDumps.Size = new System.Drawing.Size(126, 17);
             this.cb_osMemDumps.TabIndex = 9;
@@ -167,7 +170,7 @@
             this.cb_iisAccessLogs.AutoSize = true;
             this.cb_iisAccessLogs.Checked = true;
             this.cb_iisAccessLogs.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_iisAccessLogs.Location = new System.Drawing.Point(218, 228);
+            this.cb_iisAccessLogs.Location = new System.Drawing.Point(208, 228);
             this.cb_iisAccessLogs.Name = "cb_iisAccessLogs";
             this.cb_iisAccessLogs.Size = new System.Drawing.Size(103, 17);
             this.cb_iisAccessLogs.TabIndex = 13;
@@ -181,9 +184,9 @@
             this.cb_EvtViewerLogs.CheckState = System.Windows.Forms.CheckState.Checked;
             this.cb_EvtViewerLogs.Location = new System.Drawing.Point(24, 228);
             this.cb_EvtViewerLogs.Name = "cb_EvtViewerLogs";
-            this.cb_EvtViewerLogs.Size = new System.Drawing.Size(115, 17);
+            this.cb_EvtViewerLogs.Size = new System.Drawing.Size(170, 17);
             this.cb_EvtViewerLogs.TabIndex = 12;
-            this.cb_EvtViewerLogs.Text = "Event Viewer Logs";
+            this.cb_EvtViewerLogs.Text = "Event Viewer and Server Logs";
             this.cb_EvtViewerLogs.UseVisualStyleBackColor = true;
             // 
             // label9
@@ -258,6 +261,8 @@
             // 
             // tb_osDiagGenConf
             // 
+            this.tb_osDiagGenConf.Controls.Add(this.nud_iisLogsNrDays);
+            this.tb_osDiagGenConf.Controls.Add(this.label18);
             this.tb_osDiagGenConf.Controls.Add(this.label1);
             this.tb_osDiagGenConf.Controls.Add(this.label13);
             this.tb_osDiagGenConf.Controls.Add(this.label4);
@@ -279,6 +284,22 @@
             this.tb_osDiagGenConf.TabIndex = 0;
             this.tb_osDiagGenConf.Text = "General Configurations";
             this.tb_osDiagGenConf.UseVisualStyleBackColor = true;
+            // 
+            // nud_iisLogsNrDays
+            // 
+            this.nud_iisLogsNrDays.Location = new System.Drawing.Point(317, 227);
+            this.nud_iisLogsNrDays.Name = "nud_iisLogsNrDays";
+            this.nud_iisLogsNrDays.Size = new System.Drawing.Size(38, 20);
+            this.nud_iisLogsNrDays.TabIndex = 21;
+            // 
+            // label18
+            // 
+            this.label18.AutoSize = true;
+            this.label18.Location = new System.Drawing.Point(356, 229);
+            this.label18.Name = "label18";
+            this.label18.Size = new System.Drawing.Size(81, 13);
+            this.label18.TabIndex = 20;
+            this.label18.Text = "Number of days";
             // 
             // tb_databaseConf
             // 
@@ -315,7 +336,7 @@
             // 
             // bt_addMetamodelTables
             // 
-            this.bt_addMetamodelTables.Location = new System.Drawing.Point(296, 348);
+            this.bt_addMetamodelTables.Location = new System.Drawing.Point(296, 337);
             this.bt_addMetamodelTables.Name = "bt_addMetamodelTables";
             this.bt_addMetamodelTables.Size = new System.Drawing.Size(75, 23);
             this.bt_addMetamodelTables.TabIndex = 32;
@@ -328,13 +349,13 @@
             this.label17.AutoSize = true;
             this.label17.Location = new System.Drawing.Point(250, 286);
             this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(112, 13);
+            this.label17.Size = new System.Drawing.Size(115, 13);
             this.label17.TabIndex = 31;
-            this.label17.Text = "Add Metamodel tables";
+            this.label17.Text = "Add Metamodel tables:";
             // 
             // tb_inptMetamodelTables
             // 
-            this.tb_inptMetamodelTables.Location = new System.Drawing.Point(253, 311);
+            this.tb_inptMetamodelTables.Location = new System.Drawing.Point(253, 302);
             this.tb_inptMetamodelTables.Name = "tb_inptMetamodelTables";
             this.tb_inptMetamodelTables.Size = new System.Drawing.Size(172, 20);
             this.tb_inptMetamodelTables.TabIndex = 30;
@@ -494,7 +515,6 @@
             this.bt_runOsDiagTool.TabIndex = 25;
             this.bt_runOsDiagTool.Text = "Run";
             this.bt_runOsDiagTool.UseVisualStyleBackColor = true;
-            this.bt_runOsDiagTool.Click += new System.EventHandler(this.bt_runOsDiagTool_Click);
             // 
             // OsDiagForm
             // 
@@ -515,6 +535,7 @@
             this.tb_osDiagConf.ResumeLayout(false);
             this.tb_osDiagGenConf.ResumeLayout(false);
             this.tb_osDiagGenConf.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_iisLogsNrDays)).EndInit();
             this.tb_databaseConf.ResumeLayout(false);
             this.tb_databaseConf.PerformLayout();
             this.DBCredentials.ResumeLayout(false);
@@ -567,5 +588,7 @@
         private System.Windows.Forms.Label label17;
         private System.Windows.Forms.TextBox tb_inptMetamodelTables;
         private System.Windows.Forms.Button bt_removeMetamodelTables;
+        private System.Windows.Forms.NumericUpDown nud_iisLogsNrDays;
+        private System.Windows.Forms.Label label18;
     }
 }

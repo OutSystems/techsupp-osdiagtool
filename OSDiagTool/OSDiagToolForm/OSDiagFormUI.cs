@@ -31,8 +31,10 @@ namespace OSDiagTool.OSDiagToolForm {
             InitializeComponent();
 
             this.lb_metamodelTables.Items.AddRange(configurations.tableNames.ToArray()); // add Platform Metamodel tables to list box
+            this.nud_iisLogsNrDays.Value = configurations.IISLogsNrDays;
 
             bt_TestSaConnection.Click += delegate (object sender, EventArgs e) { bt_TestSaConnection_Click(sender, e, dbms, SQLConnectionString, OracleConnectionString); };
+            bt_runOsDiagTool.Click += delegate (object sender, EventArgs e) { bt_runOsDiagTool_Click(sender, e, configurations); };
         }
 
         private void bt_TestSaConnection_Click(object sender, EventArgs e, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
@@ -72,13 +74,19 @@ namespace OSDiagTool.OSDiagToolForm {
             DialogResult dg = popup.ShowDialog();
         }
 
-        private void bt_runOsDiagTool_Click(object sender, EventArgs e) {
+        private void bt_runOsDiagTool_Click(object sender, EventArgs e, OSDiagToolConf.ConfModel.strConfModel configurations) {
 
             var formConfigurations = new OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel();
             List<string> tableNameHelper = new List<string>();
 
+            if(tb_iptSaUsername.Text.Equals("") || tb_iptSaPwd.Text.Equals("")) { // if not input is provided in user or pwd, then DB operations don't not rum
+                cb_dbPlatformMetamodel.Checked = false;
+                cb_dbTroubleshoot.Checked = false;
+            }
+
             formConfigurations.saUser = tb_iptSaUsername.Text.ToString();
             formConfigurations.saPwd = tb_iptSaPwd.Text.ToString();
+            formConfigurations.iisLogsNrDays = Convert.ToInt32(nud_iisLogsNrDays.Value);
             foreach (object item in lb_metamodelTables.Items) {
                 tableNameHelper.Add(item.ToString());
             }
@@ -98,7 +106,7 @@ namespace OSDiagTool.OSDiagToolForm {
 
             formConfigurations.cbConfs = dictHelper;
 
-            OSDiagTool.Program.RunOsDiagTool(formConfigurations);
+            OSDiagTool.Program.RunOsDiagTool(formConfigurations, configurations);
 
         }
 

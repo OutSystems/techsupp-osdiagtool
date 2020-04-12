@@ -15,6 +15,8 @@ namespace OSDiagTool.OSDiagToolForm {
 
             public string saPwd { get; set; }
 
+            public int iisLogsNrDays { get; set; }
+
             public List<string> metamodelTables { get; set; }
 
         }
