@@ -17,6 +17,8 @@ namespace OSDiagTool.OSDiagToolForm {
         private static string _helpLink = "https://success.outsystems.com/Support/Enterprise_Customers/Troubleshooting/OSDiagTool_-_OutSystems_Support_Diagnostics_Tool";
         private static string _failedConnectionTest = "Test Connection: Failed";
         private static string _successConnectionTest = "Test Connection: Successful";
+        private static string _waitMessage = "OSDiagTool running. Please wait...";
+        private static string _doneMessage = "OSDiagTool has finished!";
         public static string _tdIis = "Threads IIS";
         public static string _tdOsServices = "Threads OS Services";
         public static string _mdIis = "Memory IIS";
@@ -70,16 +72,22 @@ namespace OSDiagTool.OSDiagToolForm {
 
             }
             
-            PopUpForm popup = new PopUpForm(testConnectionResult);
+            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackTestConnectionType ,testConnectionResult);
             DialogResult dg = popup.ShowDialog();
         }
 
         private void bt_runOsDiagTool_Click(object sender, EventArgs e, OSDiagToolConf.ConfModel.strConfModel configurations) {
 
+            Cursor = Cursors.WaitCursor;
+
+            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, _waitMessage);
+            popup.Show();
+            popup.Refresh();
+
             var formConfigurations = new OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel();
             List<string> tableNameHelper = new List<string>();
 
-            if(tb_iptSaUsername.Text.Equals("") || tb_iptSaPwd.Text.Equals("")) { // if not input is provided in user or pwd, then DB operations don't not rum
+            if(tb_iptSaUsername.Text.Equals("") || tb_iptSaPwd.Text.Equals("")) { // if no input is provided in user or pwd, then DB operations don't not rum
                 cb_dbPlatformMetamodel.Checked = false;
                 cb_dbTroubleshoot.Checked = false;
             }
@@ -108,6 +116,14 @@ namespace OSDiagTool.OSDiagToolForm {
 
             OSDiagTool.Program.RunOsDiagTool(formConfigurations, configurations);
 
+            popup.Dispose();
+            popup.Close();
+
+            puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + "Location: " + Program._zipFileLocation);
+            popup2.ShowDialog();
+
+            Cursor = Cursors.Arrow;
+
         }
 
         private void mstrp_Exit_Click(object sender, EventArgs e) {
@@ -132,7 +148,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 this.lb_metamodelTables.Items.Add(escapedTableName);
                 this.tb_inptMetamodelTables.Text = "";
             } else {
-                PopUpForm popup = new PopUpForm("Failed to add table: " + Environment.NewLine + "Cannot contain spaces and must start" + Environment.NewLine + "with prefix OSSYS or OSLTM.");
+                puf_popUpForm popup = new puf_popUpForm("errorAddTable", "Failed to add table: " + Environment.NewLine + "Cannot contain spaces and must start" + Environment.NewLine + "with prefix OSSYS or OSLTM.");
                 DialogResult dg = popup.ShowDialog();
             }
 

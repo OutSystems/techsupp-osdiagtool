@@ -17,7 +17,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
 
         public string sessionsSp_Who2_Blocked { get; set; } = @"SELECT spid, blocked BlkBy
             FROM master.dbo.sysprocesses sp
-            JOIN master.dbo.sysdatabases sd ON sp.dbid = sd.dbid
+            JOIN master.dbo.sysdatabases sd ON sp.dbid = sd.dbid WHERE blocked <> 0
             ORDER BY cpu DESC";
 
         public string costlyCPUQueries { get; set; } = @"SELECT TOP 20

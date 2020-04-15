@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Data.SqlClient;
 using System.IO;
 using Oracle.ManagedDataAccess.Client;
+using System.Text.RegularExpressions;
 
 namespace OSDiagTool.DatabaseExporter {
     class CSVExporter {
@@ -32,10 +33,17 @@ namespace OSDiagTool.DatabaseExporter {
 
                     while (dr.Read()) {
                         for (int i = 0; i < dr.FieldCount; i++) {
+
                             string value = dr[i].ToString();
+                            value = Regex.Replace(value, @"(;|\r\n|\n)", " "); // replacing semicolon and new lines
+
+                            if (value.Contains(",")) {
+                                value = value.Replace(",", "_"); // replacing commas for _ to avoid writting in a next cell
+                            }
 
                             fs.Write(value + ";");
                         }
+
                         fs.WriteLine();
                     }
                         

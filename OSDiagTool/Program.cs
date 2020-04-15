@@ -10,6 +10,7 @@ using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
 using System.Data.SqlClient;
 using System.Windows.Forms;
+using OSDiagTool.OSDiagToolForm;
 
 namespace OSDiagTool
 {
@@ -31,7 +32,9 @@ namespace OSDiagTool
         private static string _osDatabaseTablesDest = Path.Combine(_tempFolderPath, "DatabaseTables");
         private static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
+        private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+        public static string _zipFileLocation;
 
 
         static void Main(string[] args) {
@@ -65,10 +68,9 @@ namespace OSDiagTool
 
         }
 
-        public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) { 
+        public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) {
 
-            // Change console encoding to support all characters
-            ////Console.OutputEncoding = Encoding.UTF8;
+            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, "");
 
             // Initialize helper classes
             FileSystemHelper fsHelper = new FileSystemHelper();
@@ -87,6 +89,7 @@ namespace OSDiagTool
             Directory.CreateDirectory(_osPlatFilesDest);
             Directory.CreateDirectory(_windowsInfoDest);
             Directory.CreateDirectory(_osDatabaseTablesDest);
+            Directory.CreateDirectory(_osDatabaseTroubleshootDest);
 
             // Create error dump file to log all exceptions during script execution
             using (var errorTxtFile = File.Create(_errorDumpFile));
@@ -140,17 +143,30 @@ namespace OSDiagTool
                 IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, configurations.IISLogsNrDays);
             }
 
-
+            string dbEngine = null;
             // SQL Export
-            if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool getPlatformMetamodel) && getPlatformMetamodel == true) {
+            if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool _getPlatformMetamodel) && _getPlatformMetamodel == true) ||
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true)) {
                 try {
 
-                    string dbEngine = platformDBInfo.DBMS;
+                    dbEngine = platformDBInfo.DBMS;
                     if (dbEngine.ToLower().Equals("sqlserver")) {
 
                         var sqlConnString = new DBConnector.SQLConnStringModel();
                         sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                         sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
+                        
+
+                        // Database Troubleshoot
+                        FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool doDbTroubleshoot);
+                        if (doDbTroubleshoot) {
+
+                            sqlConnString.userId = FormConfigurations.saUser;
+                            sqlConnString.pwd = FormConfigurations.saPwd; // TBC
+
+                            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations.queryTimeout, _osDatabaseTroubleshootDest, sqlConnString);
+                        }
+
                         sqlConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
                         sqlConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
 
@@ -228,8 +244,6 @@ namespace OSDiagTool
                 CollectThreadDumps(getIisThreadDumps, getOsThreadDumps);
             }
 
-
-            ////Console.Write("Do you want to collect memory dumps? (y/N) ");
             if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdIis, out bool getIisMemDumps) && getIisMemDumps == true) ||
                 (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdOsServices, out bool _getOsMemDumps) && _getOsMemDumps == true)) {
 
@@ -244,11 +258,13 @@ namespace OSDiagTool
             Console.WriteLine();
             FileLogger.TraceLog("Creating zip file... ");
             _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip"); // need to assign again in case the user runs the tool a second time
-            fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true); //fix target zip
+            fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true); 
             Console.WriteLine("DONE");
 
             // Delete temp folder
             Directory.Delete(_tempFolderPath, true);
+
+            _zipFileLocation = _targetZipFile;
 
             // Print process end
             PrintEnd();

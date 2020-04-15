@@ -17,7 +17,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
             // Needs user with sa permissions
 
             int top_statCachedPlan = 10;
-            List<int> blockingAndBlockedSpids = new List<int>();
+            List<string> blockingAndBlockedSpids = new List<string>();
 
             // work in progress; still needs tests
             if (dbEngineType.ToLower().Equals("sqlserver")) {
@@ -25,11 +25,11 @@ namespace OSDiagTool.Database.DatabaseQueries {
                 var sqlDBQueries = new SQLServerQueries();
 
                 Dictionary<string, string> sqlQueries = new Dictionary<string, string> { // TODO: use reflection to get the property names
-                    { "sessionsSp_Who2", string.Format(sqlDBQueries.sessionsSp_Who2) },
-                    { "sessionsSp_Who2_Blocked", string.Format(sqlDBQueries.sessionsSp_Who2_Blocked) },
+                    { "sessionsSp_Who2", sqlDBQueries.sessionsSp_Who2 },
+                    { "sessionsSp_Who2_Blocked", sqlDBQueries.sessionsSp_Who2_Blocked },
                     { "statCachedPlan", string.Format(sqlDBQueries.statCachedPlans, top_statCachedPlan) },
-                    { "costlyCPUQueries", string.Format(sqlDBQueries.costlyCPUQueries) },
-                    { "dbccInputBuffer", string.Format(sqlDBQueries.dbccInputBuffer) } 
+                    { "costlyCPUQueries", sqlDBQueries.costlyCPUQueries },
+                    { "dbccInputBuffer", sqlDBQueries.dbccInputBuffer } 
                 };
 
                 var connector = new DBConnector.SLQDBConnector();
@@ -49,16 +49,17 @@ namespace OSDiagTool.Database.DatabaseQueries {
                             };
 
                             SqlDataReader dr = cmd.ExecuteReader();
-                            if (dr.HasRows) {
 
-                                while (dr.Read()) {
-                                    if (!(dr.GetInt32(1).Equals(0))){ // Check if BlkBy is not zero, hence, not blocked
-                                        blockingAndBlockedSpids.Add(dr.GetInt32(0)); // add blockings spids to list
-                                        blockingAndBlockedSpids.Add(dr.GetInt32(1)); // add blocked spids to list
-                                    };
-                                    
-                                }
-                            }
+                                if (dr.HasRows) {
+
+                                    while (dr.Read()) {
+
+                                        blockingAndBlockedSpids.Add(dr.GetValue(0).ToString()); // add blockings spids to list
+                                        blockingAndBlockedSpids.Add(dr.GetValue(1).ToString()); // add blocked spids to list
+
+                                    }
+
+                                }                             
 
                         }
                         else if (entry.Key.Equals("dbccInputBuffer")) {
@@ -66,7 +67,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
                             if (!(blockingAndBlockedSpids.Count.Equals(0))) { // get sql text of blocked and blockig spids
 
                                 string allBlockedSpidsInline = string.Join(",", blockingAndBlockedSpids.ToArray());
-                                string blockedSqlTextQuery = string.Format(entry.Key, allBlockedSpidsInline);
+                                string blockedSqlTextQuery = string.Format(entry.Value, allBlockedSpidsInline);
 
                                 CSVExporter.SQLToCSVExport(connection, entry.Key, outputDestination, queryTimeout, blockedSqlTextQuery);
 

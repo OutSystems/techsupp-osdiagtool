@@ -67,6 +67,7 @@
             this.label11 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.bt_runOsDiagTool = new System.Windows.Forms.Button();
+            this.lbl_feedbackOsDiagForm = new System.Windows.Forms.Label();
             this.menuStrip1.SuspendLayout();
             this.tb_osDiagConf.SuspendLayout();
             this.tb_osDiagGenConf.SuspendLayout();
@@ -516,12 +517,21 @@
             this.bt_runOsDiagTool.Text = "Run";
             this.bt_runOsDiagTool.UseVisualStyleBackColor = true;
             // 
+            // lbl_feedbackOsDiagForm
+            // 
+            this.lbl_feedbackOsDiagForm.AutoSize = true;
+            this.lbl_feedbackOsDiagForm.Location = new System.Drawing.Point(330, 543);
+            this.lbl_feedbackOsDiagForm.Name = "lbl_feedbackOsDiagForm";
+            this.lbl_feedbackOsDiagForm.Size = new System.Drawing.Size(0, 13);
+            this.lbl_feedbackOsDiagForm.TabIndex = 26;
+            // 
             // OsDiagForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(465, 573);
+            this.Controls.Add(this.lbl_feedbackOsDiagForm);
             this.Controls.Add(this.bt_runOsDiagTool);
             this.Controls.Add(this.tb_osDiagConf);
             this.Controls.Add(this.menuStrip1);
@@ -590,5 +600,6 @@
         private System.Windows.Forms.Button bt_removeMetamodelTables;
         private System.Windows.Forms.NumericUpDown nud_iisLogsNrDays;
         private System.Windows.Forms.Label label18;
+        private System.Windows.Forms.Label lbl_feedbackOsDiagForm;
     }
 }

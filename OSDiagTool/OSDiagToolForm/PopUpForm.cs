@@ -9,22 +9,27 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace OSDiagTool.OSDiagToolForm {
-    public partial class PopUpForm : Form {
-        public PopUpForm(string testConnectionResult) {
+    public partial class puf_popUpForm : Form {
+
+        public static string _feedbackTestConnectionType = "testConnection";
+        public static string _feedbackWaitType = "wait";
+        public static string _feedbackDoneType = "done";
+
+        public puf_popUpForm(string feedbackType, string message) {
             InitializeComponent();
 
-            if (testConnectionResult.ToLower().Contains("success")) {
-                System.Drawing.Icon icon = System.Drawing.SystemIcons.Information;
-                this.Icon = icon;
-            } else {
-                System.Drawing.Icon icon = System.Drawing.SystemIcons.Error;
-                this.Icon = icon;
+            if (feedbackType.Equals(_feedbackWaitType)) {
+                bt_CloseFormPopUp.Visible = false;
+            } else if (feedbackType.Equals(_feedbackDoneType)) {
+                this.Width = this.Width * 3;
+                bt_CloseFormPopUp.Location = new Point(bt_CloseFormPopUp.Location.X * 4, bt_CloseFormPopUp.Location.Y);
             }
 
-            this.lbl_connectionTest.Text = this.lbl_connectionTest.Text + testConnectionResult;
+            this.lbl_message.Text = message;
+
         }
 
-        private void bt_CloseFormPopUp_Click(object sender, EventArgs e) {
+        public void bt_CloseFormPopUp_Click(object sender, EventArgs e) {
             this.Dispose();
             this.Close();
         }
