@@ -20,11 +20,44 @@ namespace OSDiagTool.Tests
         public static string PlatformDatabaseConfigurationElement = "PlatformDatabaseConfiguration";
         public static string _oSDiagToolConfPath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\OSDiagTool.exe.config";
         private static string platformConfigurationFilepath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug\server.hsconf";
-
+        private static string _tempPath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug";
 
 
         static void Main(string[] args)
         {
+
+            string dbEngine = "oracle";
+            int queryTimeout = 30;
+
+
+            var orclConnString = new DBConnector.OracleConnStringModel();
+            orclConnString.host = @"<>";
+            orclConnString.port = @"<>";
+            orclConnString.serviceName = @"<>";
+
+            orclConnString.userId = @"<>";
+            orclConnString.pwd = @"<>";
+
+
+            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, queryTimeout, _tempPath, null, orclConnString);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             Test();
 

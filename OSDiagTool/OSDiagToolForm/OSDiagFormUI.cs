@@ -87,8 +87,7 @@ namespace OSDiagTool.OSDiagToolForm {
             var formConfigurations = new OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel();
             List<string> tableNameHelper = new List<string>();
 
-            if(tb_iptSaUsername.Text.Equals("") || tb_iptSaPwd.Text.Equals("")) { // if no input is provided in user or pwd, then DB operations don't not rum
-                cb_dbPlatformMetamodel.Checked = false;
+            if(tb_iptSaUsername.Text.Equals("") || tb_iptSaPwd.Text.Equals("")) { // if no input is provided in user or pwd, then DBTroubleshoot doesn't run
                 cb_dbTroubleshoot.Checked = false;
             }
 

@@ -11,16 +11,19 @@ using OSDiagTool.DatabaseExporter;
 namespace OSDiagTool.Database.DatabaseQueries {
     class DatabaseTroubleshoot {
 
-        public static void DatabaseTroubleshooting(string dbEngineType, int queryTimeout, string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,
+        public static void DatabaseTroubleshooting(string dbEngine, int queryTimeout, string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null) {
 
             // Needs user with sa permissions
 
             int top_statCachedPlan = 10;
+            int orcl_TopCPU = 50;
+
             List<string> blockingAndBlockedSpids = new List<string>();
+            List<string> orclSids = new List<string>();
 
             // work in progress; still needs tests
-            if (dbEngineType.ToLower().Equals("sqlserver")) {
+            if (dbEngine.ToLower().Equals("sqlserver")) {
 
                 var sqlDBQueries = new SQLServerQueries();
 
@@ -40,9 +43,10 @@ namespace OSDiagTool.Database.DatabaseQueries {
                     foreach (KeyValuePair<string, string> entry in sqlQueries) {
 
                         if (!(entry.Key.Equals("sessionsSp_Who2_Blocked") || entry.Key.Equals("dbccInputBuffer"))) { // skip sp_who2_blocked and dbcc since it already exports the entire result set of sp_who2
-                            CSVExporter.SQLToCSVExport(connection, entry.Key, outputDestination, queryTimeout, entry.Value);
-                        } 
-                        else if(entry.Key.Equals("sessionsSp_Who2_Blocked")) {
+
+                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, entry.Value, connection, null);
+
+                        } else if(entry.Key.Equals("sessionsSp_Who2_Blocked")) {
 
                             SqlCommand cmd = new SqlCommand(entry.Value, connection) {
                                 CommandTimeout = queryTimeout
@@ -61,15 +65,14 @@ namespace OSDiagTool.Database.DatabaseQueries {
 
                                 }                             
 
-                        }
-                        else if (entry.Key.Equals("dbccInputBuffer")) {
+                        } else if (entry.Key.Equals("dbccInputBuffer")) {
 
                             if (!(blockingAndBlockedSpids.Count.Equals(0))) { // get sql text of blocked and blockig spids
 
                                 string allBlockedSpidsInline = string.Join(",", blockingAndBlockedSpids.ToArray());
                                 string blockedSqlTextQuery = string.Format(entry.Value, allBlockedSpidsInline);
 
-                                CSVExporter.SQLToCSVExport(connection, entry.Key, outputDestination, queryTimeout, blockedSqlTextQuery);
+                                CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, blockedSqlTextQuery, connection, null);
 
                             }
                         }
@@ -77,14 +80,70 @@ namespace OSDiagTool.Database.DatabaseQueries {
                 }
 
 
-            }
-            else if (dbEngineType.ToLower().Equals("oracle")) {
+            } else if (dbEngine.ToLower().Equals("oracle")) {
 
-                var oracleDBQueries = new OracleQueries();
+                var orclDBQueries = new OracleQueries();
 
-                string sessionByReadIO = string.Format(oracleDBQueries.sessionByIOType, "DISK_READS");
-                string sessionByWriteIO = string.Format(oracleDBQueries.sessionByIOType, "DIRECT_WRITES");
+                Dictionary<string, string> orclQueries = new Dictionary<string, string> { // TODO: use reflection to get the property names
+                    { "orcl_lockedObjects", orclDBQueries.lockedObjects },
+                    { "orcl_lockedObjects_2", orclDBQueries.lockedObjects_2 },
+                    { "orcl_resourceLimit", orclDBQueries.resourceLimit },
+                    { "orcl_sessionByIOType_Reads", string.Format(orclDBQueries.sessionByIOType, "DISK_READS") },
+                    { "orcl_sessionByIOType_Writes", string.Format(orclDBQueries.sessionByIOType, "DIRECT_WRITES") },
+                    { "orcl_tk_queriesRunningNow", orclDBQueries.tk_queriesRunningNow },
+                    { "orcl_sqlTextBySID", orclDBQueries.sqlTextBySID },
+                    { "orcl_sidInfo", orclDBQueries.sidInfo },
+                    { "orcl_topCPUSqls", string.Format(orclDBQueries.topCPUSqls, orcl_TopCPU) }
+                };
 
+                var connector = new DBConnector.OracleDBConnector();
+                OracleConnection connection = connector.OracleOpenConnection(OracleConnectionString);
+
+                using (connection) {
+
+                    foreach (KeyValuePair<string, string> entry in orclQueries) {
+
+                        if (!(entry.Key.Equals("orcl_lockedObjects") || (entry.Key.Equals("orcl_sessionByIOType_Writes") || (entry.Key.Equals("orcl_sessionByIOType_Reads") || (entry.Key.Equals("orcl_lockedObjects_2") ||
+                            (entry.Key.Equals("orcl_sqlTextBySID") || (entry.Key.Equals("orcl_sidInfo")))))))) { // skip queries that we want to know more about the sessions
+
+                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, entry.Value, null, connection);
+
+                        } else if (entry.Key.Equals("orcl_lockedObjects") || entry.Key.Equals("orcl_lockedObjects_2") || entry.Key.Equals("orcl_sessionByIOType_Reads") || entry.Key.Equals("orcl_sessionByIOType_Writes")) {
+
+                            OracleCommand cmd = new OracleCommand(entry.Value, connection) {
+                                CommandTimeout = queryTimeout
+                            };
+
+                            OracleDataReader dr = cmd.ExecuteReader();
+
+                            if (dr.HasRows) {
+
+                                while (dr.Read()) {
+
+                                    orclSids.Add(dr.GetValue(0).ToString()); // add Sids to list
+
+                                }
+
+                            }
+
+                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, entry.Value, null, connection);
+
+                        } else if (entry.Key.Equals("orcl_sidInfo") || entry.Key.Equals("orcl_sqlTextBySID")) {
+
+                            if (!(orclSids.Count.Equals(0))) {
+
+                                string allSidsInline = string.Join(",", orclSids.ToArray());
+                                string sidsSqlTextQuery = string.Format(entry.Value, allSidsInline);
+
+                                CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, sidsSqlTextQuery, null, connection);
+
+                            }
+
+                        }
+
+                    }
+
+                }
 
             }
 

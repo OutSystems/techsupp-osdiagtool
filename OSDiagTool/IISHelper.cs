@@ -35,19 +35,13 @@ namespace OSDiagTool
                 }
 
                 //Copies all the contents from the path iisAcessLogsPath, including contents in subfolder
-                fsHelper.DirectoryCopy(iisAccessLogsPath, Path.Combine(tempFolderPath, "IISAccessLogs"), true, daysToFetch);
+                fsHelper.DirectoryCopy(iisAccessLogsPath, Path.Combine(tempFolderPath, "IISLogs"), true, daysToFetch);
 
                 FileLogger.TraceLog("DONE", true);
 
             } catch (Exception e) {
                 FileLogger.LogError("Attempted to retrieve IIS Access logs but failed...", e.Message);
             }
-
-
-
-
-
-
 
         }
 

@@ -34,6 +34,7 @@ namespace OSDiagTool
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+        private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
         public static string _zipFileLocation;
 
 
@@ -70,7 +71,7 @@ namespace OSDiagTool
 
         public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) {
 
-            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, "");
+            //puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, "");
 
             // Initialize helper classes
             FileSystemHelper fsHelper = new FileSystemHelper();
@@ -103,7 +104,7 @@ namespace OSDiagTool
             // Process copy files
             CopyAllFiles();
 
-            // Generate text Event Viewer Logs
+            // Generate Event Viewer and Server Logs
             if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slEvt, out bool getEvt) && getEvt == true) {
                 FileLogger.TraceLog("Generating log files... ");
                 welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
@@ -143,13 +144,12 @@ namespace OSDiagTool
                 IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, configurations.IISLogsNrDays);
             }
 
-            string dbEngine = null;
+            string dbEngine = platformDBInfo.DBMS;
             // SQL Export
             if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool _getPlatformMetamodel) && _getPlatformMetamodel == true) ||
                 (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true)) {
                 try {
 
-                    dbEngine = platformDBInfo.DBMS;
                     if (dbEngine.ToLower().Equals("sqlserver")) {
 
                         var sqlConnString = new DBConnector.SQLConnStringModel();
@@ -162,7 +162,7 @@ namespace OSDiagTool
                         if (doDbTroubleshoot) {
 
                             sqlConnString.userId = FormConfigurations.saUser;
-                            sqlConnString.pwd = FormConfigurations.saPwd; // TBC
+                            sqlConnString.pwd = FormConfigurations.saPwd; 
 
                             Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations.queryTimeout, _osDatabaseTroubleshootDest, sqlConnString);
                         }
@@ -187,7 +187,7 @@ namespace OSDiagTool
                                 if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                     FileLogger.TraceLog(table + ", ", writeDateTime: false);
                                     string selectAllQuery = "SELECT * FROM " + table;
-                                    CSVExporter.SQLToCSVExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery);
+                                    CSVExporter.SQLToCSVExport(dbEngine, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
                                 }
 
                             }
@@ -200,6 +200,19 @@ namespace OSDiagTool
                         orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                         orclConnString.port = platformDBInfo.GetProperty("Port").Value;
                         orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
+
+                        // Database Troubleshoot
+                        FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool doDbTroubleshoot);
+
+                        if (doDbTroubleshoot) {
+
+                            orclConnString.userId = FormConfigurations.saUser;
+                            orclConnString.pwd = FormConfigurations.saPwd; 
+
+                            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations.queryTimeout, _osDatabaseTroubleshootDest, null, orclConnString);
+                        }
+
+
                         orclConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
                         orclConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
                         string osAdminSchema = platformDBInfo.GetProperty("AdminUser").Value;
@@ -338,6 +351,7 @@ namespace OSDiagTool
         {
             IDictionary<string, CmdLineCommand> commands = new Dictionary<string, CmdLineCommand>
             {
+                { "appcmd " , new CmdLineCommand(string.Format("{0} list requests", _appCmdPath), Path.Combine(_tempFolderPath, "IISRequests.txt")) },
                 { "dir_outsystems", new CmdLineCommand(string.Format("dir /s /a \"{0}\"", _osInstallationFolder), Path.Combine(_windowsInfoDest, "dir_outsystems")) },
                 { "tasklist", new CmdLineCommand("tasklist /v", Path.Combine(_windowsInfoDest, "tasklist")) },
                 { "cpu_info", new CmdLineCommand("wmic cpu", Path.Combine(_windowsInfoDest, "cpu_info")) },
@@ -352,6 +366,7 @@ namespace OSDiagTool
                 { "app_evtx", new CmdLineCommand("WEVTUtil epl Application " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx") + "\"") },
                 { "sys_evtx", new CmdLineCommand("WEVTUtil epl System " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx") + "\"") },
                 { "sec_evtx", new CmdLineCommand("WEVTUtil epl Security " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx") + "\"") }
+                
             };
 
             foreach (KeyValuePair<string, CmdLineCommand> commandEntry in commands)
