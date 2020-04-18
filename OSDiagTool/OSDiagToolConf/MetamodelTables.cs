@@ -14,7 +14,7 @@ namespace OSDiagTool.OSDiagToolConf {
 
         List<string> allowedPrefixes = new List<string> {
             _ossysPrefix,
-            _osltmPrefix
+            _osltmPrefix,
         };
 
         public bool ValidateMetamodelTableName(string tableName) {

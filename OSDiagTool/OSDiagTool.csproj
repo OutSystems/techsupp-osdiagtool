@@ -124,6 +124,7 @@
     <Compile Include="Platform\ConfigFiles\ConfigFileProperty.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileReader.cs" />
     <Compile Include="OSServiceConfigFileParser.cs" />
+    <Compile Include="Platform\LogExporter.cs" />
     <Compile Include="Platform\PlatformVersion.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

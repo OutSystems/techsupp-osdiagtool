@@ -29,6 +29,8 @@ namespace OSDiagTool.Tests
             string dbEngine = "oracle";
             int queryTimeout = 30;
 
+            OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
+            var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
             var orclConnString = new DBConnector.OracleConnStringModel();
             orclConnString.host = @"<>";
@@ -39,7 +41,7 @@ namespace OSDiagTool.Tests
             orclConnString.pwd = @"<>";
 
 
-            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, queryTimeout, _tempPath, null, orclConnString);
+            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _tempPath, null, orclConnString);
 
 
 
@@ -89,8 +91,6 @@ namespace OSDiagTool.Tests
             var connector = new DBConnector.SLQDBConnector();
             SqlConnection connection = connector.SQLOpenConnection(connString);
 
-            OSDiagToolConfReader test = new OSDiagToolConfReader();
-            var configurations = test.GetOsDiagToolConfigurations();
 
             foreach(string table in configurations.tableNames) {
                 //CSVExporter.SQLToCSVExport(connection, table, Path.Combine(Directory.GetCurrentDirectory(), "collect_data"), configurations.queryTimeout);

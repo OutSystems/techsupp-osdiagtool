@@ -27,13 +27,31 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _slIisLogs = "IIS Access Logs";
         public static string _diMetamodel = "Platform Metamodel";
         public static string _diDbTroubleshoot = "Database Troubleshoot";
+        public static string _diPlatformLogs = "Platform Logs";
+        // new check box items must be added to dictHelper dictionary
 
         public OsDiagForm(OSDiagToolConf.ConfModel.strConfModel configurations, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
 
             InitializeComponent();
 
+            this.cb_iisThreads.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_threadDumps][OSDiagToolConfReader._l3_iisW3wp]; // Iis thread dumps
+            this.cb_osServicesThreads.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_threadDumps][OSDiagToolConfReader._l3_osServices]; // OS services thread dumps
+
+            this.cb_iisMemDumps.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_memoryDumps][OSDiagToolConfReader._l3_iisW3wp];
+            this.cb_osMemDumps.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_memoryDumps][OSDiagToolConfReader._l3_osServices];
+
+            this.cb_EvtViewerLogs.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_serverLogs][OSDiagToolConfReader._l3_evtAndServer];
+            this.cb_iisAccessLogs.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_serverLogs][OSDiagToolConfReader._l3_iisLogs];
+            this.nud_iisLogsNrDays.Value = configurations.IISLogsNrDays; // Number of days of IIS logs
+
+            this.cb_platformLogs.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_platform][OSDiagToolConfReader._l3_platformLogs];
+            this.nud_topLogs.Value = configurations.osLogTopRecords;
+
+            this.cb_dbPlatformMetamodel.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_platformMetamodel];
+            this.cb_dbTroubleshoot.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_databaseTroubleshoot];
+
             this.lb_metamodelTables.Items.AddRange(configurations.tableNames.ToArray()); // add Platform Metamodel tables to list box
-            this.nud_iisLogsNrDays.Value = configurations.IISLogsNrDays;
+
 
             bt_TestSaConnection.Click += delegate (object sender, EventArgs e) { bt_TestSaConnection_Click(sender, e, dbms, SQLConnectionString, OracleConnectionString); };
             bt_runOsDiagTool.Click += delegate (object sender, EventArgs e) { bt_runOsDiagTool_Click(sender, e, configurations); };
@@ -109,6 +127,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _slIisLogs, cb_iisAccessLogs.Checked},
                 { _diMetamodel, cb_dbPlatformMetamodel.Checked},
                 { _diDbTroubleshoot, cb_dbTroubleshoot.Checked},
+                { _diPlatformLogs, cb_platformLogs.Checked},
             };
 
             formConfigurations.cbConfs = dictHelper;

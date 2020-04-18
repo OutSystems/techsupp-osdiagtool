@@ -33,6 +33,7 @@ namespace OSDiagTool
         private static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
+        private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
         public static string _zipFileLocation;
@@ -91,6 +92,7 @@ namespace OSDiagTool
             Directory.CreateDirectory(_windowsInfoDest);
             Directory.CreateDirectory(_osDatabaseTablesDest);
             Directory.CreateDirectory(_osDatabaseTroubleshootDest);
+            Directory.CreateDirectory(_osPlatformLogs);
 
             // Create error dump file to log all exceptions during script execution
             using (var errorTxtFile = File.Create(_errorDumpFile));
@@ -137,7 +139,13 @@ namespace OSDiagTool
 
             ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, osPlatformVersion);
             ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
-            
+
+            ConfigFileDBInfo loggingDBInfo = null;
+            bool separateLogCatalog = !osPlatformVersion.StartsWith("10.");
+            if (separateLogCatalog) { // Log DB is on a separate DB Catalog starting Platform version 11
+                loggingDBInfo = confFileParser.DBLoggingInfo;
+            }
+
             // Retrieving IIS access logs
             if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slIisLogs, out bool getIisLogs) && getIisLogs == true) {
                 
@@ -145,100 +153,152 @@ namespace OSDiagTool
             }
 
             string dbEngine = platformDBInfo.DBMS;
-            // SQL Export
+
+            // Database Export
             if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool _getPlatformMetamodel) && _getPlatformMetamodel == true) ||
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true)) {
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true) || 
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diPlatformLogs, out bool _getPlatformLogs) && _getPlatformLogs == true)){
+
                 try {
+
+                    string platformDBRuntimeUser = platformDBInfo.GetProperty("RuntimeUser").Value;
+                    string platformDBRuntimeUserPwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                    string platformDBAdminUser = platformDBInfo.GetProperty("AdminUser").Value;
+
+                    FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool getPlatformMetamodel);
+                    FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diPlatformLogs, out bool diGetPlatformLogs);
+                    FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool doDbTroubleshoot);
 
                     if (dbEngine.ToLower().Equals("sqlserver")) {
 
                         var sqlConnString = new DBConnector.SQLConnStringModel();
-                        sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
-                        sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
+                        string platformDBServer = platformDBInfo.GetProperty("Server").Value;
+                        string platformDBCatalog = platformDBInfo.GetProperty("Catalog").Value;
                         
-
-                        // Database Troubleshoot
-                        FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool doDbTroubleshoot);
+                        // Database Troubleshoot // use sa
                         if (doDbTroubleshoot) {
 
                             sqlConnString.userId = FormConfigurations.saUser;
                             sqlConnString.pwd = FormConfigurations.saPwd; 
 
-                            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations.queryTimeout, _osDatabaseTroubleshootDest, sqlConnString);
+                            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, sqlConnString);
+                        }                      
+
+                        
+                        if (diGetPlatformLogs) {
+
+                            if (separateLogCatalog) {
+                                sqlConnString.dataSource = loggingDBInfo.GetProperty("Server").Value;
+                                sqlConnString.userId = loggingDBInfo.GetProperty("RuntimeUser").Value; // needs to use oslog configurations
+                                sqlConnString.pwd = loggingDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                                sqlConnString.initialCatalog = loggingDBInfo.GetProperty("Catalog").Value; 
+
+                            }
+                            
+
+                            List<string> platformLogs = new List<string>();
+                            foreach (string table in configurations.tableNames) { // add only oslog tables to list
+                                if (table.ToLower().StartsWith("oslog")) {
+                                    platformLogs.Add(table);
+                                }
+                            }
+
+                            Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, configurations, _osPlatformLogs, sqlConnString, null);
+
                         }
 
-                        sqlConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
-                        sqlConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                        
+                        if (getPlatformMetamodel) {
 
-                        var connector = new DBConnector.SLQDBConnector();
-                        SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
+                            sqlConnString.dataSource = platformDBServer;
+                            sqlConnString.userId = platformDBRuntimeUser; // needs to use oslog configurations
+                            sqlConnString.pwd = platformDBRuntimeUserPwd;
+                            sqlConnString.initialCatalog = platformDBCatalog;
 
-                        string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
+                            var connector = new DBConnector.SLQDBConnector();
+                            SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
 
-                        SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, connection) {
-                            CommandTimeout = configurations.queryTimeout
-                        };
-                        cmd.ExecuteNonQuery();
-                        int count = Convert.ToInt32(cmd.ExecuteScalar());
+                            string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1"; // check if it's registered on LifeTime
 
-                        using (connection) {
-                            FileLogger.TraceLog("Starting exporting tables: ");
-                            foreach (string table in configurations.tableNames) {
-                                if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                                    FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                    string selectAllQuery = "SELECT * FROM " + table;
-                                    CSVExporter.SQLToCSVExport(dbEngine, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
+                            SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, connection) {
+                                CommandTimeout = configurations.queryTimeout
+                            };
+
+                            cmd.ExecuteNonQuery();
+                            int count = Convert.ToInt32(cmd.ExecuteScalar());
+
+                            using (connection) {
+                                FileLogger.TraceLog("Starting exporting tables: ");
+                                foreach (string table in configurations.tableNames) {
+                                    if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                                        string selectAllQuery = "SELECT * FROM " + table;
+                                        CSVExporter.SQLToCSVExport(dbEngine, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
+                                    }
                                 }
-
                             }
                         }
 
                     }   // Oracle Export -- RuntimeUser is used but the Admin schema is necessary to query OSSYS 
                     else if (dbEngine.ToLower().Equals("oracle")) {
+
                         var orclConnString = new DBConnector.OracleConnStringModel();
 
-                        orclConnString.host = platformDBInfo.GetProperty("Host").Value;
-                        orclConnString.port = platformDBInfo.GetProperty("Port").Value;
-                        orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
+                        string oraclePlatformDBHost = orclConnString.host = platformDBInfo.GetProperty("Host").Value;
+                        string oraclePlatformDBPort = orclConnString.port = platformDBInfo.GetProperty("Port").Value;
+                        string oraclePlatformDBServiceName = orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
 
                         // Database Troubleshoot
-                        FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool doDbTroubleshoot);
-
                         if (doDbTroubleshoot) {
 
                             orclConnString.userId = FormConfigurations.saUser;
                             orclConnString.pwd = FormConfigurations.saPwd; 
 
-                            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations.queryTimeout, _osDatabaseTroubleshootDest, null, orclConnString);
+                            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, null, orclConnString);
                         }
 
+                        if (diGetPlatformLogs) {
 
-                        orclConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
-                        orclConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
-                        string osAdminSchema = platformDBInfo.GetProperty("AdminUser").Value;
+                            if (separateLogCatalog) {
 
-                        var connector = new DBConnector.OracleDBConnector();
-                        OracleConnection connection = connector.OracleOpenConnection(orclConnString);
+                                // needs to use oslog configurations
+                                orclConnString.host = loggingDBInfo.GetProperty("Server").Value;
+                                orclConnString.port = loggingDBInfo.GetProperty("Port").Value;
+                                orclConnString.userId = loggingDBInfo.GetProperty("RuntimeUser").Value; 
+                                orclConnString.pwd = loggingDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                                orclConnString.serviceName = loggingDBInfo.GetProperty("ServiceName").Value;
 
-                        string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM " + osAdminSchema + "." + "OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
-
-                        OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, connection) {
-                            CommandTimeout = configurations.queryTimeout
-                        };
-                        cmd.ExecuteNonQuery();
-                        int count = Convert.ToInt32(cmd.ExecuteScalar());
-
-                        using (connection) {
-                            FileLogger.TraceLog("Starting exporting tables: ");
-                            foreach (string table in configurations.tableNames) {
-                                if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                                    FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                    string selectAllQuery = "SELECT * FROM " + osAdminSchema + "." + table;
-                                    CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, osAdminSchema, selectAllQuery);
-                                }
                             }
                         }
 
+                        if (getPlatformMetamodel) {
+
+                            orclConnString.userId = platformDBRuntimeUser;
+                            orclConnString.pwd = platformDBRuntimeUserPwd;
+
+                            var connector = new DBConnector.OracleDBConnector();
+                            OracleConnection connection = connector.OracleOpenConnection(orclConnString);
+
+                            string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM " + platformDBAdminUser + "." + "OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
+
+                            OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, connection) {
+                                CommandTimeout = configurations.queryTimeout
+                            };
+
+                            cmd.ExecuteNonQuery();
+                            int count = Convert.ToInt32(cmd.ExecuteScalar());
+
+                            using (connection) {
+                                FileLogger.TraceLog("Starting exporting tables: ");
+                                foreach (string table in configurations.tableNames) {
+                                    if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                                        string selectAllQuery = "SELECT * FROM " + platformDBAdminUser + "." + table;
+                                        CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, platformDBAdminUser, selectAllQuery);
+                                    }
+                                }
+                            }
+                        }
                     }
 
                 } catch (Exception e) {

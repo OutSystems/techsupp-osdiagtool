@@ -18,7 +18,7 @@ namespace OSDiagTool.OSDiagToolConf {
         private static string _rootElement = "configuration";
 
         //  L1
-        private static string _l1_infoToRetrieve = "infoToRetrieve";
+        private static string _l1_infoToRetrieve = "databaseInfo";
         private static string _l1_iisConf = "IisConf";
         private static string _l1_osDiagToolConf = "OSDiagToolConf";
 
@@ -26,10 +26,31 @@ namespace OSDiagTool.OSDiagToolConf {
         private static string _l2_databaseTables = "databaseTables";
         private static string _l2_iisLogsNrDays = "LogsNumberOfDays";
         private static string _l2_queryTimeout = "queryTimeout";
+        public static string _l2_threadDumps = "threadDumps";
+        public static string _l2_memoryDumps = "memoryDumps";
+        public static string _l2_serverLogs = "serverLogs";
+        public static string _l2_databaseOperations = "databaseOperations";
+        public static string _l2_platform = "platform";
+        private static string _l2_databaseQueryConfigurations = "databaseQueryConfigurations";
 
         // L3
         private static string _l3_ossys = "ossys";
         private static string _l3_osltm = "osltm";
+        private static string _l3_oslog = "oslog";
+        public static string _l3_iisW3wp = "iisW3wp";
+        public static string _l3_osServices = "osServices";
+        public static string _l3_evtAndServer = "evtAndServer";
+        public static string _l3_iisLogs = "iisLogs";
+        public static string _l3_platformMetamodel = "platformMetamodel";
+        public static string _l3_databaseTroubleshoot = "databaseTroubleshoot";
+        public static string _l3_platformLogs = "platformLogs";
+        public static string _l3_sqlServer = "sqlServer";
+        public static string _l3_oracle = "oracle";
+        public static string _l3_oslogTopRecords = "oslogTopRecords";
+
+        // L4
+        public static string _l4_top_statCachedPlans = "top_statCachedPlans";
+        public static string _l4_top_topCPU = "top_topCPU";
 
         // XML Attributes
         private static string _nameAttribute = "name";
@@ -43,7 +64,10 @@ namespace OSDiagTool.OSDiagToolConf {
 
             configuration.queryTimeout = GetQueryTimeout(xml);
             configuration.IISLogsNrDays = GetIISLogsNrDays(xml);
-            configuration.tableNames = GetTableNames(xml); 
+            configuration.tableNames = GetTableNames(xml);
+            configuration.osLogTopRecords = GetOsLogTopRecords(xml);
+            configuration.databaseQueryConfigurations = GetDatabaseQueryConfigurations(xml);
+            configuration.osDiagToolConfigurations = GetOsDiagToolConfigurations(xml);
 
             return configuration;
 
@@ -52,6 +76,10 @@ namespace OSDiagTool.OSDiagToolConf {
         public List<string> GetTableNames(XDocument xml) {
 
             List<string> tableNames = new List<string> ();
+
+            // Read OSLOG tables
+            var oslogNodes = (from n in xml.Descendants(_rootElement)
+                              select n.Element(_l1_infoToRetrieve).Element(_l2_databaseTables).Element(_l3_oslog).Elements()).ToList();
 
             // Reading OSSYS table names
             var ossysNodes = (from n in xml.Descendants(_rootElement)
@@ -88,6 +116,19 @@ namespace OSDiagTool.OSDiagToolConf {
                 
             }
 
+            foreach (XElement el in oslogNodes[0]) {
+
+                string tableName = el.Attribute(_nameAttribute).Value;
+                Regex pattern = new Regex("[ -*/]|[\n]{2}/g");
+                tableName = pattern.Replace(tableName, "");
+
+                // Check if table name in configuration file matchs prefix of table and delete everything after space and comma to protect from SQLI
+                if (tableName.ToLower().StartsWith(_l3_oslog) && !(tableName.ToLower().Contains((" ")))) {
+                    tableNames.Add(tableName);
+                }
+
+            }
+
             return tableNames;
 
         }
@@ -121,6 +162,157 @@ namespace OSDiagTool.OSDiagToolConf {
                 int queryTimeout = 30;
                 return queryTimeout;
             }
+
+        }
+
+        public int GetOsLogTopRecords (XDocument xml) {
+
+            var query = from n in xml.Descendants(_rootElement)
+                        select new {
+                            value = n.Element(_l1_infoToRetrieve).Element(_l2_databaseQueryConfigurations).Element(_l3_oslogTopRecords).Value,
+                        };
+            try {
+                int osLogTopRecords = Convert.ToInt32(query.First().value);
+                return osLogTopRecords;
+            } catch (Exception e) {
+                int osLogTopRecords = 500;
+                return osLogTopRecords;
+            }
+
+        }
+
+        public Dictionary<string, Dictionary<string, string>> GetDatabaseQueryConfigurations(XDocument xml) {
+
+            Dictionary<string, Dictionary<string, string>> DatabaseQueryConfigurations = new Dictionary<string, Dictionary<string, string>>();
+
+            var sqlServerNodesConf = (from n in xml.Descendants(_rootElement)
+                              select n.Element(_l1_infoToRetrieve).Element(_l2_databaseQueryConfigurations).Element(_l3_sqlServer).Elements()).ToList();
+
+            var oracleNodesConf = (from n in xml.Descendants(_rootElement)
+                                      select n.Element(_l1_infoToRetrieve).Element(_l2_databaseQueryConfigurations).Element(_l3_oracle).Elements()).ToList();
+
+            foreach (XElement el in sqlServerNodesConf[0]) {
+
+                string conf = el.Value;
+                XName XconfName = el.Name;
+                string confName = XconfName.ToString();
+
+                if (!DatabaseQueryConfigurations.ContainsKey(_l3_sqlServer)) {
+                    DatabaseQueryConfigurations.Add(_l3_sqlServer, new Dictionary<string, string>());
+                }
+
+                DatabaseQueryConfigurations[_l3_sqlServer].Add(confName, conf);
+
+            }
+
+            foreach (XElement el in oracleNodesConf[0]) {
+
+                string conf = el.Value;
+                XName XconfName = el.Name;
+                string confName = XconfName.ToString();
+
+                if (!DatabaseQueryConfigurations.ContainsKey(_l3_oracle)) {
+                    DatabaseQueryConfigurations.Add(_l3_oracle, new Dictionary<string, string>());
+                }
+
+                DatabaseQueryConfigurations[_l3_oracle].Add(confName, conf);
+
+            }
+
+            return DatabaseQueryConfigurations;
+
+        }
+
+        public Dictionary<string, Dictionary<string, bool>> GetOsDiagToolConfigurations(XDocument xml) {
+
+            Dictionary<string, Dictionary<string, bool>> OsDiagToolConfigurations = new Dictionary<string, Dictionary<string, bool>>();
+
+            var threadDumpsNodes = (from n in xml.Descendants(_rootElement)
+                                      select n.Element(_l1_osDiagToolConf).Element(_l2_threadDumps).Elements()).ToList();
+
+            var memoryDumpsNodes = (from n in xml.Descendants(_rootElement)
+                                    select n.Element(_l1_osDiagToolConf).Element(_l2_memoryDumps).Elements()).ToList();
+
+            var serverLogsNodes = (from n in xml.Descendants(_rootElement)
+                                    select n.Element(_l1_osDiagToolConf).Element(_l2_serverLogs).Elements()).ToList();
+
+            var platformNodes = (from n in xml.Descendants(_rootElement)
+                                   select n.Element(_l1_osDiagToolConf).Element(_l2_platform).Elements()).ToList();
+
+            var databaseOperationsNodes = (from n in xml.Descendants(_rootElement)
+                                   select n.Element(_l1_osDiagToolConf).Element(_l2_databaseOperations).Elements()).ToList();
+
+            foreach (XElement el in threadDumpsNodes[0]) {
+
+                bool conf = Convert.ToBoolean(el.Value);
+                XName XconfName = el.Name;
+                string confName = XconfName.ToString();
+
+                if (!OsDiagToolConfigurations.ContainsKey(_l2_threadDumps)) {
+                    OsDiagToolConfigurations.Add(_l2_threadDumps, new Dictionary<string, bool>());
+                }
+
+                OsDiagToolConfigurations[_l2_threadDumps].Add(confName, conf);
+
+            }
+
+            foreach (XElement el in memoryDumpsNodes[0]) {
+
+                bool conf = Convert.ToBoolean(el.Value);
+                XName XconfName = el.Name;
+                string confName = XconfName.ToString();
+
+                if (!OsDiagToolConfigurations.ContainsKey(_l2_memoryDumps)) {
+                    OsDiagToolConfigurations.Add(_l2_memoryDumps, new Dictionary<string, bool>());
+                }
+                
+                OsDiagToolConfigurations[_l2_memoryDumps].Add(confName, conf);
+
+            }
+
+            foreach (XElement el in serverLogsNodes[0]) {
+
+                bool conf = Convert.ToBoolean(el.Value);
+                XName XconfName = el.Name;
+                string confName = XconfName.ToString();
+
+                if (!OsDiagToolConfigurations.ContainsKey(_l2_serverLogs)) {
+                    OsDiagToolConfigurations.Add(_l2_serverLogs, new Dictionary<string, bool>());
+                }
+
+                OsDiagToolConfigurations[_l2_serverLogs].Add(confName, conf);
+
+            }
+
+            foreach (XElement el in platformNodes[0]) {
+
+                bool conf = Convert.ToBoolean(el.Value);
+                XName XconfName = el.Name;
+                string confName = XconfName.ToString();
+
+                if (!OsDiagToolConfigurations.ContainsKey(_l2_platform)) {
+                    OsDiagToolConfigurations.Add(_l2_platform, new Dictionary<string, bool>());
+                }
+
+                OsDiagToolConfigurations[_l2_platform].Add(confName, conf);
+
+            }
+
+            foreach (XElement el in databaseOperationsNodes[0]) {
+
+                bool conf = Convert.ToBoolean(el.Value);
+                XName XconfName = el.Name;
+                string confName = XconfName.ToString();
+
+                if (!OsDiagToolConfigurations.ContainsKey(_l2_databaseOperations)) {
+                    OsDiagToolConfigurations.Add(_l2_databaseOperations, new Dictionary<string, bool>());
+                }
+
+                OsDiagToolConfigurations[_l2_databaseOperations].Add(confName, conf);
+
+            }
+
+            return OsDiagToolConfigurations;
 
         }
     }

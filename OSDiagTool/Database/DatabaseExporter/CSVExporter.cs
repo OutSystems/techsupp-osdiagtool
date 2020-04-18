@@ -33,7 +33,7 @@ namespace OSDiagTool.DatabaseExporter {
                                 name = name.Replace(",", "_"); // replacing commas for _ to avoid writting in a next cell
                             }
 
-                            fs.Write(name + ";");
+                            fs.Write(name + ",");
                         }
 
                         fs.WriteLine();
@@ -41,7 +41,7 @@ namespace OSDiagTool.DatabaseExporter {
                         while (dr.Read()) {
                             for (int i = 0; i < dr.FieldCount; i++) {
 
-                                string value = dr[i].ToString();
+                                var value = dr[i].ToString();
                                 value = Regex.Replace(value, @"(;|\r\n|\n)", " "); // replacing semicolon and new lines
 
 
@@ -49,7 +49,7 @@ namespace OSDiagTool.DatabaseExporter {
                                     value = value.Replace(",", "_"); // replacing commas for _ to avoid writting in a next cell
                                 }
 
-                                fs.Write(value + ";");
+                                fs.Write(value + ",");
                             }
 
                             fs.WriteLine();
@@ -64,13 +64,13 @@ namespace OSDiagTool.DatabaseExporter {
                         OracleDataReader dr = command.ExecuteReader();
 
                         for (int i = 0; i < dr.FieldCount; i++) {
-                            string name = dr.GetName(i);
+                            var name = dr.GetName(i);
 
                             if (name.Contains(",")) {
                                 name = name.Replace(",", "_"); // replacing commas for _ to avoid writting in a next cell
                             }
 
-                            fs.Write(name + ";");
+                            fs.Write(name + ",");
                         }
 
                         fs.WriteLine();
@@ -86,7 +86,7 @@ namespace OSDiagTool.DatabaseExporter {
                                     value = value.Replace(",", "_"); // replacing commas for _ to avoid writting in a next cell
                                 }
 
-                                fs.Write(value + ";");
+                                fs.Write(value + ",");
                             }
 
                             fs.WriteLine();

@@ -6,28 +6,26 @@ using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.DatabaseExporter;
-
+using OSDiagTool.OSDiagToolConf;
+using System.Reflection;
 
 namespace OSDiagTool.Database.DatabaseQueries {
     class DatabaseTroubleshoot {
 
-        public static void DatabaseTroubleshooting(string dbEngine, int queryTimeout, string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,
+        public static void DatabaseTroubleshooting(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations,string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null) {
 
             // Needs user with sa permissions
 
-            int top_statCachedPlan = 10;
-            int orcl_TopCPU = 50;
-
-            List<string> blockingAndBlockedSpids = new List<string>();
-            List<string> orclSids = new List<string>();
-
-            // work in progress; still needs tests
             if (dbEngine.ToLower().Equals("sqlserver")) {
+
+                List<string> blockingAndBlockedSpids = new List<string>();
+
+                int top_statCachedPlan = Convert.ToInt32(configurations.databaseQueryConfigurations[OSDiagToolConfReader._l3_sqlServer][OSDiagToolConfReader._l4_top_statCachedPlans]);
 
                 var sqlDBQueries = new SQLServerQueries();
 
-                Dictionary<string, string> sqlQueries = new Dictionary<string, string> { // TODO: use reflection to get the property names
+                Dictionary<string, string> sqlQueries = new Dictionary<string, string> { // use same name as in the DatabaseQueries
                     { "sessionsSp_Who2", sqlDBQueries.sessionsSp_Who2 },
                     { "sessionsSp_Who2_Blocked", sqlDBQueries.sessionsSp_Who2_Blocked },
                     { "statCachedPlan", string.Format(sqlDBQueries.statCachedPlans, top_statCachedPlan) },
@@ -44,12 +42,12 @@ namespace OSDiagTool.Database.DatabaseQueries {
 
                         if (!(entry.Key.Equals("sessionsSp_Who2_Blocked") || entry.Key.Equals("dbccInputBuffer"))) { // skip sp_who2_blocked and dbcc since it already exports the entire result set of sp_who2
 
-                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, entry.Value, connection, null);
+                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, configurations.queryTimeout, entry.Value, connection, null);
 
                         } else if(entry.Key.Equals("sessionsSp_Who2_Blocked")) {
 
                             SqlCommand cmd = new SqlCommand(entry.Value, connection) {
-                                CommandTimeout = queryTimeout
+                                CommandTimeout = configurations.queryTimeout
                             };
 
                             SqlDataReader dr = cmd.ExecuteReader();
@@ -72,7 +70,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
                                 string allBlockedSpidsInline = string.Join(",", blockingAndBlockedSpids.ToArray());
                                 string blockedSqlTextQuery = string.Format(entry.Value, allBlockedSpidsInline);
 
-                                CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, blockedSqlTextQuery, connection, null);
+                                CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, configurations.queryTimeout, blockedSqlTextQuery, connection, null);
 
                             }
                         }
@@ -81,6 +79,10 @@ namespace OSDiagTool.Database.DatabaseQueries {
 
 
             } else if (dbEngine.ToLower().Equals("oracle")) {
+
+                List<string> orclSids = new List<string>();
+
+                int orcl_TopCPU = Convert.ToInt32(configurations.databaseQueryConfigurations[OSDiagToolConfReader._l3_oracle][OSDiagToolConfReader._l4_top_topCPU]);
 
                 var orclDBQueries = new OracleQueries();
 
@@ -106,12 +108,12 @@ namespace OSDiagTool.Database.DatabaseQueries {
                         if (!(entry.Key.Equals("orcl_lockedObjects") || (entry.Key.Equals("orcl_sessionByIOType_Writes") || (entry.Key.Equals("orcl_sessionByIOType_Reads") || (entry.Key.Equals("orcl_lockedObjects_2") ||
                             (entry.Key.Equals("orcl_sqlTextBySID") || (entry.Key.Equals("orcl_sidInfo")))))))) { // skip queries that we want to know more about the sessions
 
-                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, entry.Value, null, connection);
+                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, configurations.queryTimeout, entry.Value, null, connection);
 
                         } else if (entry.Key.Equals("orcl_lockedObjects") || entry.Key.Equals("orcl_lockedObjects_2") || entry.Key.Equals("orcl_sessionByIOType_Reads") || entry.Key.Equals("orcl_sessionByIOType_Writes")) {
 
                             OracleCommand cmd = new OracleCommand(entry.Value, connection) {
-                                CommandTimeout = queryTimeout
+                                CommandTimeout = configurations.queryTimeout
                             };
 
                             OracleDataReader dr = cmd.ExecuteReader();
@@ -126,7 +128,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
 
                             }
 
-                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, entry.Value, null, connection);
+                            CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, configurations.queryTimeout, entry.Value, null, connection);
 
                         } else if (entry.Key.Equals("orcl_sidInfo") || entry.Key.Equals("orcl_sqlTextBySID")) {
 
@@ -135,7 +137,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
                                 string allSidsInline = string.Join(",", orclSids.ToArray());
                                 string sidsSqlTextQuery = string.Format(entry.Value, allSidsInline);
 
-                                CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, queryTimeout, sidsSqlTextQuery, null, connection);
+                                CSVExporter.SQLToCSVExport(dbEngine, entry.Key, outputDestination, configurations.queryTimeout, sidsSqlTextQuery, null, connection);
 
                             }
 
