@@ -70,7 +70,7 @@ namespace OSDiagTool
                 _isFileLoaded = true;
             }
             catch (Exception e) {
-                FileLogger.LogError("Attempted to load OS Configuration file but failed:", e.Message);
+                FileLogger.LogError("Attempted to load OS Configuration file but failed:", e.Message + e.StackTrace);
             }
         }
 

@@ -72,8 +72,6 @@ namespace OSDiagTool
 
         public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) {
 
-            //puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, "");
-
             // Initialize helper classes
             FileSystemHelper fsHelper = new FileSystemHelper();
             CmdHelper cmdHelper = new CmdHelper();
@@ -97,14 +95,14 @@ namespace OSDiagTool
             // Create error dump file to log all exceptions during script execution
             using (var errorTxtFile = File.Create(_errorDumpFile));
 
-
-            Platform.PlatformVersion ps = new Platform.PlatformVersion();
-            string osPlatformVersion = ps.GetPlatformVersion(_osServerRegistry);
+            string osPlatformVersion = Platform.PlatformVersion.GetPlatformVersion(_osServerRegistry);
 
             Object obj = RegistryClass.GetRegistryValue(_osServerRegistry, ""); // The "Defaut" values are empty strings.
 
-            // Process copy files
-            CopyAllFiles();
+            // Process Platform and Server Configuration files
+            if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformAndServerFiles, out bool getPSandServerConfFiles) && getPSandServerConfFiles == true) {
+                CopyPlatformAndServerConfFiles();
+            }
 
             // Generate Event Viewer and Server Logs
             if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slEvt, out bool getEvt) && getEvt == true) {
@@ -129,7 +127,7 @@ namespace OSDiagTool
 
                     FileLogger.TraceLog("DONE", true);
                 } catch (Exception e) {
-                    FileLogger.LogError("Failed to export Registry:", e.Message);
+                    FileLogger.LogError("Failed to export Registry:", e.Message + e.StackTrace);
                 }
             }
             
@@ -157,7 +155,7 @@ namespace OSDiagTool
             // Database Export
             if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool _getPlatformMetamodel) && _getPlatformMetamodel == true) ||
                 (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true) || 
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diPlatformLogs, out bool _getPlatformLogs) && _getPlatformLogs == true)){
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformLogs, out bool _getPlatformLogs) && _getPlatformLogs == true)){
 
                 try {
 
@@ -166,17 +164,21 @@ namespace OSDiagTool
                     string platformDBAdminUser = platformDBInfo.GetProperty("AdminUser").Value;
 
                     FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool getPlatformMetamodel);
-                    FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diPlatformLogs, out bool diGetPlatformLogs);
+                    FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformLogs, out bool diGetPlatformLogs);
                     FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool doDbTroubleshoot);
 
                     if (dbEngine.ToLower().Equals("sqlserver")) {
 
                         var sqlConnString = new DBConnector.SQLConnStringModel();
-                        string platformDBServer = platformDBInfo.GetProperty("Server").Value;
-                        string platformDBCatalog = platformDBInfo.GetProperty("Catalog").Value;
+                        string platformDBServer = sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
+                        string platformDBCatalog = sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
                         
                         // Database Troubleshoot // use sa
                         if (doDbTroubleshoot) {
+
+                            FileLogger.TraceLog("Performing Database Troubleshoot...");
+
+                            FileLogger.TraceLog("DataSource: " + sqlConnString.dataSource + ";" + " Catalog: " + sqlConnString.initialCatalog);
 
                             sqlConnString.userId = FormConfigurations.saUser;
                             sqlConnString.pwd = FormConfigurations.saPwd; 
@@ -186,6 +188,8 @@ namespace OSDiagTool
 
                         
                         if (diGetPlatformLogs) {
+
+                            FileLogger.TraceLog("Exporting Platform Logs...");
 
                             if (separateLogCatalog) {
                                 sqlConnString.dataSource = loggingDBInfo.GetProperty("Server").Value;
@@ -203,12 +207,13 @@ namespace OSDiagTool
                                 }
                             }
 
-                            Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, configurations, _osPlatformLogs, sqlConnString, null);
+                            Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
 
                         }
-
                         
                         if (getPlatformMetamodel) {
+
+                            FileLogger.TraceLog("Exporting Platform Metamodel...");
 
                             sqlConnString.dataSource = platformDBServer;
                             sqlConnString.userId = platformDBRuntimeUser; // needs to use oslog configurations
@@ -251,6 +256,8 @@ namespace OSDiagTool
                         // Database Troubleshoot
                         if (doDbTroubleshoot) {
 
+                            FileLogger.TraceLog("Performing Database Troubleshoot...");
+
                             orclConnString.userId = FormConfigurations.saUser;
                             orclConnString.pwd = FormConfigurations.saPwd; 
 
@@ -259,19 +266,32 @@ namespace OSDiagTool
 
                         if (diGetPlatformLogs) {
 
+                            FileLogger.TraceLog("Exporting Platform Logs...");
+
                             if (separateLogCatalog) {
 
                                 // needs to use oslog configurations
-                                orclConnString.host = loggingDBInfo.GetProperty("Server").Value;
+                                orclConnString.host = loggingDBInfo.GetProperty("Host").Value;
                                 orclConnString.port = loggingDBInfo.GetProperty("Port").Value;
-                                orclConnString.userId = loggingDBInfo.GetProperty("RuntimeUser").Value; 
-                                orclConnString.pwd = loggingDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+                                orclConnString.userId = loggingDBInfo.GetProperty("AdminUser").Value; 
+                                orclConnString.pwd = loggingDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
                                 orclConnString.serviceName = loggingDBInfo.GetProperty("ServiceName").Value;
+
+                                List<string> platformLogs = new List<string>();
+                                foreach (string table in configurations.tableNames) { // add only oslog tables to list
+                                    if (table.ToLower().StartsWith("oslog")) {
+                                        platformLogs.Add(table);
+                                    }
+                                }
+
+                                Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, orclConnString);
 
                             }
                         }
 
                         if (getPlatformMetamodel) {
+
+                            FileLogger.TraceLog("Exporting Platform Metamodel...");
 
                             orclConnString.userId = platformDBRuntimeUser;
                             orclConnString.pwd = platformDBRuntimeUserPwd;
@@ -303,7 +323,7 @@ namespace OSDiagTool
 
                 } catch (Exception e) {
 
-                    FileLogger.LogError("Unable to export database tables", e.Message);
+                    FileLogger.LogError("Unable to export database tables", e.Message + e.StackTrace);
 
                 }
                 FileLogger.TraceLog("DONE", true);
@@ -350,7 +370,7 @@ namespace OSDiagTool
             Console.ReadKey();
         }
 
-        private static void CopyAllFiles()
+        private static void CopyPlatformAndServerConfFiles()
         {
             // List of OS services and components
             IDictionary<string, string> osServiceNames = new Dictionary<string, string> {
@@ -482,7 +502,7 @@ namespace OSDiagTool
                     FileLogger.TraceLog("DONE", true);
                 }
             } catch (Exception e) {
-                FileLogger.LogError("Failed to get thread dump: ", e.Message);
+                FileLogger.LogError("Failed to get thread dump: ", e.Message + e.StackTrace);
             }
 
 
@@ -538,7 +558,7 @@ namespace OSDiagTool
                     FileLogger.TraceLog("DONE", true);
                 }
             } catch(Exception e) {
-                FileLogger.LogError("Failed to get memory dump: ", e.Message);
+                FileLogger.LogError("Failed to get memory dump: ", e.Message + e.StackTrace);
             }
 
             

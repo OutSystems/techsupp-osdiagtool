@@ -25,12 +25,12 @@ namespace OSDiagTool
             if (isTaskFinished == false)
             {
                 Console.Write(traceMessage);
-                File.AppendAllText(_errorDumpFile, writeDateTime ? DateTime.Now + "\t" + traceMessage : traceMessage);
+                File.AppendAllText(_errorDumpFile, writeDateTime ? Environment.NewLine + DateTime.Now + "\t" + traceMessage : traceMessage);
             }
             else if (isTaskFinished == true)
             {
                 Console.WriteLine(traceMessage);
-                File.AppendAllText(_errorDumpFile, traceMessage + Environment.NewLine);
+                File.AppendAllText(_errorDumpFile, traceMessage);
             }
 
         }

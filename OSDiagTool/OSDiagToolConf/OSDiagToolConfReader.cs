@@ -47,6 +47,7 @@ namespace OSDiagTool.OSDiagToolConf {
         public static string _l3_sqlServer = "sqlServer";
         public static string _l3_oracle = "oracle";
         public static string _l3_oslogTopRecords = "oslogTopRecords";
+        public static string _l3_platformAndServerConfigFiles = "platformAndServerConfFiles";
 
         // L4
         public static string _l4_top_statCachedPlans = "top_statCachedPlans";

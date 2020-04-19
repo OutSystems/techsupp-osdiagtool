@@ -44,6 +44,11 @@
             this.mstrp_Exit = new System.Windows.Forms.ToolStripMenuItem();
             this.tb_osDiagConf = new System.Windows.Forms.TabControl();
             this.tb_osDiagGenConf = new System.Windows.Forms.TabPage();
+            this.nud_topLogs = new System.Windows.Forms.NumericUpDown();
+            this.label21 = new System.Windows.Forms.Label();
+            this.label19 = new System.Windows.Forms.Label();
+            this.label20 = new System.Windows.Forms.Label();
+            this.cb_platformLogs = new System.Windows.Forms.CheckBox();
             this.nud_iisLogsNrDays = new System.Windows.Forms.NumericUpDown();
             this.label18 = new System.Windows.Forms.Label();
             this.tb_databaseConf = new System.Windows.Forms.TabPage();
@@ -68,18 +73,14 @@
             this.label12 = new System.Windows.Forms.Label();
             this.bt_runOsDiagTool = new System.Windows.Forms.Button();
             this.lbl_feedbackOsDiagForm = new System.Windows.Forms.Label();
-            this.label19 = new System.Windows.Forms.Label();
-            this.label20 = new System.Windows.Forms.Label();
-            this.cb_platformLogs = new System.Windows.Forms.CheckBox();
-            this.nud_topLogs = new System.Windows.Forms.NumericUpDown();
-            this.label21 = new System.Windows.Forms.Label();
+            this.cb_platformAndServerFiles = new System.Windows.Forms.CheckBox();
             this.menuStrip1.SuspendLayout();
             this.tb_osDiagConf.SuspendLayout();
             this.tb_osDiagGenConf.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_topLogs)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_iisLogsNrDays)).BeginInit();
             this.tb_databaseConf.SuspendLayout();
             this.DBCredentials.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_topLogs)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -268,6 +269,7 @@
             // 
             // tb_osDiagGenConf
             // 
+            this.tb_osDiagGenConf.Controls.Add(this.cb_platformAndServerFiles);
             this.tb_osDiagGenConf.Controls.Add(this.nud_topLogs);
             this.tb_osDiagGenConf.Controls.Add(this.label21);
             this.tb_osDiagGenConf.Controls.Add(this.label19);
@@ -296,6 +298,55 @@
             this.tb_osDiagGenConf.TabIndex = 0;
             this.tb_osDiagGenConf.Text = "General Configurations";
             this.tb_osDiagGenConf.UseVisualStyleBackColor = true;
+            // 
+            // nud_topLogs
+            // 
+            this.nud_topLogs.Location = new System.Drawing.Point(118, 300);
+            this.nud_topLogs.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.nud_topLogs.Name = "nud_topLogs";
+            this.nud_topLogs.Size = new System.Drawing.Size(56, 20);
+            this.nud_topLogs.TabIndex = 26;
+            // 
+            // label21
+            // 
+            this.label21.AutoSize = true;
+            this.label21.Location = new System.Drawing.Point(180, 302);
+            this.label21.Name = "label21";
+            this.label21.Size = new System.Drawing.Size(154, 13);
+            this.label21.TabIndex = 25;
+            this.label21.Text = "Number of Records in the Logs";
+            // 
+            // label19
+            // 
+            this.label19.AutoSize = true;
+            this.label19.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label19.Location = new System.Drawing.Point(21, 262);
+            this.label19.Name = "label19";
+            this.label19.Size = new System.Drawing.Size(53, 15);
+            this.label19.TabIndex = 22;
+            this.label19.Text = "Platform";
+            // 
+            // label20
+            // 
+            this.label20.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.label20.Location = new System.Drawing.Point(21, 286);
+            this.label20.Name = "label20";
+            this.label20.Size = new System.Drawing.Size(410, 2);
+            this.label20.TabIndex = 23;
+            // 
+            // cb_platformLogs
+            // 
+            this.cb_platformLogs.AutoSize = true;
+            this.cb_platformLogs.Location = new System.Drawing.Point(24, 301);
+            this.cb_platformLogs.Name = "cb_platformLogs";
+            this.cb_platformLogs.Size = new System.Drawing.Size(90, 17);
+            this.cb_platformLogs.TabIndex = 24;
+            this.cb_platformLogs.Text = "Platform Logs";
+            this.cb_platformLogs.UseVisualStyleBackColor = true;
             // 
             // nud_iisLogsNrDays
             // 
@@ -536,54 +587,17 @@
             this.lbl_feedbackOsDiagForm.Size = new System.Drawing.Size(0, 13);
             this.lbl_feedbackOsDiagForm.TabIndex = 26;
             // 
-            // label19
+            // cb_platformAndServerFiles
             // 
-            this.label19.AutoSize = true;
-            this.label19.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label19.Location = new System.Drawing.Point(21, 262);
-            this.label19.Name = "label19";
-            this.label19.Size = new System.Drawing.Size(53, 15);
-            this.label19.TabIndex = 22;
-            this.label19.Text = "Platform";
-            // 
-            // label20
-            // 
-            this.label20.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label20.Location = new System.Drawing.Point(21, 286);
-            this.label20.Name = "label20";
-            this.label20.Size = new System.Drawing.Size(410, 2);
-            this.label20.TabIndex = 23;
-            // 
-            // cb_platformLogs
-            // 
-            this.cb_platformLogs.AutoSize = true;
-            this.cb_platformLogs.Location = new System.Drawing.Point(24, 301);
-            this.cb_platformLogs.Name = "cb_platformLogs";
-            this.cb_platformLogs.Size = new System.Drawing.Size(90, 17);
-            this.cb_platformLogs.TabIndex = 24;
-            this.cb_platformLogs.Text = "Platform Logs";
-            this.cb_platformLogs.UseVisualStyleBackColor = true;
-            // 
-            // nud_topLogs
-            // 
-            this.nud_topLogs.Location = new System.Drawing.Point(123, 300);
-            this.nud_topLogs.Maximum = new decimal(new int[] {
-            10000,
-            0,
-            0,
-            0});
-            this.nud_topLogs.Name = "nud_topLogs";
-            this.nud_topLogs.Size = new System.Drawing.Size(56, 20);
-            this.nud_topLogs.TabIndex = 26;
-            // 
-            // label21
-            // 
-            this.label21.AutoSize = true;
-            this.label21.Location = new System.Drawing.Point(185, 302);
-            this.label21.Name = "label21";
-            this.label21.Size = new System.Drawing.Size(154, 13);
-            this.label21.TabIndex = 25;
-            this.label21.Text = "Number of Records in the Logs";
+            this.cb_platformAndServerFiles.AutoSize = true;
+            this.cb_platformAndServerFiles.Checked = true;
+            this.cb_platformAndServerFiles.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cb_platformAndServerFiles.Location = new System.Drawing.Point(24, 335);
+            this.cb_platformAndServerFiles.Name = "cb_platformAndServerFiles";
+            this.cb_platformAndServerFiles.Size = new System.Drawing.Size(205, 17);
+            this.cb_platformAndServerFiles.TabIndex = 27;
+            this.cb_platformAndServerFiles.Text = "Platform and Server Configuration files";
+            this.cb_platformAndServerFiles.UseVisualStyleBackColor = true;
             // 
             // OsDiagForm
             // 
@@ -605,12 +619,12 @@
             this.tb_osDiagConf.ResumeLayout(false);
             this.tb_osDiagGenConf.ResumeLayout(false);
             this.tb_osDiagGenConf.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_topLogs)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_iisLogsNrDays)).EndInit();
             this.tb_databaseConf.ResumeLayout(false);
             this.tb_databaseConf.PerformLayout();
             this.DBCredentials.ResumeLayout(false);
             this.DBCredentials.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_topLogs)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -667,5 +681,6 @@
         private System.Windows.Forms.CheckBox cb_platformLogs;
         private System.Windows.Forms.NumericUpDown nud_topLogs;
         private System.Windows.Forms.Label label21;
+        private System.Windows.Forms.CheckBox cb_platformAndServerFiles;
     }
 }

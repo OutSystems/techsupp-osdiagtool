@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace OSDiagTool.Platform {
     class PlatformVersion {
 
-        public string GetPlatformVersion(string osServerRegistry) {
+        public static string GetPlatformVersion(string osServerRegistry) {
 
             // Find Installation path and Platform Version 
             string osPlatformVersion = null;
@@ -21,7 +21,7 @@ namespace OSDiagTool.Platform {
                 FileLogger.TraceLog("Found it on: " + osInstallationFolder + "; Version: " + osPlatformVersion, true);
 
             } catch (Exception e) {
-                FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message);
+                FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message + e.StackTrace);
                 WriteExitLines();
                 return null;
             }

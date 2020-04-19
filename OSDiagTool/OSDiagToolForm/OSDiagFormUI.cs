@@ -27,7 +27,8 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _slIisLogs = "IIS Access Logs";
         public static string _diMetamodel = "Platform Metamodel";
         public static string _diDbTroubleshoot = "Database Troubleshoot";
-        public static string _diPlatformLogs = "Platform Logs";
+        public static string _plPlatformLogs = "Platform Logs";
+        public static string _plPlatformAndServerFiles = "Platform and Server Configuration files";
         // new check box items must be added to dictHelper dictionary
 
         public OsDiagForm(OSDiagToolConf.ConfModel.strConfModel configurations, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
@@ -46,6 +47,7 @@ namespace OSDiagTool.OSDiagToolForm {
 
             this.cb_platformLogs.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_platform][OSDiagToolConfReader._l3_platformLogs];
             this.nud_topLogs.Value = configurations.osLogTopRecords;
+            this.cb_platformAndServerFiles.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_platform][OSDiagToolConfReader._l3_platformAndServerConfigFiles];
 
             this.cb_dbPlatformMetamodel.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_platformMetamodel];
             this.cb_dbTroubleshoot.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_databaseTroubleshoot];
@@ -112,6 +114,7 @@ namespace OSDiagTool.OSDiagToolForm {
             formConfigurations.saUser = tb_iptSaUsername.Text.ToString();
             formConfigurations.saPwd = tb_iptSaPwd.Text.ToString();
             formConfigurations.iisLogsNrDays = Convert.ToInt32(nud_iisLogsNrDays.Value);
+            formConfigurations.osLogTopRecords = Convert.ToInt32(nud_topLogs.Value);
             foreach (object item in lb_metamodelTables.Items) {
                 tableNameHelper.Add(item.ToString());
             }
@@ -127,7 +130,8 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _slIisLogs, cb_iisAccessLogs.Checked},
                 { _diMetamodel, cb_dbPlatformMetamodel.Checked},
                 { _diDbTroubleshoot, cb_dbTroubleshoot.Checked},
-                { _diPlatformLogs, cb_platformLogs.Checked},
+                { _plPlatformLogs, cb_platformLogs.Checked},
+                { _plPlatformAndServerFiles, cb_platformAndServerFiles.Checked },
             };
 
             formConfigurations.cbConfs = dictHelper;

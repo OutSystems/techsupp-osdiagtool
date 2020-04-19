@@ -17,6 +17,8 @@ namespace OSDiagTool.OSDiagToolForm {
 
             public int iisLogsNrDays { get; set; }
 
+            public int osLogTopRecords { get; set; }
+
             public List<string> metamodelTables { get; set; }
 
         }

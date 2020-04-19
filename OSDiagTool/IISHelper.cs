@@ -40,7 +40,7 @@ namespace OSDiagTool
                 FileLogger.TraceLog("DONE", true);
 
             } catch (Exception e) {
-                FileLogger.LogError("Attempted to retrieve IIS Access logs but failed...", e.Message);
+                FileLogger.LogError("Attempted to retrieve IIS Access logs but failed...", e.Message + e.StackTrace);
             }
 
         }

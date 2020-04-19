@@ -97,7 +97,7 @@ namespace OSDiagTool.DatabaseExporter {
                 }
 
                 } catch (Exception e) {
-                FileLogger.LogError("Unable to read data from SQL DB: " + tableName, e.Message, writeToConsole: false, writeDateTime: false);
+                FileLogger.LogError("Unable to read data from SQL DB: " + tableName, e.Message + e.StackTrace, writeToConsole: false, writeDateTime: false);
                 }
 
 
@@ -135,7 +135,7 @@ namespace OSDiagTool.DatabaseExporter {
                     }
 
                 } catch (Exception e) {
-                    FileLogger.LogError("Unable to read data from SQL DB: " + tableName, e.Message, writeToConsole: false, writeDateTime: false);
+                    FileLogger.LogError("Unable to read data from SQL DB: " + tableName, e.Message + e.StackTrace, writeToConsole: false, writeDateTime: false);
                 }
 
             }
