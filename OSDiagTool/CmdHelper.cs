@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Text;
 
 namespace OSDiagTool
@@ -11,27 +12,39 @@ namespace OSDiagTool
 
         public static void RunCommand(string command, bool isHidden = true)
         {
-            Process process = new Process();
-            ProcessStartInfo startInfo = new ProcessStartInfo();
 
-            if(isHidden)
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            try {
 
-            startInfo.FileName = "cmd.exe";
-            startInfo.Arguments = "/C " + command;
-            startInfo.UseShellExecute = false;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.StandardOutputEncoding = Encoding.UTF8;
+                Process process = new Process();
+                ProcessStartInfo startInfo = new ProcessStartInfo();
 
-            startInfo.WindowStyle = ProcessWindowStyle.Minimized;
-            startInfo.CreateNoWindow = true;
+                if (isHidden)
+                    startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-            process.StartInfo = startInfo;
+                startInfo.FileName = "cmd.exe";
+                startInfo.Arguments = "/C " + command;
+                startInfo.UseShellExecute = false;
+                startInfo.RedirectStandardOutput = true;
+                startInfo.StandardOutputEncoding = Encoding.UTF8;
 
-            //using (Process.Start(startInfo)) ;
-            process.Start();   
-            process.WaitForExit();
-            process.Close();
+                startInfo.WindowStyle = ProcessWindowStyle.Minimized;
+                startInfo.CreateNoWindow = true;
+
+                //FileLogger.TraceLog("Cmd: " + command);
+
+                process.StartInfo = startInfo;
+
+                process.Start();
+                //FileLogger.TraceLog(process.StandardOutput.ReadToEnd());
+                process.WaitForExit();              
+                process.Close();
+
+            } catch (Exception e){
+
+                FileLogger.LogError("Error retrieving memory dumps. Cmd: " + command, e.Message + e.StackTrace);
+            }
+
+            
         }
 
     }

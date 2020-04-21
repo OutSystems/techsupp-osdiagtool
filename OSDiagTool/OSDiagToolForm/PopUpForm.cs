@@ -20,6 +20,10 @@ namespace OSDiagTool.OSDiagToolForm {
 
             if (feedbackType.Equals(_feedbackWaitType)) {
                 bt_CloseFormPopUp.Visible = false;
+                /*pb_progressBar.Style = ProgressBarStyle.Marquee;
+                pb_progressBar.MarqueeAnimationSpeed = 80;
+                pb_progressBar.Visible = true;*/
+
             } else if (feedbackType.Equals(_feedbackDoneType)) {
                 this.Width = this.Width * 3;
                 bt_CloseFormPopUp.Location = new Point(bt_CloseFormPopUp.Location.X * 4, bt_CloseFormPopUp.Location.Y);

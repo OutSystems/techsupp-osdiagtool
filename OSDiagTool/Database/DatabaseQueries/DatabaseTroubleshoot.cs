@@ -22,6 +22,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
                 List<string> blockingAndBlockedSpids = new List<string>();
 
                 int top_statCachedPlan = Convert.ToInt32(configurations.databaseQueryConfigurations[OSDiagToolConfReader._l3_sqlServer][OSDiagToolConfReader._l4_top_statCachedPlans]);
+                int top_topCPU = Convert.ToInt32(configurations.databaseQueryConfigurations[OSDiagToolConfReader._l3_sqlServer][OSDiagToolConfReader._l4_top_topCPU]);
 
                 var sqlDBQueries = new SQLServerQueries();
 
@@ -29,7 +30,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
                     { "sessionsSp_Who2", sqlDBQueries.sessionsSp_Who2 },
                     { "sessionsSp_Who2_Blocked", sqlDBQueries.sessionsSp_Who2_Blocked },
                     { "statCachedPlan", string.Format(sqlDBQueries.statCachedPlans, top_statCachedPlan) },
-                    { "costlyCPUQueries", sqlDBQueries.costlyCPUQueries },
+                    { "costlyCPUQueries", string.Format(sqlDBQueries.costlyCPUQueries, top_topCPU) },
                     { "dbccInputBuffer", sqlDBQueries.dbccInputBuffer } 
                 };
 

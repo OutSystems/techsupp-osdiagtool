@@ -20,7 +20,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
             JOIN master.dbo.sysdatabases sd ON sp.dbid = sd.dbid WHERE blocked <> 0
             ORDER BY cpu DESC";
 
-        public string costlyCPUQueries { get; set; } = @"SELECT TOP 20
+        public string costlyCPUQueries { get; set; } = @"SELECT TOP {0}
             last_execution_time, qs.execution_count,
             total_CPU_inSeconds = --Converted from microseconds
                 qs.total_worker_time/1000000,

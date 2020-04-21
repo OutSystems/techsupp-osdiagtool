@@ -178,8 +178,6 @@ namespace OSDiagTool
 
                             FileLogger.TraceLog("Performing Database Troubleshoot...");
 
-                            FileLogger.TraceLog("DataSource: " + sqlConnString.dataSource + ";" + " Catalog: " + sqlConnString.initialCatalog);
-
                             sqlConnString.userId = FormConfigurations.saUser;
                             sqlConnString.pwd = FormConfigurations.saPwd; 
 
@@ -234,7 +232,7 @@ namespace OSDiagTool
 
                             using (connection) {
                                 FileLogger.TraceLog("Starting exporting tables: ");
-                                foreach (string table in configurations.tableNames) {
+                                foreach (string table in FormConfigurations.metamodelTables) {
                                     if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                         FileLogger.TraceLog(table + ", ", writeDateTime: false);
                                         string selectAllQuery = "SELECT * FROM " + table;
@@ -310,7 +308,7 @@ namespace OSDiagTool
 
                             using (connection) {
                                 FileLogger.TraceLog("Starting exporting tables: ");
-                                foreach (string table in configurations.tableNames) {
+                                foreach (string table in FormConfigurations.metamodelTables) {
                                     if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
                                         FileLogger.TraceLog(table + ", ", writeDateTime: false);
                                         string selectAllQuery = "SELECT * FROM " + platformDBAdminUser + "." + table;
@@ -509,7 +507,7 @@ namespace OSDiagTool
             }
             
 
-        private static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
+        public static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
         {
 
             List<string> processList = new List<string>();
@@ -551,7 +549,7 @@ namespace OSDiagTool
                         string filename = "memdump_" + processTag + pidSuf + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".dmp";
 
                         FileLogger.TraceLog(" - PID " + pid + " - ");
-                        command = new CmdLineCommand("procdump64.exe -ma " + pid + " /accepteula " + Path.Combine(memoryDumpsPath, filename));
+                        command = new CmdLineCommand("procdump64.exe -ma " + pid + " /accepteula " + "\"" + Path.Combine(memoryDumpsPath, filename) + "\"");
                         command.Execute();
                     }
 

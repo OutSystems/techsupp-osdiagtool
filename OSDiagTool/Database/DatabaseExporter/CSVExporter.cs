@@ -120,7 +120,11 @@ namespace OSDiagTool.DatabaseExporter {
                     for (int i = 0; i < dr.FieldCount; i++) {
                         string name = dr.GetName(i);
 
-                        fs.Write(name + ";");
+                        if (name.Contains(",")) {
+                            name = name.Replace(",", "_"); // replacing commas for _ to avoid writting in a next cell
+                        }
+
+                        fs.Write(name + ",");
                     }
 
                     fs.WriteLine();
@@ -129,7 +133,11 @@ namespace OSDiagTool.DatabaseExporter {
                         for (int i = 0; i < dr.FieldCount; i++) {
                             string value = dr[i].ToString();
 
-                            fs.Write(value + ";");
+                            if (value.Contains(",")) {
+                                value = value.Replace(",", "_"); // replacing commas for _ to avoid writting in a next cell
+                            }
+
+                            fs.Write(value + ",");
                         }
                         fs.WriteLine();
                     }

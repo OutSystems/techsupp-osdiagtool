@@ -25,6 +25,7 @@
         private void InitializeComponent() {
             this.lbl_message = new System.Windows.Forms.Label();
             this.bt_CloseFormPopUp = new System.Windows.Forms.Button();
+            this.pb_progressBar = new System.Windows.Forms.ProgressBar();
             this.SuspendLayout();
             // 
             // lbl_message
@@ -46,11 +47,20 @@
             this.bt_CloseFormPopUp.UseVisualStyleBackColor = true;
             this.bt_CloseFormPopUp.Click += new System.EventHandler(this.bt_CloseFormPopUp_Click);
             // 
+            // pb_progressBar
+            // 
+            this.pb_progressBar.Location = new System.Drawing.Point(12, 50);
+            this.pb_progressBar.Name = "pb_progressBar";
+            this.pb_progressBar.Size = new System.Drawing.Size(205, 23);
+            this.pb_progressBar.TabIndex = 2;
+            this.pb_progressBar.Visible = false;
+            // 
             // puf_popUpForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(229, 114);
+            this.Controls.Add(this.pb_progressBar);
             this.Controls.Add(this.bt_CloseFormPopUp);
             this.Controls.Add(this.lbl_message);
             this.MaximizeBox = false;
@@ -67,5 +77,6 @@
 
         private System.Windows.Forms.Label lbl_message;
         private System.Windows.Forms.Button bt_CloseFormPopUp;
+        private System.Windows.Forms.ProgressBar pb_progressBar;
     }
 }

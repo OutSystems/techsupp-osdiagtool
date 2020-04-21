@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using OSDiagTool.OSDiagToolConf;
+using System.Threading;
 
 namespace OSDiagTool.OSDiagToolForm {
     public partial class OsDiagForm : Form {
@@ -53,6 +54,13 @@ namespace OSDiagTool.OSDiagToolForm {
             this.cb_dbTroubleshoot.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_databaseTroubleshoot];
 
             this.lb_metamodelTables.Items.AddRange(configurations.tableNames.ToArray()); // add Platform Metamodel tables to list box
+
+            /*BackgroundWorker backgroundWorker1 = new BackgroundWorker();
+            backgroundWorker1.DoWork += new DoWorkEventHandler(backgroundWorker1_DoWork);
+            backgroundWorker1.ProgressChanged += backgroundWorker1_ProgressChanged;
+            backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;  //Tell the user how the process went
+            backgroundWorker1.WorkerReportsProgress = true;
+            backgroundWorker1.WorkerSupportsCancellation = true;*/
 
 
             bt_TestSaConnection.Click += delegate (object sender, EventArgs e) { bt_TestSaConnection_Click(sender, e, dbms, SQLConnectionString, OracleConnectionString); };
@@ -99,7 +107,7 @@ namespace OSDiagTool.OSDiagToolForm {
         private void bt_runOsDiagTool_Click(object sender, EventArgs e, OSDiagToolConf.ConfModel.strConfModel configurations) {
 
             Cursor = Cursors.WaitCursor;
-
+            
             puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, _waitMessage);
             popup.Show();
             popup.Refresh();
@@ -135,6 +143,8 @@ namespace OSDiagTool.OSDiagToolForm {
             };
 
             formConfigurations.cbConfs = dictHelper;
+
+            /*backgroundWorker1.RunWorkerAsync();*/
 
             OSDiagTool.Program.RunOsDiagTool(formConfigurations, configurations);
 
@@ -182,5 +192,19 @@ namespace OSDiagTool.OSDiagToolForm {
             this.lb_metamodelTables.Items.Remove(selectedItem);
 
         }
+
+        /*private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e) {
+            for (int i = 0; i < 100; i++) {
+                Thread.Sleep(1000);
+                backgroundWorker1.ReportProgress(i);
+
+                //Check if there is a request to cancel the process
+                if (backgroundWorker1.CancellationPending) {
+                    e.Cancel = true;
+                    backgroundWorker1.ReportProgress(0);
+                    return;
+                }
+            }
+        */
     }
 }

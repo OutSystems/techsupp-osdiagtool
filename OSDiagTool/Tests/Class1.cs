@@ -12,6 +12,7 @@ using OSDiagTool.OSDiagToolConf;
 using OSDiagTool.DatabaseExporter;
 using System.Data.SqlClient;
 using OSDiagTool.Database.DatabaseQueries;
+using OSDiagTool;
 
 namespace OSDiagTool.Tests
 {
@@ -26,7 +27,11 @@ namespace OSDiagTool.Tests
         static void Main(string[] args)
         {
 
-            string dbEngine = "oracle";
+
+
+            Program.CollectMemoryDumps(true, true);
+
+            /*string dbEngine = "oracle";
             int queryTimeout = 30;
 
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
@@ -133,7 +138,7 @@ namespace OSDiagTool.Tests
             //var xmlString = XDocument.Load(_oSDiagToolConfPath);
 
 
-            /*// Querying the data
+            // Querying the data
             var query = from p in xmlString.Descendants("configuration")
                         select new
                         {
@@ -141,9 +146,13 @@ namespace OSDiagTool.Tests
                             //test = p.Element("OSDiagToolConf").Attribute("queryTimeout").Value,
                         };
 
-            string test = query.First().test.ToLower();*/
+            string test = query.First().test.ToLower();
 
-            //return test;
+
+            */
+
+
+            //return test; 
         }
 
         // must still be added to the Tool code
@@ -172,17 +181,6 @@ namespace OSDiagTool.Tests
                 HsConfPropertiesVal.Add(HsconfProperty, _propValue);
                 Console.WriteLine(HsconfProperty + " " + _propValue);
             }
-        }
-
-        private static bool Test() {
-
-            try {
-                OSDiagConfReader();
-            } catch {
-                return false;
-            }
-
-            return true;
         }
     }
 }

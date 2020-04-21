@@ -45,4 +45,3 @@ C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool
 C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.exe
 C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.pdb
 C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.OSDiagToolForm.puf_popUpForm.resources
-C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\obj\Debug\OSDiagTool.csprojAssemblyReference.cache
