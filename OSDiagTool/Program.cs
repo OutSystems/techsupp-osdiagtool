@@ -36,7 +36,7 @@ namespace OSDiagTool
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
-        public static string _zipFileLocation;
+        public static string _endFeedback;
 
 
         static void Main(string[] args) {
@@ -44,29 +44,45 @@ namespace OSDiagTool
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
-            RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
-            string _osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
 
-            ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, _osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
-
-            var sqlConnString = new DBConnector.SQLConnStringModel();
-            var orclConnString = new DBConnector.OracleConnStringModel();
-
-            if (platformDBInfo.DBMS.ToLower().Equals("sqlserver")) {
-
-                sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
-                sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
-
-            } else if (platformDBInfo.DBMS.ToLower().Equals("oracle")) {
-
-                orclConnString.host = platformDBInfo.GetProperty("Host").Value;
-                orclConnString.port = platformDBInfo.GetProperty("Port").Value;
-                orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
+            string _osPlatformVersion = null;
+            try {
+                RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
+                _osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
+            } catch (Exception e) {
+                //
             }
+            
 
-            Application.EnableVisualStyles();
-            Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
+            if(_osPlatformVersion == null) {
+
+                Application.Run(new OSDiagToolForm.puf_popUpForm(OSDiagToolForm.puf_popUpForm._feedbackErrorType, "OutSystems Platform Server not found. "));
+
+            }
+            else {
+
+                ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, _osPlatformVersion);
+                ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+                var sqlConnString = new DBConnector.SQLConnStringModel();
+                var orclConnString = new DBConnector.OracleConnStringModel();
+
+                if (platformDBInfo.DBMS.ToLower().Equals("sqlserver")) {
+
+                    sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
+                    sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
+
+                } else if (platformDBInfo.DBMS.ToLower().Equals("oracle")) {
+
+                    orclConnString.host = platformDBInfo.GetProperty("Host").Value;
+                    orclConnString.port = platformDBInfo.GetProperty("Port").Value;
+                    orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
+                }
+
+                Application.EnableVisualStyles();
+                Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
+
+            }
 
         }
 
@@ -96,7 +112,7 @@ namespace OSDiagTool
             using (var errorTxtFile = File.Create(_errorDumpFile));
 
             string osPlatformVersion = Platform.PlatformVersion.GetPlatformVersion(_osServerRegistry);
-
+ 
             Object obj = RegistryClass.GetRegistryValue(_osServerRegistry, ""); // The "Defaut" values are empty strings.
 
             // Process Platform and Server Configuration files
@@ -109,7 +125,7 @@ namespace OSDiagTool
                 FileLogger.TraceLog("Generating log files... ");
                 welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
                 FileLogger.TraceLog("DONE", true);
-                ExecuteCommands(); 
+                ExecuteCommands();
 
                 // Export Registry information
                 // Create directory for Registry information
@@ -130,7 +146,7 @@ namespace OSDiagTool
                     FileLogger.LogError("Failed to export Registry:", e.Message + e.StackTrace);
                 }
             }
-            
+
             // Reading serverhsconf and private key files
             string privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
             string platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
@@ -146,7 +162,7 @@ namespace OSDiagTool
 
             // Retrieving IIS access logs
             if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slIisLogs, out bool getIisLogs) && getIisLogs == true) {
-                
+
                 IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, configurations.IISLogsNrDays);
             }
 
@@ -154,8 +170,8 @@ namespace OSDiagTool
 
             // Database Export
             if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool _getPlatformMetamodel) && _getPlatformMetamodel == true) ||
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true) || 
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformLogs, out bool _getPlatformLogs) && _getPlatformLogs == true)){
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true) ||
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformLogs, out bool _getPlatformLogs) && _getPlatformLogs == true)) {
 
                 try {
 
@@ -172,19 +188,19 @@ namespace OSDiagTool
                         var sqlConnString = new DBConnector.SQLConnStringModel();
                         string platformDBServer = sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                         string platformDBCatalog = sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
-                        
+
                         // Database Troubleshoot // use sa
                         if (doDbTroubleshoot) {
 
                             FileLogger.TraceLog("Performing Database Troubleshoot...");
 
                             sqlConnString.userId = FormConfigurations.saUser;
-                            sqlConnString.pwd = FormConfigurations.saPwd; 
+                            sqlConnString.pwd = FormConfigurations.saPwd;
 
                             Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, sqlConnString);
-                        }                      
+                        }
 
-                        
+
                         if (diGetPlatformLogs) {
 
                             FileLogger.TraceLog("Exporting Platform Logs...");
@@ -193,10 +209,10 @@ namespace OSDiagTool
                                 sqlConnString.dataSource = loggingDBInfo.GetProperty("Server").Value;
                                 sqlConnString.userId = loggingDBInfo.GetProperty("RuntimeUser").Value; // needs to use oslog configurations
                                 sqlConnString.pwd = loggingDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
-                                sqlConnString.initialCatalog = loggingDBInfo.GetProperty("Catalog").Value; 
+                                sqlConnString.initialCatalog = loggingDBInfo.GetProperty("Catalog").Value;
 
                             }
-                            
+
 
                             List<string> platformLogs = new List<string>();
                             foreach (string table in configurations.tableNames) { // add only oslog tables to list
@@ -208,7 +224,7 @@ namespace OSDiagTool
                             Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
 
                         }
-                        
+
                         if (getPlatformMetamodel) {
 
                             FileLogger.TraceLog("Exporting Platform Metamodel...");
@@ -257,7 +273,7 @@ namespace OSDiagTool
                             FileLogger.TraceLog("Performing Database Troubleshoot...");
 
                             orclConnString.userId = FormConfigurations.saUser;
-                            orclConnString.pwd = FormConfigurations.saPwd; 
+                            orclConnString.pwd = FormConfigurations.saPwd;
 
                             Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, null, orclConnString);
                         }
@@ -271,7 +287,7 @@ namespace OSDiagTool
                                 // needs to use oslog configurations
                                 orclConnString.host = loggingDBInfo.GetProperty("Host").Value;
                                 orclConnString.port = loggingDBInfo.GetProperty("Port").Value;
-                                orclConnString.userId = loggingDBInfo.GetProperty("AdminUser").Value; 
+                                orclConnString.userId = loggingDBInfo.GetProperty("AdminUser").Value;
                                 orclConnString.pwd = loggingDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
                                 orclConnString.serviceName = loggingDBInfo.GetProperty("ServiceName").Value;
 
@@ -327,9 +343,9 @@ namespace OSDiagTool
                 FileLogger.TraceLog("DONE", true);
             }
 
-            
-            if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdIis, out bool getIisThreadDumps) && getIisThreadDumps == true) || 
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool _getOsThreadDumps) &&_getOsThreadDumps == true)) {
+
+            if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdIis, out bool getIisThreadDumps) && getIisThreadDumps == true) ||
+                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool _getOsThreadDumps) && _getOsThreadDumps == true)) {
 
                 FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool getOsThreadDumps); // necessary because the first condition can be evaluated to true and second condition may never be checked
                 CollectThreadDumps(getIisThreadDumps, getOsThreadDumps);
@@ -349,16 +365,17 @@ namespace OSDiagTool
             Console.WriteLine();
             FileLogger.TraceLog("Creating zip file... ");
             _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip"); // need to assign again in case the user runs the tool a second time
-            fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true); 
+            fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true);
             Console.WriteLine("DONE");
 
             // Delete temp folder
             Directory.Delete(_tempFolderPath, true);
 
-            _zipFileLocation = _targetZipFile;
+            _endFeedback = "File Location: " +_targetZipFile;
 
             // Print process end
             PrintEnd();
+
         }
 
         // write a generic exit line and wait for user input

@@ -151,7 +151,7 @@ namespace OSDiagTool.OSDiagToolForm {
             popup.Dispose();
             popup.Close();
 
-            puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + "Location: " + Program._zipFileLocation);
+            puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + Program._endFeedback);
             popup2.ShowDialog();
 
             Cursor = Cursors.Arrow;
