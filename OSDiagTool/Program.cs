@@ -45,12 +45,12 @@ namespace OSDiagTool
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
 
-            string _osPlatformVersion = null;
+            string _osPlatformVersion;
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
                 _osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
             } catch (Exception e) {
-                //
+                _osPlatformVersion = null;
             }
             
 
