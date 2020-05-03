@@ -107,6 +107,7 @@
     <Compile Include="OSDiagToolConf\ConfModel.cs" />
     <Compile Include="OSDiagToolConf\MetamodelTables.cs" />
     <Compile Include="OSDiagToolConf\OSDiagToolConfReader.cs" />
+    <Compile Include="OSDiagToolConf\OSDiagToolHelper.cs" />
     <Compile Include="OSDiagToolForm\OsDiagFormConfModel.cs" />
     <Compile Include="OSDiagToolForm\OSDiagFormUI.cs">
       <SubType>Form</SubType>

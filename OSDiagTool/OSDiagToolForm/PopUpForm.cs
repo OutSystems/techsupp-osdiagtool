@@ -16,14 +16,19 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _feedbackDoneType = "done";
         public static string _feedbackErrorType = "error";
 
-        public puf_popUpForm(string feedbackType, string message) {
+        public puf_popUpForm(string feedbackType, string message, int totalSteps = 0) {
             InitializeComponent();
 
             if (feedbackType.Equals(_feedbackWaitType)) {
                 bt_CloseFormPopUp.Visible = false;
-                /*pb_progressBar.Style = ProgressBarStyle.Marquee;
-                pb_progressBar.MarqueeAnimationSpeed = 80;
-                pb_progressBar.Visible = true;*/
+                this.Width = this.Width * 6/5;
+                pb_progressBar.Style = ProgressBarStyle.Continuous;
+                pb_progressBar.Width = pb_progressBar.Width * 6 / 5;
+                pb_progressBar.Maximum = 100;
+                pb_progressBar.Value = 0;
+                pb_progressBar.Step = pb_progressBar.Maximum/totalSteps;
+                pb_progressBar.PerformStep();
+                pb_progressBar.Visible = true;
 
             } else if (feedbackType.Equals(_feedbackDoneType)) {
                 this.Width = this.Width * 3;
@@ -41,5 +46,18 @@ namespace OSDiagTool.OSDiagToolForm {
             this.Dispose();
             this.Close();
         }
+
+        public static void ChangeFeedbackLabelAndProgressBar (puf_popUpForm popUpForm, string labelText) {
+
+            popUpForm.lbl_message.Text = labelText;
+            if(!(popUpForm.pb_progressBar.Value >= popUpForm.pb_progressBar.Maximum)) {
+                popUpForm.pb_progressBar.PerformStep();
+            }
+            
+            popUpForm.Refresh();
+
+        }
+
+         
     }
 }

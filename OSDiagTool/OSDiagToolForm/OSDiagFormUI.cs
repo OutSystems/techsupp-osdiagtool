@@ -18,7 +18,7 @@ namespace OSDiagTool.OSDiagToolForm {
         private static string _helpLink = "https://success.outsystems.com/Support/Enterprise_Customers/Troubleshooting/OSDiagTool_-_OutSystems_Support_Diagnostics_Tool";
         private static string _failedConnectionTest = "Test Connection: Failed";
         private static string _successConnectionTest = "Test Connection: Successful";
-        private static string _waitMessage = "OSDiagTool running. Please wait...";
+        public static string _waitMessage = "OSDiagTool running. Please wait...";
         private static string _doneMessage = "OSDiagTool has finished!";
         public static string _tdIis = "Threads IIS";
         public static string _tdOsServices = "Threads OS Services";
@@ -54,13 +54,6 @@ namespace OSDiagTool.OSDiagToolForm {
             this.cb_dbTroubleshoot.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_databaseTroubleshoot];
 
             this.lb_metamodelTables.Items.AddRange(configurations.tableNames.ToArray()); // add Platform Metamodel tables to list box
-
-            /*BackgroundWorker backgroundWorker1 = new BackgroundWorker();
-            backgroundWorker1.DoWork += new DoWorkEventHandler(backgroundWorker1_DoWork);
-            backgroundWorker1.ProgressChanged += backgroundWorker1_ProgressChanged;
-            backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;  //Tell the user how the process went
-            backgroundWorker1.WorkerReportsProgress = true;
-            backgroundWorker1.WorkerSupportsCancellation = true;*/
 
 
             bt_TestSaConnection.Click += delegate (object sender, EventArgs e) { bt_TestSaConnection_Click(sender, e, dbms, SQLConnectionString, OracleConnectionString); };
@@ -108,9 +101,11 @@ namespace OSDiagTool.OSDiagToolForm {
 
             Cursor = Cursors.WaitCursor;
             
+            /*
             puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, _waitMessage);
             popup.Show();
             popup.Refresh();
+            */
 
             var formConfigurations = new OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel();
             List<string> tableNameHelper = new List<string>();
@@ -142,17 +137,19 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _plPlatformAndServerFiles, cb_platformAndServerFiles.Checked },
             };
 
-            formConfigurations.cbConfs = dictHelper;
 
-            /*backgroundWorker1.RunWorkerAsync();*/
+            formConfigurations.cbConfs = dictHelper;
 
             OSDiagTool.Program.RunOsDiagTool(formConfigurations, configurations);
 
+            /*
             popup.Dispose();
             popup.Close();
+            */
 
             puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + Program._endFeedback);
             popup2.ShowDialog();
+            
 
             Cursor = Cursors.Arrow;
 
@@ -193,18 +190,18 @@ namespace OSDiagTool.OSDiagToolForm {
 
         }
 
-        /*private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e) {
-            for (int i = 0; i < 100; i++) {
-                Thread.Sleep(1000);
-                backgroundWorker1.ReportProgress(i);
+        
 
-                //Check if there is a request to cancel the process
-                if (backgroundWorker1.CancellationPending) {
-                    e.Cancel = true;
-                    backgroundWorker1.ReportProgress(0);
-                    return;
-                }
-            }
-        */
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e) {
+
+        }
+
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e) {
+
+        }
+
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
+
+        }
     }
 }
