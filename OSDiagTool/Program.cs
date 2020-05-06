@@ -44,15 +44,13 @@ namespace OSDiagTool
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
-
             string _osPlatformVersion;
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
                 _osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
             } catch (Exception e) {
                 _osPlatformVersion = null;
-            }
-            
+            }    
 
             if(_osPlatformVersion == null) {
 
@@ -121,7 +119,8 @@ namespace OSDiagTool
                 OSDiagToolForm.puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Copying Platform and Server configuration files...");
                 FileLogger.TraceLog("Copying Platform and Server configuration files... ");
                 Directory.CreateDirectory(_osPlatFilesDest);
-                CopyPlatformAndServerConfFiles();
+                Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _machineConfigPath, _osPlatFilesDest);
+                //CopyPlatformAndServerConfFiles();
             }
 
             // Export Event Viewer and Server Logs
@@ -401,64 +400,6 @@ namespace OSDiagTool
             _endFeedback = "File Location: " +_targetZipFile;
 
 
-        }
-
-
-        private static void CopyPlatformAndServerConfFiles()
-        {
-            // List of OS services and components
-            IDictionary<string, string> osServiceNames = new Dictionary<string, string> {
-                { "ConfigurationTool", "Configuration Tool" },
-                { "LogServer", "Log Service" },
-                { "CompilerService", "Deployment Controller Service" },
-                { "DeployService", "Deployment Service" },
-                { "Scheduler", "Scheduler Service" },
-                { "SMSConnector", "SMS Service" }
-            };
-
-            // Initialize dictionary with all the files that we need to get and can be accessed directly
-            IDictionary<string, string> files = new Dictionary<string, string> {
-                { "ServerHSConf", Path.Combine(_osInstallationFolder, "server.hsconf") },
-                { "OSVersion", Path.Combine(_osInstallationFolder, "version.txt") },
-                { "applicationHost.config", _iisApplicationHostPath },
-                { "machine.config", _machineConfigPath }
-            };
-
-            // Add OS log and configuration files
-            foreach (KeyValuePair<string, string> serviceFileEntry in osServiceNames)
-            {
-                string confFilePath = Path.Combine(_osInstallationFolder, serviceFileEntry.Key + ".exe.config");
-
-                // Get log file location from conf file
-                OSServiceConfigFileParser confParser = new OSServiceConfigFileParser(serviceFileEntry.Value, confFilePath);
-                string logPath = confParser.LogFilePath;
-
-                // Add properties file
-                files.Add(serviceFileEntry.Value + " config", confFilePath);
-
-                // Add log file
-                files.Add(serviceFileEntry.Value + " log", logPath);
-            }
-
-            // Copy all files to the temporary folder
-            foreach (KeyValuePair<string, string> fileEntry in files)
-            {
-                String filepath = fileEntry.Value;
-                String fileAlias = fileEntry.Key;
-
-                FileLogger.TraceLog("Copying " + fileAlias + "... ");
-                if (File.Exists(filepath))
-                {
-                    String realFilename = Path.GetFileName(filepath);
-                    File.Copy(filepath, Path.Combine(_osPlatFilesDest, realFilename));
-
-                    FileLogger.TraceLog("DONE", true);
-                }
-                else
-                {
-                    FileLogger.TraceLog("(File does not exist)", true);
-                }
-            }
         }
 
         private static void ExecuteCommands()
