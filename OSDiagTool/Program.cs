@@ -84,6 +84,172 @@ namespace OSDiagTool
 
         }
 
+        /* REFACTOR */
+        public static void OSDiagToolInitialization() {
+
+            // Operations that are necessary before collecting info
+
+            // Delete temporary directory and all contents if it already exists (e.g.: error runs)
+            if (Directory.Exists(_tempFolderPath)) {
+                Directory.Delete(_tempFolderPath, true);
+            }
+
+            // Create temporary directory 
+            Directory.CreateDirectory(_tempFolderPath);
+
+            // Creates a file to log traces during the execution
+            using (var errorTxtFile = File.Create(_errorDumpFile));
+
+
+        }
+
+        public static void GetPlatformAndServerFiles() {
+
+            // Process Platform and Server Configuration files
+            FileLogger.TraceLog("Copying Platform and Server configuration files... ");
+            Directory.CreateDirectory(_osPlatFilesDest);
+            Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _machineConfigPath, _osPlatFilesDest);
+            
+        }
+
+        public static void ExportEventViewerAndServerLogs() {
+
+            WindowsEventLogHelper welHelper = new WindowsEventLogHelper();
+
+            FileLogger.TraceLog("Exporting Event Viewer and Server logs... ");
+            Directory.CreateDirectory(_evtVwrLogsDest);
+            Directory.CreateDirectory(_windowsInfoDest);
+            welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
+            ExecuteCommands();
+
+            // Export Registry information
+            // Create directory for Registry information
+            Directory.CreateDirectory(Path.Combine(_tempFolderPath, "RegistryInformation"));
+            string registryInformationPath = Path.Combine(_tempFolderPath, "RegistryInformation");
+
+            // Fetch Registry key values and subkeys values
+            try {
+                FileLogger.TraceLog("Exporting Registry information...");
+
+                RegistryClass.RegistryCopy(_sslProtocolsRegistryPath, Path.Combine(registryInformationPath, "SSLProtocols.txt"), true);
+                RegistryClass.RegistryCopy(_netFrameworkRegistryPath, Path.Combine(registryInformationPath, "NetFramework.txt"), true);
+                RegistryClass.RegistryCopy(_iisRegistryPath, Path.Combine(registryInformationPath, "IIS.txt"), true);
+                RegistryClass.RegistryCopy(_outSystemsPlatformRegistryPath, Path.Combine(registryInformationPath, "OutSystemsPlatform.txt"), true);
+
+            } catch (Exception e) {
+                FileLogger.LogError("Failed to export Registry:", e.Message + e.StackTrace);
+            }
+            
+        }                       
+
+        public static void CopyIISAccessLogs(int iisLogsNrDays) {
+
+            FileSystemHelper fsHelper = new FileSystemHelper();
+            FileLogger.TraceLog(string.Format("Exporting IIS Access logs({0} days)...", iisLogsNrDays));
+            IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, iisLogsNrDays);
+            
+        }
+
+        public static void DatabaseTroubleshootProgram(string dbEngine, ref OSDiagToolConf.ConfModel.strConfModel configurations, string _osDatabaseTroubleshootDest, DBConnector.SQLConnStringModel sqlConnString) {
+
+            Directory.CreateDirectory(_osDatabaseTroubleshootDest);
+
+            try {
+                FileLogger.TraceLog("Performing SQL Server Database Troubleshoot...");
+                Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, sqlConnString);
+
+            } catch (Exception e) {
+                FileLogger.LogError("Failed to perform Database Troubleshoot", e.Message + e.StackTrace); //TBC
+            }
+
+        }
+
+        public static void ExportPlatformMetamodel(string dbEngine, ref OSDiagToolConf.ConfModel.strConfModel configurations, ref OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, DBConnector.SQLConnStringModel sqlConnString, puf_popUpForm popup) {
+
+            OSDiagToolForm.puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Exporting Platform metamodel...");
+            FileLogger.TraceLog("Exporting Platform Metamodel...");
+
+            var connector = new DBConnector.SLQDBConnector();
+            SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
+
+            string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1"; // check if it's registered on LifeTime. If it isn't, assume it's LifeTime
+
+            SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, connection) {
+                CommandTimeout = configurations.queryTimeout
+            };
+
+            cmd.ExecuteNonQuery();
+            int count = Convert.ToInt32(cmd.ExecuteScalar());
+
+            using (connection) {
+                FileLogger.TraceLog("Starting exporting tables: ");
+                foreach (string table in FormConfigurations.metamodelTables) {
+                    if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                        string selectAllQuery = "SELECT * FROM " + table;
+                        CSVExporter.SQLToCSVExport(dbEngine, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
+                    }
+                }
+            }
+        }
+
+        public static void ExportServiceCenterLogs(string dbEngine, ref OSDiagToolConf.ConfModel.strConfModel configurations, ref OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, DBConnector.SQLConnStringModel sqlConnString, bool separateLogCatalog, puf_popUpForm popup) {
+
+            OSDiagToolForm.puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, string.Format("Exporting Platform logs ({0} records)...", FormConfigurations.osLogTopRecords));
+            FileLogger.TraceLog(string.Format("Exporting Platform logs ({0} records)...", FormConfigurations.osLogTopRecords));
+
+            List<string> platformLogs = new List<string>();
+            foreach (string table in configurations.tableNames) { // add only oslog tables to list
+                if (table.ToLower().StartsWith("oslog")) {
+                    platformLogs.Add(table);
+                }
+            }
+
+            Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
+
+        }
+
+        public static void CollectThreadDumps(bool getIisThreadDumps, bool getOsThreadDumps, puf_popUpForm popup) {
+
+            OSDiagToolForm.puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Collecting thread dumps...");
+            FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS thread dumps: {0} ; OutSystems Services thread dumps: {1})", getIisThreadDumps, getOsThreadDumps));
+
+            CollectThreadDumps(getIisThreadDumps, getOsThreadDumps); // evaluate if this method is really necessary
+
+        }
+
+        public static void CollectMemoryDumps(bool getIisMemDumps, bool getOsMemDumps, puf_popUpForm popup) {
+
+            OSDiagToolForm.puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Collecting memory dumps...");
+            FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS memory dumps: {0} ; OutSystems Services memory dumps: {1})", getIisMemDumps, getOsMemDumps));
+
+            CollectMemoryDumps(getIisMemDumps, getOsMemDumps);
+
+        }
+
+        public static void GenerateZipFile(FileSystemHelper fsHelper, puf_popUpForm popup) {
+
+            OSDiagToolForm.puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Zipping file...");
+            FileLogger.TraceLog("Creating zip file... ");
+            _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip"); // need to assign again in case the user runs the tool a second time
+            fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true);
+
+            // Delete temp folder
+            Directory.Delete(_tempFolderPath, true);
+
+            popup.Dispose();
+            popup.Close();
+
+            _endFeedback = "File Location: " + _targetZipFile;
+        }
+
+        /* REFACTOR */
+
+
+
+
+
+
         public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) {
 
 
@@ -110,9 +276,8 @@ namespace OSDiagTool
             // Create error dump file to log all exceptions during script execution
             using (var errorTxtFile = File.Create(_errorDumpFile));
 
-            string osPlatformVersion = Platform.PlatformVersion.GetPlatformVersion(_osServerRegistry);
- 
-            Object obj = RegistryClass.GetRegistryValue(_osServerRegistry, ""); // The "Defaut" values are empty strings.
+            string osPlatformVersion = Platform.PlatformUtils.GetPlatformVersion(_osServerRegistry);
+            _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
 
             // Process Platform and Server Configuration files
             if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformAndServerFiles, out bool getPSandServerConfFiles) && getPSandServerConfFiles == true) {
@@ -120,7 +285,6 @@ namespace OSDiagTool
                 FileLogger.TraceLog("Copying Platform and Server configuration files... ");
                 Directory.CreateDirectory(_osPlatFilesDest);
                 Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _machineConfigPath, _osPlatFilesDest);
-                //CopyPlatformAndServerConfFiles();
             }
 
             // Export Event Viewer and Server Logs

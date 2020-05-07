@@ -45,8 +45,6 @@ namespace OSDiagTool.Platform {
                         string oracleQuery = "SELECT * FROM (SELECT * FROM {0}.{1} ORDER BY INSTANT DESC) WHERE ROWNUM < {2}";
                         oracleQuery = string.Format(oracleQuery, OracleConnectionString.userId, table, FormConfigurations.osLogTopRecords);
 
-                        //CSVExporter.ORCLToCsvExport(connection, table, outputDestination, configurations.queryTimeout, OracleConnectionString.userId, oracleQuery);
-
                         FileLogger.TraceLog(string.Format("Exporting log table {0} ", table));
 
                         CSVExporter.SQLToCSVExport(dbEngine, table, outputDestination, queryTimeout, oracleQuery, null, connection);

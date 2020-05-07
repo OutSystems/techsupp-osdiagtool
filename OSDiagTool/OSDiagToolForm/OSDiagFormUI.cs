@@ -2,15 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Data.SqlClient;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using OSDiagTool.OSDiagToolConf;
 using System.Threading;
+using OSDiagTool.Platform.ConfigFiles;
+using System.IO;
 
 namespace OSDiagTool.OSDiagToolForm {
     public partial class OsDiagForm : Form {
@@ -101,12 +101,6 @@ namespace OSDiagTool.OSDiagToolForm {
 
             Cursor = Cursors.WaitCursor;
             
-            /*
-            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, _waitMessage);
-            popup.Show();
-            popup.Refresh();
-            */
-
             var formConfigurations = new OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel();
             List<string> tableNameHelper = new List<string>();
 
@@ -137,22 +131,28 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _plPlatformAndServerFiles, cb_platformAndServerFiles.Checked },
             };
 
-
             formConfigurations.cbConfs = dictHelper;
 
+            // Comment here for refactor
+            
+            /////////
             OSDiagTool.Program.RunOsDiagTool(formConfigurations, configurations);
-
-            /*
-            popup.Dispose();
-            popup.Close();
-            */
 
             puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + Program._endFeedback);
             popup2.ShowDialog();
             
-
             Cursor = Cursors.Arrow;
+            /////////
 
+            /* Async */
+            
+            var configurationsHelper = new DataHelperClass.strConfigurations();
+            configurationsHelper.configurations = new OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel();
+            configurationsHelper.configurations.cbConfs = dictHelper;
+
+            backgroundWorker1.RunWorkerAsync(configurationsHelper);
+
+   
         }
 
         private void mstrp_Exit_Click(object sender, EventArgs e) {
@@ -194,6 +194,69 @@ namespace OSDiagTool.OSDiagToolForm {
 
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e) {
 
+            /* REFACTOR */
+            OSDiagToolForm.DataHelperClass.strConfigurations configurationsHelper = (OSDiagToolForm.DataHelperClass.strConfigurations)e.Argument;
+            //OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel formConfigurations = (OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel)e.Argument;
+
+            int numberOfSteps = OSDiagToolHelper.CountSteps(configurationsHelper.configurations.cbConfs);
+
+            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, OsDiagForm._waitMessage, totalSteps: numberOfSteps + 1); // totalSteps + 1 for the zipping
+            popup.Show();
+            popup.Refresh();
+
+
+            puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Initializing OSDiagTool...");
+
+            // Loading of configuration files should be returned by the initialization
+            // Reading serverhsconf and private key files
+            /*
+            string privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
+            string platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+
+            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, osPlatformVersion);
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+            ConfigFileDBInfo loggingDBInfo = null;
+            bool separateLogCatalog = !osPlatformVersion.StartsWith("10.");
+            if (separateLogCatalog) { // Log DB is on a separate DB Catalog starting Platform version 11
+                loggingDBInfo = confFileParser.DBLoggingInfo;
+            }
+            */
+
+            Program.OSDiagToolInitialization();
+
+            // Get Platform and Server files
+            if (configurationsHelper.configurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformAndServerFiles, out bool getPSandServerConfFiles) && getPSandServerConfFiles == true) {
+                puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Copying Platform and Server configuration files...");
+                Program.GetPlatformAndServerFiles();
+            }
+
+            // Export Event Viewer and Server logs
+            if (configurationsHelper.configurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slEvt, out bool getEvt) && getEvt == true) {
+                puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Exporting Event Viewer and Server logs...");
+                Program.ExportEventViewerAndServerLogs();
+            }
+
+            // Copy IIS Access logs
+            if (configurationsHelper.configurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slIisLogs, out bool getIisLogs) && getIisLogs == true) {
+                puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, string.Format("Exporting IIS Access logs ({0} days)...", configurationsHelper.configurations.iisLogsNrDays));
+                Program.CopyIISAccessLogs(configurationsHelper.configurations.iisLogsNrDays);
+            }
+
+            // Database Troubleshoot
+            if (configurationsHelper.configurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true) {
+                puf_popUpForm.ChangeFeedbackLabelAndProgressBar(popup, "Performing Database Troubleshoot...");
+
+
+                //Program.DatabaseTroubleshootProgram();
+
+
+            }
+
+
+            /* REFACTOR */
+
+
         }
 
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e) {
@@ -201,6 +264,8 @@ namespace OSDiagTool.OSDiagToolForm {
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
+
+            
 
         }
     }
