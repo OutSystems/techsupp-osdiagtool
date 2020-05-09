@@ -9,9 +9,11 @@ namespace OSDiagTool.OSDiagToolForm {
 
         public class strConfigurations {
 
-            public OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel configurations { get; set; }
+            public OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations { get; set; }
 
-            public puf_popUpForm popup { get; set; }
+            public OSDiagToolConf.ConfModel.strConfModel ConfigFileConfigurations { get; set; }
+
+            //public puf_popUpForm popup { get; set; }
 
         }
 

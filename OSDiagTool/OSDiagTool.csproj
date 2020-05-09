@@ -127,8 +127,9 @@
     <Compile Include="Platform\ConfigFiles\ConfigFileReader.cs" />
     <Compile Include="Platform\OSServiceConfigFileParser.cs" />
     <Compile Include="Platform\LogExporter.cs" />
+    <Compile Include="Platform\PlatformConnectionStringDefiner.cs" />
     <Compile Include="Platform\PlatformFilesHelper.cs" />
-    <Compile Include="Platform\PlatformVersion.cs" />
+    <Compile Include="Platform\PlatformUtils.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
