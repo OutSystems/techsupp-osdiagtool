@@ -11,18 +11,23 @@ namespace OSDiagTool.Platform {
 
         public DBConnector.SQLConnStringModel SQLConnString { get; set; }
         public DBConnector.OracleConnStringModel OracleConnString { get; set; }
-
+        public string AdminSchema { get; set; }
 
         public PlatformConnectionStringDefiner GetConnectionString(string dbEngine, bool isLogDatabase, bool isSaCredentials, PlatformConnectionStringDefiner ConnStringDefiner, string saUser = null, string saPwd = null) {
 
+            ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            ConfigFileDBInfo loggingDBInfo = confFileParser.DBLoggingInfo;
+
             if (dbEngine.Equals("sqlserver")) {
 
-                ConnStringDefiner.SQLConnString = SetPlatformSQLConnString(isLogDatabase, isSaCredentials, saUser, saPwd);
+                ConnStringDefiner.SQLConnString = SetPlatformSQLConnString(isLogDatabase, isSaCredentials, platformDBInfo, loggingDBInfo, saUser, saPwd);
                 return ConnStringDefiner;
 
             } else if (dbEngine.Equals("oracle")) {
 
-                ConnStringDefiner.OracleConnString = SetPlatformOracleConnString(isLogDatabase, isSaCredentials, saUser, saPwd);
+                ConnStringDefiner.OracleConnString = SetPlatformOracleConnString(isLogDatabase, isSaCredentials, platformDBInfo, loggingDBInfo, saUser, saPwd);
+                ConnStringDefiner.AdminSchema = platformDBInfo.GetProperty("AdminUser").Value;
                 return ConnStringDefiner;
 
             }
@@ -31,10 +36,7 @@ namespace OSDiagTool.Platform {
 
         }
 
-        public DBConnector.SQLConnStringModel SetPlatformSQLConnString(bool isLogDatabase, bool isSaCredentials, string saUser = null, string saPwd = null) {
-
-            ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+        public DBConnector.SQLConnStringModel SetPlatformSQLConnString(bool isLogDatabase, bool isSaCredentials, ConfigFileDBInfo platformDBInfo = null, ConfigFileDBInfo loggingDBInfo = null, string saUser = null, string saPwd = null) {
 
             var sqlConnString = new DBConnector.SQLConnStringModel();
 
@@ -51,7 +53,7 @@ namespace OSDiagTool.Platform {
             }
             else if (isLogDatabase) { // Uses Runtime Log user and Log Catalog
 
-                ConfigFileDBInfo loggingDBInfo = confFileParser.DBLoggingInfo;
+                 
 
                 sqlConnString.dataSource = loggingDBInfo.GetProperty("Server").Value;
                 sqlConnString.userId = loggingDBInfo.GetProperty("RuntimeUser").Value; // needs to use oslog configurations
@@ -72,34 +74,30 @@ namespace OSDiagTool.Platform {
 
         }
 
-        public DBConnector.OracleConnStringModel SetPlatformOracleConnString(bool isLogDatabase, bool isSaCredentials, string saUser = null, string saPwd = null) {
-
-            ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+        public DBConnector.OracleConnStringModel SetPlatformOracleConnString(bool isLogDatabase, bool isSaCredentials, ConfigFileDBInfo platformDBInfo = null, ConfigFileDBInfo loggingDBInfo = null, string saUser = null, string saPwd = null) {
 
             var orclConnString = new DBConnector.OracleConnStringModel();
 
-            if (!isLogDatabase && !isSaCredentials) { // Uses Runtime user and Platform Main Catalog 
+            FileLogger.TraceLog("isLogDB: " + isLogDatabase );
 
-                string platformDBRuntimeUser = platformDBInfo.GetProperty("RuntimeUser").Value;
-                string platformDBRuntimeUserPwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath));
-                string platformDBAdminUser = platformDBInfo.GetProperty("AdminUser").Value;
+            if (!isLogDatabase && !isSaCredentials) { // Uses Runtime user and Platform Main Catalog 
 
                 orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                 orclConnString.port = platformDBInfo.GetProperty("Port").Value;
                 orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
-                orclConnString.userId = platformDBRuntimeUser;
-                orclConnString.pwd = platformDBRuntimeUserPwd;
+                orclConnString.userId = platformDBInfo.GetProperty("RuntimeUser").Value;
+                orclConnString.pwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath));
+                
 
             } else if (isLogDatabase) { // Uses Runtime Log user and Log Catalog
 
-                ConfigFileDBInfo loggingDBInfo = confFileParser.DBLoggingInfo;
+                //ConfigFileDBInfo loggingDBInfo = confFileParser.DBLoggingInfo;
 
                 orclConnString.host = loggingDBInfo.GetProperty("Host").Value;
                 orclConnString.port = loggingDBInfo.GetProperty("Port").Value;
                 orclConnString.serviceName = loggingDBInfo.GetProperty("ServiceName").Value;
-                orclConnString.userId = loggingDBInfo.GetProperty("RuntimeUser").Value; // needs to use oslog configurations
-                orclConnString.pwd = loggingDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath));
+                orclConnString.userId = loggingDBInfo.GetProperty("AdminUser").Value; // needs to use oslog configurations
+                orclConnString.pwd = loggingDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath));
 
 
             } else if (isSaCredentials) { // Uses SA Credentials inputted on the Form
@@ -114,10 +112,5 @@ namespace OSDiagTool.Platform {
 
             return orclConnString;
         }
-
-        
-
-
-
     }
 }

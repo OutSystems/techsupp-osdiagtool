@@ -15,8 +15,8 @@ namespace OSDiagTool
 
         private int _logLevel;
         private string _logFilePath;
-        private string _serverApiFilePath;
-        private string _serverIdentityFilePath;
+        private string _logServerFilePath;
+
         // if needed, we can fetch more info, but this should be enough for now
 
         public OSServiceConfigFileParser(string serviceName, string filepath)
@@ -24,8 +24,6 @@ namespace OSDiagTool
             _serviceName = serviceName;
             _filepath = filepath;
             _isFileLoaded = false;
-            _serverApiFilePath = filepath;
-            _serverIdentityFilePath = filepath;
         }
 
         public OSServiceConfigFileParser(string serviceName, string filepath, bool forceLoad) : this(serviceName, filepath)
@@ -36,15 +34,15 @@ namespace OSDiagTool
                 
         }
 
-        /*public string LogServerAPIAndIdentityFilePath {
+        public string LogServerAPIAndIdentityFilePath {
             get {
                 // lazy load
                 if (!_isFileLoaded)
                     LoadServerAPIAndIdentityLogPath(_filepath);
 
-                return _logFilePath;
+                return _logServerFilePath;
             }
-        }*/
+        }
 
         public string LogFilePath
         {
@@ -128,22 +126,20 @@ namespace OSDiagTool
             }
         }
 
-        private void LoadServerAPIAndIdentityLogPath(XElement root, string serverApiAndIdentityConfPath) {
+        private void LoadServerAPIAndIdentityLogPath(string _filepath) {
 
             try {
+                var xml = XDocument.Load(_filepath);
 
-                /*
-// TODO
+                XNamespace ns = xml.Root.GetDefaultNamespace();
 
-                if (serverApiAndIdentityConfPath.ToLower().Contains("server.api")) {
-                    _serverApiFilePath = path;
-                } else if (serverApiAndIdentityConfPath.ToLower().Contains("server.identity")) {
-                    _serverIdentityFilePath = path;
+                foreach (XElement el in xml.Descendants(ns + "targets").Elements(ns + "target")) {
+                    _logServerFilePath = el.Attribute("fileName").Value.ToString();
+                    break;
                 }
-                */
 
             } catch (Exception e) {
-                FileLogger.LogError("Server API and Server Identity not found", e.Message + e.StackTrace);
+                FileLogger.LogError("Failed to parse Server API / Identity xml ", e.Message + e.StackTrace);
             }
         }
     }

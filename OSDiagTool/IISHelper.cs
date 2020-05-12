@@ -7,6 +7,7 @@ namespace OSDiagTool
 {
     class IISHelper
     {
+
         public static void GetIISAccessLogs(string iisapplicationHostPath, string tempFolderPath, FileSystemHelper fsHelper, int daysToFetch) {
 
             //Retrieving IIS access logs
@@ -37,13 +38,10 @@ namespace OSDiagTool
                 //Copies all the contents from the path iisAcessLogsPath, including contents in subfolder
                 fsHelper.DirectoryCopy(iisAccessLogsPath, Path.Combine(tempFolderPath, "IISLogs"), true, daysToFetch);
 
-                FileLogger.TraceLog("DONE", true);
-
             } catch (Exception e) {
                 FileLogger.LogError("Attempted to retrieve IIS Access logs but failed...", e.Message + e.StackTrace);
             }
 
         }
-
     }
 }

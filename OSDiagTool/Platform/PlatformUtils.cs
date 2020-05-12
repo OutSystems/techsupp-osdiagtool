@@ -19,7 +19,6 @@ namespace OSDiagTool.Platform {
                 FileLogger.TraceLog("Verifying OutSystems Platform Version...");
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(osServerRegistry);
 
-                //string osInstallationFolder = (string)OSPlatformInstaller.GetValue("");
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
                 FileLogger.TraceLog("Platform version: " + osPlatformVersion);
 

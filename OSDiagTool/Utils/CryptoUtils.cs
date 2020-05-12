@@ -14,7 +14,8 @@ namespace OSDiagTool.Utils
      */
     static class CryptoUtils
     {
-        
+        static private RNGCryptoServiceProvider rnd = new RNGCryptoServiceProvider();
+
         private static byte[] DecryptBytes(byte[] key, byte[] iv, byte[] ciphertext)
         {
             using (Aes crypto = new AesManaged() { Mode = CipherMode.CBC, Padding = PaddingMode.PKCS7 })
@@ -44,6 +45,34 @@ namespace OSDiagTool.Utils
             return Encoding.UTF8.GetString(DecryptBytes(the_key, iv, ciphertext));
         }
 
+        /*public static String Encrypt(string key, String plaintext) {
+
+            using (Aes crypto = getCipher()) {
+                byte[] the_key = Convert.FromBase64String(key);
+                crypto.Key = the_key;
+                crypto.IV = getRandomBytes(crypto.BlockSize / 8);
+
+                byte[] plainBytes = Encoding.UTF8.GetBytes(plaintext);
+                MemoryStream ms = new MemoryStream();
+                ms.Write(crypto.IV, 0, crypto.IV.Length);
+                using (CryptoStream cs = new CryptoStream(ms, crypto.CreateEncryptor(crypto.Key, crypto.IV), CryptoStreamMode.Write))
+                    cs.Write(plainBytes, 0, plainBytes.Length);
+                ms.Close();
+                var cipherBytes = ms.ToArray();
+
+                HMACSHA256 mac = new HMACSHA256();
+                mac.Key = the_key;
+
+                var macBytes = mac.ComputeHash(cipherBytes);
+
+                MemoryStream resStream = new MemoryStream();
+                resStream.Write(cipherBytes, 0, cipherBytes.Length);
+                resStream.Write(macBytes, 0, macBytes.Length);
+                return Convert.ToBase64String(resStream.ToArray());
+
+            }
+        }*/
+
         public static string GetPrivateKeyFromFile(string privateKeyFilepath)
         {
             foreach (string line in File.ReadAllLines(privateKeyFilepath))
@@ -68,6 +97,19 @@ namespace OSDiagTool.Utils
                 }
                 return res;
             }
+        }
+
+        private static Aes getCipher() {
+            return new AesManaged() {
+                Mode = CipherMode.CBC,
+                Padding = PaddingMode.PKCS7
+            };
+        }
+
+        private static byte[] getRandomBytes(int count) {
+            byte[] res = new byte[count];
+            rnd.GetBytes(res);
+            return res;
         }
     }
 }

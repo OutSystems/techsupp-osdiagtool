@@ -26,6 +26,7 @@ namespace OSDiagTool
         private static string _netFrameworkRegistryPath = @"SOFTWARE\Microsoft\NET Framework Setup\NDP";
         private static string _outSystemsPlatformRegistryPath = @"SOFTWARE\OutSystems";
         private static string _iisApplicationHostPath = Path.Combine(_windir, @"system32\inetsrv\config\applicationHost.config");
+        private static string _iisWebConfigPath = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), @"inetpub\wwwroot\web.config");
         private static string _machineConfigPath = Path.Combine(_windir, @"Microsoft.NET\Framework64\v4.0.30319\CONFIG\machine.config");
         private static string _evtVwrLogsDest = Path.Combine(_tempFolderPath, "EventViewerLogs");
         private static string _osPlatFilesDest = Path.Combine(_tempFolderPath, "OSPlatformFiles");
@@ -76,7 +77,6 @@ namespace OSDiagTool
 
                 if (dbEngine.Equals("sqlserver")) {
 
-                    
                     sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                     sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
 
@@ -97,9 +97,7 @@ namespace OSDiagTool
         /* REFACTOR */
         public static void OSDiagToolInitialization() {
 
-            //Loading of configuration files should be returned by the initialization
             // Reading serverhsconf and private key files
-
             // Creates a file to log traces during the execution
             // Delete temporary directory and all contents if it already exists (e.g.: error runs)
             if (Directory.Exists(_tempFolderPath)) {
@@ -111,16 +109,11 @@ namespace OSDiagTool
 
             using (var errorTxtFile = File.Create(_errorDumpFile)) ;
 
+            _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
             privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
             platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
-
             osPlatformVersion = Platform.PlatformUtils.GetPlatformVersion(_osServerRegistry);
-            _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
-
             separateLogCatalog = !osPlatformVersion.StartsWith("10.");
-
-            
-
         }
 
         public static void GetPlatformAndServerFiles() {
@@ -128,7 +121,7 @@ namespace OSDiagTool
             // Process Platform and Server Configuration files
             FileLogger.TraceLog("Copying Platform and Server configuration files... ");
             Directory.CreateDirectory(_osPlatFilesDest);
-            Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _machineConfigPath, _osPlatFilesDest);
+            Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _iisWebConfigPath, _machineConfigPath, _osPlatFilesDest);
             
         }
 
@@ -241,7 +234,7 @@ namespace OSDiagTool
         }
 
         public static void ExportServiceCenterLogs(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
-            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null) {
+            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, string adminSchema = null) {
 
             FileLogger.TraceLog(string.Format("Exporting Platform logs ({0} records)...", FormConfigurations.osLogTopRecords));
 
@@ -257,7 +250,7 @@ namespace OSDiagTool
             if (dbEngine.Equals("sqlserver")) {
                 Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
             } else if (dbEngine.Equals("oracle")) {
-                Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString);
+                Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
             }
 
 
@@ -319,7 +312,6 @@ namespace OSDiagTool
             {
                 FileLogger.TraceLog("Getting " + commandEntry.Key + "...");
                 commandEntry.Value.Execute();
-                FileLogger.TraceLog("DONE" + Environment.NewLine);
             }
         }
 
@@ -365,7 +357,6 @@ namespace OSDiagTool
                         }
                     }
 
-                    FileLogger.TraceLog("DONE", true);
                 }
             } catch (Exception e) {
                 FileLogger.LogError("Failed to get thread dump: ", e.Message + e.StackTrace);
@@ -421,7 +412,6 @@ namespace OSDiagTool
                         command.Execute();
                     }
 
-                    FileLogger.TraceLog("DONE", true);
                 }
             } catch(Exception e) {
                 FileLogger.LogError("Failed to get memory dump: ", e.Message + e.StackTrace);

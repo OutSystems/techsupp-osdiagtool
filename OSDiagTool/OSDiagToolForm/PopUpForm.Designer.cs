@@ -83,7 +83,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(229, 114);
+            this.ClientSize = new System.Drawing.Size(225, 114);
             this.Controls.Add(this.bt_CancelOsDiagTool);
             this.Controls.Add(this.lb_ProgressFeedback);
             this.Controls.Add(this.pb_progressBar);

@@ -109,7 +109,9 @@ namespace OSDiagTool.OSDiagToolForm {
                 }
 
             }
-            
+
+            //string test = Utils.CryptoUtils.Encrypt(Utils.CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath), tb_iptSaPwd.Text);
+
             puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackTestConnectionType ,testConnectionResult);
             DialogResult dg = popup.ShowDialog();
         }
@@ -154,7 +156,7 @@ namespace OSDiagTool.OSDiagToolForm {
             configurationsHelper.FormConfigurations = formConfigurations;
 
             int numberOfSteps = OSDiagToolHelper.CountSteps(configurationsHelper.FormConfigurations.cbConfs);
-            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, OsDiagForm._waitMessage, totalSteps: numberOfSteps + 1); // totalSteps + 1 for the zipping
+            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, OsDiagForm._waitMessage, totalSteps: numberOfSteps + 2); // totalSteps + 2 for the zipping and pop up close
             popup.Show();
             popup.Refresh();
             configurationsHelper.popup = popup;
@@ -291,7 +293,7 @@ namespace OSDiagTool.OSDiagToolForm {
                         Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper.SQLConnString, null);
 
                     } else if (Program.dbEngine.Equals("oracle")) {
-                        Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper.OracleConnString);
+                        Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper.OracleConnString, ConnStringHelper.AdminSchema);
 
                     }
                 }
@@ -363,6 +365,7 @@ namespace OSDiagTool.OSDiagToolForm {
 
             if (puf_popUpForm.isBackgroundWorkerCancelled == true) {
                 backgroundWorker1.CancelAsync();
+                puf_popUpForm.isBackgroundWorkerCancelled = false; // reset
             } else {
 
                 FeedbackSteps.TryGetValue(stepId, out string feedbackText);
