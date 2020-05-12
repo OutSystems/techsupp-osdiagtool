@@ -17,9 +17,11 @@ namespace OSDiagTool.OSDiagToolConf {
             _osltmPrefix,
         };
 
-        public bool ValidateMetamodelTableName(string tableName) {
+        public bool ValidateMetamodelTableName(string tableName, List<string> ExistentTables) {
 
-            if(!tableName.ToLower().Contains(" ")) {
+            string item = ExistentTables.Where(x => x.Contains(tableName)).FirstOrDefault();
+
+            if(!(tableName.ToLower().Contains(" ")) && !(tableName.Equals(item))) { // Check for spaces and if already exists in the List box
                 bool checkPrefixes = allowedPrefixes.Any(o => tableName.ToLower().StartsWith(o)); // check if tableName matches any of the allowed prefixes in the list
                 if (checkPrefixes) {
                     return true;
@@ -30,7 +32,7 @@ namespace OSDiagTool.OSDiagToolConf {
 
         public string TableNameEscapeCharacters(string tableName) {
 
-            Regex pattern = new Regex("[ -*/]|[\n]{2}/g");
+            Regex pattern = new Regex("[ -*/()';]|[\n]{2}/g");
             return pattern.Replace(tableName, "");
 
         }

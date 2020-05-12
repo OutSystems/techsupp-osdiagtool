@@ -13,9 +13,8 @@ namespace OSDiagTool.OSDiagToolForm {
 
             public OSDiagToolConf.ConfModel.strConfModel ConfigFileConfigurations { get; set; }
 
-            //public puf_popUpForm popup { get; set; }
+            public puf_popUpForm popup { get; set; }
 
         }
-
     }
 }

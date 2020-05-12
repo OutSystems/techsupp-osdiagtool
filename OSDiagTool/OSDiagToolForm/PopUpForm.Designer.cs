@@ -27,6 +27,7 @@
             this.bt_CloseFormPopUp = new System.Windows.Forms.Button();
             this.pb_progressBar = new System.Windows.Forms.ProgressBar();
             this.lb_ProgressFeedback = new System.Windows.Forms.ListBox();
+            this.bt_CancelOsDiagTool = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // lbl_message
@@ -67,11 +68,23 @@
             this.lb_ProgressFeedback.TabStop = false;
             this.lb_ProgressFeedback.Visible = false;
             // 
+            // bt_CancelOsDiagTool
+            // 
+            this.bt_CancelOsDiagTool.Location = new System.Drawing.Point(-5, 79);
+            this.bt_CancelOsDiagTool.Name = "bt_CancelOsDiagTool";
+            this.bt_CancelOsDiagTool.Size = new System.Drawing.Size(75, 23);
+            this.bt_CancelOsDiagTool.TabIndex = 4;
+            this.bt_CancelOsDiagTool.Text = "Cancel";
+            this.bt_CancelOsDiagTool.UseVisualStyleBackColor = true;
+            this.bt_CancelOsDiagTool.Visible = false;
+            this.bt_CancelOsDiagTool.Click += new System.EventHandler(this.bt_CancelOsDiagTool_Click);
+            // 
             // puf_popUpForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(229, 114);
+            this.Controls.Add(this.bt_CancelOsDiagTool);
             this.Controls.Add(this.lb_ProgressFeedback);
             this.Controls.Add(this.pb_progressBar);
             this.Controls.Add(this.bt_CloseFormPopUp);
@@ -90,7 +103,8 @@
 
         private System.Windows.Forms.Label lbl_message;
         private System.Windows.Forms.Button bt_CloseFormPopUp;
-        private System.Windows.Forms.ProgressBar pb_progressBar;
-        private System.Windows.Forms.ListBox lb_ProgressFeedback;
+        public System.Windows.Forms.ProgressBar pb_progressBar;
+        public System.Windows.Forms.ListBox lb_ProgressFeedback;
+        private System.Windows.Forms.Button bt_CancelOsDiagTool;
     }
 }

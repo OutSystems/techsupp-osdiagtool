@@ -15,12 +15,14 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _feedbackWaitType = "wait";
         public static string _feedbackDoneType = "done";
         public static string _feedbackErrorType = "error";
+        public static bool isBackgroundWorkerCancelled = false;
 
         public puf_popUpForm(string feedbackType, string message, int totalSteps = 0) {
             InitializeComponent();
 
             if (feedbackType.Equals(_feedbackWaitType)) {
 
+                this.Text = "Collecting information. Please wait...";
                 lb_ProgressFeedback.Visible = true;
                 lb_ProgressFeedback.Width = lb_ProgressFeedback.Width * 5 / 4;
                 lb_ProgressFeedback.Height = lb_ProgressFeedback.Height * 4;
@@ -35,7 +37,10 @@ namespace OSDiagTool.OSDiagToolForm {
                 pb_progressBar.Step = pb_progressBar.Maximum/totalSteps;
                 pb_progressBar.PerformStep();
                 pb_progressBar.Visible = true;
-                pb_progressBar.Location = new Point(pb_progressBar.Location.X, pb_progressBar.Location.Y * 3);
+                pb_progressBar.Location = new Point(pb_progressBar.Location.X, pb_progressBar.Location.Y * 5/2);
+
+                bt_CancelOsDiagTool.Visible = true;
+                bt_CancelOsDiagTool.Location = new Point(bt_CloseFormPopUp.Location.X * 3/2, bt_CloseFormPopUp.Location.Y*2);
 
             } else if (feedbackType.Equals(_feedbackDoneType)) {
                 this.Width = this.Width * 3;
@@ -72,6 +77,11 @@ namespace OSDiagTool.OSDiagToolForm {
 
         }
 
-         
+        private void bt_CancelOsDiagTool_Click(object sender, EventArgs e) {
+
+            isBackgroundWorkerCancelled = true;
+            this.Text = "Cancelling. Please wait...";
+
+        }
     }
 }
