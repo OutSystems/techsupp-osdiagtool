@@ -52,7 +52,16 @@ namespace OSDiagTool
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
-            
+            /* REMOVE THIS. It's here just for tests in CryptoUtils */
+            _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
+            privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
+            platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+            osPlatformVersion = Platform.PlatformUtils.GetPlatformVersion(_osServerRegistry);
+            separateLogCatalog = !osPlatformVersion.StartsWith("10.");
+            /* REMOVE THIS. It's here just for tests in CryptoUtils */
+
+
+
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
@@ -122,7 +131,7 @@ namespace OSDiagTool
             FileLogger.TraceLog("Copying Platform and Server configuration files... ");
             Directory.CreateDirectory(_osPlatFilesDest);
             Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _iisWebConfigPath, _machineConfigPath, _osPlatFilesDest);
-            
+
         }
 
         public static void ExportEventViewerAndServerLogs() {
@@ -288,6 +297,7 @@ namespace OSDiagTool
 
         private static void ExecuteCommands()
         {
+
             IDictionary<string, CmdLineCommand> commands = new Dictionary<string, CmdLineCommand>
             {
                 { "appcmd " , new CmdLineCommand(string.Format("{0} list requests", _appCmdPath), Path.Combine(_tempFolderPath, "IISRequests.txt")) },
@@ -305,7 +315,7 @@ namespace OSDiagTool
                 { "app_evtx", new CmdLineCommand("WEVTUtil epl Application " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx") + "\"") },
                 { "sys_evtx", new CmdLineCommand("WEVTUtil epl System " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx") + "\"") },
                 { "sec_evtx", new CmdLineCommand("WEVTUtil epl Security " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx") + "\"") }
-                
+
             };
 
             foreach (KeyValuePair<string, CmdLineCommand> commandEntry in commands)

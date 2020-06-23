@@ -16,14 +16,14 @@ namespace OSDiagTool.Platform {
             // Find Installation path and Platform Version 
             string osPlatformVersion = null;
             try {
-                FileLogger.TraceLog("Verifying OutSystems Platform Version...");
+                //FileLogger.TraceLog("Verifying OutSystems Platform Version...");
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(osServerRegistry);
 
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
-                FileLogger.TraceLog("Platform version: " + osPlatformVersion);
+                //FileLogger.TraceLog("Platform version: " + osPlatformVersion);
 
             } catch (Exception e) {
-                FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message + e.StackTrace);
+                //FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message + e.StackTrace);
                 return null;
             }
 
@@ -34,7 +34,7 @@ namespace OSDiagTool.Platform {
         public static string GetPlatformInstallationPath(string osServerRegistry) {
 
             try {
-                FileLogger.TraceLog("Finding OutSystems Platform Installation Path...");
+                //FileLogger.TraceLog("Finding OutSystems Platform Installation Path...");
 
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(osServerRegistry);
                 string osInstallationFolder = (string)OSPlatformInstaller.GetValue("");
@@ -42,7 +42,7 @@ namespace OSDiagTool.Platform {
                 return osInstallationFolder;
 
             } catch (Exception e) {
-                FileLogger.LogError(" * Unable to find OutSystems Platform Version... * ", e.Message + e.StackTrace);
+                //FileLogger.LogError(" * Unable to find OutSystems Platform Version... * ", e.Message + e.StackTrace);
                 return null;
             }
         }

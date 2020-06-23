@@ -5,6 +5,7 @@ using System.Text;
 using System.Security.Cryptography;
 using System.IO;
 using System.Xml.Linq;
+using System.Text;
 
 namespace OSDiagTool.Utils
 {
@@ -45,33 +46,51 @@ namespace OSDiagTool.Utils
             return Encoding.UTF8.GetString(DecryptBytes(the_key, iv, ciphertext));
         }
 
-        /*public static String Encrypt(string key, String plaintext) {
+        public static string Encrypt(string key, string plaintext) {
+            byte[] test = Convert.FromBase64String(key);
+            string result = Convert.ToBase64String(EncryptBytes(Convert.FromBase64String(key), Encoding.UTF8.GetBytes(plaintext), null));
+            return result;
+        }
 
-            using (Aes crypto = getCipher()) {
-                byte[] the_key = Convert.FromBase64String(key);
-                crypto.Key = the_key;
-                crypto.IV = getRandomBytes(crypto.BlockSize / 8);
+        private static byte[] EncryptBytes(byte[] keyBytes, byte[] plainBytes, byte[] associatedData) {
 
-                byte[] plainBytes = Encoding.UTF8.GetBytes(plaintext);
+            using (Aes crypto = new AesManaged() {
+                Mode = CipherMode.CBC,
+                Padding = PaddingMode.PKCS7
+            }) {
+                crypto.Key = keyBytes;
+                byte[] test = BitConverter.GetBytes(crypto.BlockSize / 8);
+                crypto.IV = test;
+
                 MemoryStream ms = new MemoryStream();
                 ms.Write(crypto.IV, 0, crypto.IV.Length);
-                using (CryptoStream cs = new CryptoStream(ms, crypto.CreateEncryptor(crypto.Key, crypto.IV), CryptoStreamMode.Write))
+                using (CryptoStream cs = new CryptoStream(ms, crypto.CreateEncryptor(crypto.Key, crypto.IV), CryptoStreamMode.Write)) {
                     cs.Write(plainBytes, 0, plainBytes.Length);
+                }
                 ms.Close();
                 var cipherBytes = ms.ToArray();
 
                 HMACSHA256 mac = new HMACSHA256();
-                mac.Key = the_key;
+                mac.Key = keyBytes;
 
-                var macBytes = mac.ComputeHash(cipherBytes);
+                byte[] allBytes = cipherBytes;
+                if (associatedData != null) {
+                    allBytes = new byte[cipherBytes.Length + associatedData.Length];
+                    cipherBytes.CopyTo(allBytes, 0);
+                    associatedData.CopyTo(allBytes, cipherBytes.Length);
+                }
+
+                byte[] macBytes = mac.ComputeHash(allBytes);
 
                 MemoryStream resStream = new MemoryStream();
                 resStream.Write(cipherBytes, 0, cipherBytes.Length);
                 resStream.Write(macBytes, 0, macBytes.Length);
-                return Convert.ToBase64String(resStream.ToArray());
-
+                return resStream.ToArray();
             }
-        }*/
+        }
+
+
+    
 
         public static string GetPrivateKeyFromFile(string privateKeyFilepath)
         {
@@ -106,10 +125,18 @@ namespace OSDiagTool.Utils
             };
         }
 
+        
+
         private static byte[] getRandomBytes(int count) {
             byte[] res = new byte[count];
             rnd.GetBytes(res);
             return res;
         }
+
+        private static byte[] GenerateSalt(int sizeInBytes) {
+            byte[] test = BitConverter.GetBytes(sizeInBytes);
+            return BitConverter.GetBytes(sizeInBytes); 
+        }
+
     }
 }
