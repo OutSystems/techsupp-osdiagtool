@@ -52,14 +52,15 @@ namespace OSDiagTool
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
-            /* REMOVE THIS. It's here just for tests in CryptoUtils */
+            /*
+             REMOVE THIS. It's here just for tests in CryptoUtils 
             _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
             privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
             platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
             osPlatformVersion = Platform.PlatformUtils.GetPlatformVersion(_osServerRegistry);
             separateLogCatalog = !osPlatformVersion.StartsWith("10.");
-            /* REMOVE THIS. It's here just for tests in CryptoUtils */
-
+             REMOVE THIS. It's here just for tests in CryptoUtils 
+            */
 
 
             try {

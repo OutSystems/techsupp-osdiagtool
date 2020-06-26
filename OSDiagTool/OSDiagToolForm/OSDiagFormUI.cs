@@ -11,7 +11,6 @@ using OSDiagTool.OSDiagToolConf;
 using System.Threading;
 using OSDiagTool.Platform.ConfigFiles;
 using System.IO;
-using System.Linq;
 
 namespace OSDiagTool.OSDiagToolForm {
     public partial class OsDiagForm : Form {
