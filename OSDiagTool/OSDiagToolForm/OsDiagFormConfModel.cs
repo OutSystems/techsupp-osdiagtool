@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace OSDiagTool.OSDiagToolForm {
     class OsDiagFormConfModel {
 
-        public struct strFormConfigurationsModel {
+        public class strFormConfigurationsModel {
 
             public Dictionary<string, bool> cbConfs { get; set; }
 

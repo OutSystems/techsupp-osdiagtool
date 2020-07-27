@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Runtime;
+using System.Threading;
 
 namespace OSDiagTool
 {
@@ -17,7 +18,9 @@ namespace OSDiagTool
         public static void LogError(string customMessage, string errorMessage, bool writeToConsole = true, bool writeDateTime = true)
         {
             if (writeToConsole) { Console.WriteLine("[ERROR] " + customMessage + ": " + errorMessage);  };
-            File.AppendAllText(_errorDumpFile, writeDateTime ? DateTime.Now + "\t" + "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine : "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine);
+            File.AppendAllText(_errorDumpFile, writeDateTime ? "[" + Thread.CurrentThread.ManagedThreadId + "]" + DateTime.Now + "\t" + "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine : 
+                "[" + Thread.CurrentThread.ManagedThreadId + "]" + "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine);
+
         }
 
         public static void TraceLog(string traceMessage, bool isTaskFinished = false, bool writeDateTime = true)
@@ -25,7 +28,7 @@ namespace OSDiagTool
             if (isTaskFinished == false)
             {
                 Console.Write(traceMessage);
-                File.AppendAllText(_errorDumpFile, writeDateTime ? Environment.NewLine + DateTime.Now + "\t" + traceMessage : traceMessage);
+                File.AppendAllText(_errorDumpFile, writeDateTime ? "[" + Thread.CurrentThread.ManagedThreadId + "]" + Environment.NewLine + DateTime.Now + "\t" + traceMessage : "[" + Thread.CurrentThread.ManagedThreadId + "]" + traceMessage);
             }
             else if (isTaskFinished == true)
             {

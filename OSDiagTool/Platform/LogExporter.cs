@@ -12,7 +12,7 @@ namespace OSDiagTool.Platform {
     class LogExporter {
 
         public static void PlatformLogExporter(string dbEngine, List<string> tableNames, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, string outputDestination, int queryTimeout, DBConnector.SQLConnStringModel SQLConnectionString = null,
-            DBConnector.OracleConnStringModel OracleConnectionString = null) {
+            DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null) {
 
             if (dbEngine.ToLower().Equals("sqlserver")) {
 
@@ -25,6 +25,8 @@ namespace OSDiagTool.Platform {
 
                         string sqlQuery = "SELECT TOP {0} * FROM {1} ORDER BY INSTANT DESC";
                         sqlQuery = string.Format(sqlQuery, FormConfigurations.osLogTopRecords, table);
+
+                        FileLogger.TraceLog(string.Format("Exporting log table {0} ", table));
 
                         CSVExporter.SQLToCSVExport(dbEngine, table, Path.Combine(outputDestination), queryTimeout, sqlQuery, connection, null);
 
@@ -41,9 +43,9 @@ namespace OSDiagTool.Platform {
                     foreach (string table in tableNames) {
 
                         string oracleQuery = "SELECT * FROM (SELECT * FROM {0}.{1} ORDER BY INSTANT DESC) WHERE ROWNUM < {2}";
-                        oracleQuery = string.Format(oracleQuery, OracleConnectionString.userId, table, FormConfigurations.osLogTopRecords);
+                        oracleQuery = string.Format(oracleQuery, adminSchema, table, FormConfigurations.osLogTopRecords);
 
-                        //CSVExporter.ORCLToCsvExport(connection, table, outputDestination, configurations.queryTimeout, OracleConnectionString.userId, oracleQuery);
+                        FileLogger.TraceLog(string.Format("Exporting log table {0} ", table));
 
                         CSVExporter.SQLToCSVExport(dbEngine, table, outputDestination, queryTimeout, oracleQuery, null, connection);
 

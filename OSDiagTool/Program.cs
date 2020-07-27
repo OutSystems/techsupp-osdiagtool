@@ -26,17 +26,25 @@ namespace OSDiagTool
         private static string _netFrameworkRegistryPath = @"SOFTWARE\Microsoft\NET Framework Setup\NDP";
         private static string _outSystemsPlatformRegistryPath = @"SOFTWARE\OutSystems";
         private static string _iisApplicationHostPath = Path.Combine(_windir, @"system32\inetsrv\config\applicationHost.config");
+        private static string _iisWebConfigPath = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), @"inetpub\wwwroot\web.config");
         private static string _machineConfigPath = Path.Combine(_windir, @"Microsoft.NET\Framework64\v4.0.30319\CONFIG\machine.config");
         private static string _evtVwrLogsDest = Path.Combine(_tempFolderPath, "EventViewerLogs");
         private static string _osPlatFilesDest = Path.Combine(_tempFolderPath, "OSPlatformFiles");
-        private static string _osDatabaseTablesDest = Path.Combine(_tempFolderPath, "DatabaseTables");
+        private static string _osMetamodelTablesDest = Path.Combine(_tempFolderPath, "PlatformMetamodelTables");
         private static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
+
+        public static string privateKeyFilepath;
+        public static string platformConfigurationFilepath;
+        public static string osPlatformVersion;
+        public static string dbEngine;
         public static string _endFeedback;
+        public static bool separateLogCatalog;
+
 
 
         static void Main(string[] args) {
@@ -44,35 +52,45 @@ namespace OSDiagTool
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
+            /*
+             REMOVE THIS. It's here just for tests in CryptoUtils 
+            _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
+            privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
+            platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+            osPlatformVersion = Platform.PlatformUtils.GetPlatformVersion(_osServerRegistry);
+            separateLogCatalog = !osPlatformVersion.StartsWith("10.");
+             REMOVE THIS. It's here just for tests in CryptoUtils 
+            */
 
-            string _osPlatformVersion;
+
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
-                _osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
+                osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
             } catch (Exception e) {
-                _osPlatformVersion = null;
-            }
-            
+                osPlatformVersion = null;
+            }    
 
-            if(_osPlatformVersion == null) {
+            if(osPlatformVersion == null) {
 
                 Application.Run(new OSDiagToolForm.puf_popUpForm(OSDiagToolForm.puf_popUpForm._feedbackErrorType, "OutSystems Platform Server not found. "));
 
             }
             else {
 
-                ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, _osPlatformVersion);
+                ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, osPlatformVersion);
                 ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+                dbEngine = platformDBInfo.DBMS.ToLower();
 
                 var sqlConnString = new DBConnector.SQLConnStringModel();
                 var orclConnString = new DBConnector.OracleConnStringModel();
 
-                if (platformDBInfo.DBMS.ToLower().Equals("sqlserver")) {
+                if (dbEngine.Equals("sqlserver")) {
 
                     sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                     sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
 
-                } else if (platformDBInfo.DBMS.ToLower().Equals("oracle")) {
+                } else if (dbEngine.Equals("oracle")) {
 
                     orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                     orclConnString.port = platformDBInfo.GetProperty("Port").Value;
@@ -86,364 +104,201 @@ namespace OSDiagTool
 
         }
 
-        public static void RunOsDiagTool(OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, OSDiagToolConf.ConfModel.strConfModel configurations) {
+        /* REFACTOR */
+        public static void OSDiagToolInitialization() {
 
-            // Initialize helper classes
-            FileSystemHelper fsHelper = new FileSystemHelper();
-            CmdHelper cmdHelper = new CmdHelper();
-            WindowsEventLogHelper welHelper = new WindowsEventLogHelper();
-
+            // Reading serverhsconf and private key files
+            // Creates a file to log traces during the execution
             // Delete temporary directory and all contents if it already exists (e.g.: error runs)
-            if (Directory.Exists(_tempFolderPath))
-            {
+            if (Directory.Exists(_tempFolderPath)) {
                 Directory.Delete(_tempFolderPath, true);
             }
 
-            // Create temporary directory and respective subdirectories
+            // Create temporary directory 
             Directory.CreateDirectory(_tempFolderPath);
-            Directory.CreateDirectory(_evtVwrLogsDest);
-            Directory.CreateDirectory(_osPlatFilesDest);
-            Directory.CreateDirectory(_windowsInfoDest);
-            Directory.CreateDirectory(_osDatabaseTablesDest);
-            Directory.CreateDirectory(_osDatabaseTroubleshootDest);
-            Directory.CreateDirectory(_osPlatformLogs);
 
-            // Create error dump file to log all exceptions during script execution
-            using (var errorTxtFile = File.Create(_errorDumpFile));
+            using (var errorTxtFile = File.Create(_errorDumpFile)) ;
 
-            string osPlatformVersion = Platform.PlatformVersion.GetPlatformVersion(_osServerRegistry);
- 
-            Object obj = RegistryClass.GetRegistryValue(_osServerRegistry, ""); // The "Defaut" values are empty strings.
+            _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
+            privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
+            platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+            osPlatformVersion = Platform.PlatformUtils.GetPlatformVersion(_osServerRegistry);
+            separateLogCatalog = !osPlatformVersion.StartsWith("10.");
+        }
+
+        public static void GetPlatformAndServerFiles() {
 
             // Process Platform and Server Configuration files
-            if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformAndServerFiles, out bool getPSandServerConfFiles) && getPSandServerConfFiles == true) {
-                CopyPlatformAndServerConfFiles();
+            FileLogger.TraceLog("Copying Platform and Server configuration files... ");
+            Directory.CreateDirectory(_osPlatFilesDest);
+            Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _iisWebConfigPath, _machineConfigPath, _osPlatFilesDest);
+
+        }
+
+        public static void ExportEventViewerAndServerLogs() {
+
+            WindowsEventLogHelper welHelper = new WindowsEventLogHelper();
+
+            FileLogger.TraceLog("Exporting Event Viewer and Server logs... ");
+            Directory.CreateDirectory(_evtVwrLogsDest);
+            Directory.CreateDirectory(_windowsInfoDest);
+            welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
+            ExecuteCommands();
+
+            // Export Registry information
+            // Create directory for Registry information
+            Directory.CreateDirectory(Path.Combine(_tempFolderPath, "RegistryInformation"));
+            string registryInformationPath = Path.Combine(_tempFolderPath, "RegistryInformation");
+
+            // Fetch Registry key values and subkeys values
+            try {
+                FileLogger.TraceLog("Exporting Registry information...");
+
+                RegistryClass.RegistryCopy(_sslProtocolsRegistryPath, Path.Combine(registryInformationPath, "SSLProtocols.txt"), true);
+                RegistryClass.RegistryCopy(_netFrameworkRegistryPath, Path.Combine(registryInformationPath, "NetFramework.txt"), true);
+                RegistryClass.RegistryCopy(_iisRegistryPath, Path.Combine(registryInformationPath, "IIS.txt"), true);
+                RegistryClass.RegistryCopy(_outSystemsPlatformRegistryPath, Path.Combine(registryInformationPath, "OutSystemsPlatform.txt"), true);
+
+            } catch (Exception e) {
+                FileLogger.LogError("Failed to export Registry:", e.Message + e.StackTrace);
             }
+            
+        }                       
 
-            // Generate Event Viewer and Server Logs
-            if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slEvt, out bool getEvt) && getEvt == true) {
-                FileLogger.TraceLog("Generating log files... ");
-                welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
-                FileLogger.TraceLog("DONE", true);
-                ExecuteCommands();
+        public static void CopyIISAccessLogs(int iisLogsNrDays) {
 
-                // Export Registry information
-                // Create directory for Registry information
-                Directory.CreateDirectory(Path.Combine(_tempFolderPath, "RegistryInformation"));
-                string registryInformationPath = Path.Combine(_tempFolderPath, "RegistryInformation");
+            FileSystemHelper fsHelper = new FileSystemHelper();
+            FileLogger.TraceLog(string.Format("Exporting IIS Access logs({0} days)...", iisLogsNrDays));
+            IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, iisLogsNrDays);
+            
+        }
 
-                // Fetch Registry key values and subkeys values
-                try {
-                    FileLogger.TraceLog("Exporting Registry information...");
+        public static void DatabaseTroubleshootProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel orclConnString = null) {
 
-                    RegistryClass.RegistryCopy(_sslProtocolsRegistryPath, Path.Combine(registryInformationPath, "SSLProtocols.txt"), true);
-                    RegistryClass.RegistryCopy(_netFrameworkRegistryPath, Path.Combine(registryInformationPath, "NetFramework.txt"), true);
-                    RegistryClass.RegistryCopy(_iisRegistryPath, Path.Combine(registryInformationPath, "IIS.txt"), true);
-                    RegistryClass.RegistryCopy(_outSystemsPlatformRegistryPath, Path.Combine(registryInformationPath, "OutSystemsPlatform.txt"), true);
+            Directory.CreateDirectory(_osDatabaseTroubleshootDest);
 
-                    FileLogger.TraceLog("DONE", true);
-                } catch (Exception e) {
-                    FileLogger.LogError("Failed to export Registry:", e.Message + e.StackTrace);
+            try {
+                FileLogger.TraceLog(string.Format("Performing {0} Database Troubleshoot...", dbEngine.ToUpper()));
+
+                if (dbEngine.Equals("sqlserver")) {
+                    Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, sqlConnString, null);
+
+                }else if (dbEngine.Equals("oracle")) {
+                    Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, null, orclConnString);
                 }
+
+            } catch (Exception e) {
+                FileLogger.LogError("Failed to perform Database Troubleshoot", e.Message + e.StackTrace);
             }
+        }
 
-            // Reading serverhsconf and private key files
-            string privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
-            string platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
+        public static void ExportPlatformMetamodel(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
+            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null) {
 
-            ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            FileLogger.TraceLog("Exporting Platform Metamodel...");
 
-            ConfigFileDBInfo loggingDBInfo = null;
-            bool separateLogCatalog = !osPlatformVersion.StartsWith("10.");
-            if (separateLogCatalog) { // Log DB is on a separate DB Catalog starting Platform version 11
-                loggingDBInfo = confFileParser.DBLoggingInfo;
-            }
+            Directory.CreateDirectory(_osMetamodelTablesDest);
 
-            // Retrieving IIS access logs
-            if (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slIisLogs, out bool getIisLogs) && getIisLogs == true) {
+            if (dbEngine.Equals("sqlserver")) {
 
-                IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, configurations.IISLogsNrDays);
-            }
+                var connector = new DBConnector.SLQDBConnector();
+                SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
 
-            string dbEngine = platformDBInfo.DBMS;
+                using (connection) {
 
-            // Database Export
-            if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool _getPlatformMetamodel) && _getPlatformMetamodel == true) ||
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true) ||
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformLogs, out bool _getPlatformLogs) && _getPlatformLogs == true)) {
+                    bool isLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, connection);
 
-                try {
-
-                    string platformDBRuntimeUser = platformDBInfo.GetProperty("RuntimeUser").Value;
-                    string platformDBRuntimeUserPwd = platformDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
-                    string platformDBAdminUser = platformDBInfo.GetProperty("AdminUser").Value;
-
-                    FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool getPlatformMetamodel);
-                    FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformLogs, out bool diGetPlatformLogs);
-                    FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool doDbTroubleshoot);
-
-                    if (dbEngine.ToLower().Equals("sqlserver")) {
-
-                        var sqlConnString = new DBConnector.SQLConnStringModel();
-                        string platformDBServer = sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
-                        string platformDBCatalog = sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
-
-                        // Database Troubleshoot // use sa
-                        if (doDbTroubleshoot) {
-
-                            FileLogger.TraceLog("Performing Database Troubleshoot...");
-
-                            sqlConnString.userId = FormConfigurations.saUser;
-                            sqlConnString.pwd = FormConfigurations.saPwd;
-
-                            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, sqlConnString);
-                        }
-
-
-                        if (diGetPlatformLogs) {
-
-                            FileLogger.TraceLog("Exporting Platform Logs...");
-
-                            if (separateLogCatalog) {
-                                sqlConnString.dataSource = loggingDBInfo.GetProperty("Server").Value;
-                                sqlConnString.userId = loggingDBInfo.GetProperty("RuntimeUser").Value; // needs to use oslog configurations
-                                sqlConnString.pwd = loggingDBInfo.GetProperty("RuntimePassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
-                                sqlConnString.initialCatalog = loggingDBInfo.GetProperty("Catalog").Value;
-
-                            }
-
-
-                            List<string> platformLogs = new List<string>();
-                            foreach (string table in configurations.tableNames) { // add only oslog tables to list
-                                if (table.ToLower().StartsWith("oslog")) {
-                                    platformLogs.Add(table);
-                                }
-                            }
-
-                            Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
-
-                        }
-
-                        if (getPlatformMetamodel) {
-
-                            FileLogger.TraceLog("Exporting Platform Metamodel...");
-
-                            sqlConnString.dataSource = platformDBServer;
-                            sqlConnString.userId = platformDBRuntimeUser; // needs to use oslog configurations
-                            sqlConnString.pwd = platformDBRuntimeUserPwd;
-                            sqlConnString.initialCatalog = platformDBCatalog;
-
-                            var connector = new DBConnector.SLQDBConnector();
-                            SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
-
-                            string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1"; // check if it's registered on LifeTime
-
-                            SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, connection) {
-                                CommandTimeout = configurations.queryTimeout
-                            };
-
-                            cmd.ExecuteNonQuery();
-                            int count = Convert.ToInt32(cmd.ExecuteScalar());
-
-                            using (connection) {
-                                FileLogger.TraceLog("Starting exporting tables: ");
-                                foreach (string table in FormConfigurations.metamodelTables) {
-                                    if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                        string selectAllQuery = "SELECT * FROM " + table;
-                                        CSVExporter.SQLToCSVExport(dbEngine, table, _osDatabaseTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
-                                    }
-                                }
-                            }
-                        }
-
-                    }   // Oracle Export -- RuntimeUser is used but the Admin schema is necessary to query OSSYS 
-                    else if (dbEngine.ToLower().Equals("oracle")) {
-
-                        var orclConnString = new DBConnector.OracleConnStringModel();
-
-                        string oraclePlatformDBHost = orclConnString.host = platformDBInfo.GetProperty("Host").Value;
-                        string oraclePlatformDBPort = orclConnString.port = platformDBInfo.GetProperty("Port").Value;
-                        string oraclePlatformDBServiceName = orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
-
-                        // Database Troubleshoot
-                        if (doDbTroubleshoot) {
-
-                            FileLogger.TraceLog("Performing Database Troubleshoot...");
-
-                            orclConnString.userId = FormConfigurations.saUser;
-                            orclConnString.pwd = FormConfigurations.saPwd;
-
-                            Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, null, orclConnString);
-                        }
-
-                        if (diGetPlatformLogs) {
-
-                            FileLogger.TraceLog("Exporting Platform Logs...");
-
-                            if (separateLogCatalog) {
-
-                                // needs to use oslog configurations
-                                orclConnString.host = loggingDBInfo.GetProperty("Host").Value;
-                                orclConnString.port = loggingDBInfo.GetProperty("Port").Value;
-                                orclConnString.userId = loggingDBInfo.GetProperty("AdminUser").Value;
-                                orclConnString.pwd = loggingDBInfo.GetProperty("AdminPassword").GetDecryptedValue(CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
-                                orclConnString.serviceName = loggingDBInfo.GetProperty("ServiceName").Value;
-
-                                List<string> platformLogs = new List<string>();
-                                foreach (string table in configurations.tableNames) { // add only oslog tables to list
-                                    if (table.ToLower().StartsWith("oslog")) {
-                                        platformLogs.Add(table);
-                                    }
-                                }
-
-                                Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, orclConnString);
-
-                            }
-                        }
-
-                        if (getPlatformMetamodel) {
-
-                            FileLogger.TraceLog("Exporting Platform Metamodel...");
-
-                            orclConnString.userId = platformDBRuntimeUser;
-                            orclConnString.pwd = platformDBRuntimeUserPwd;
-
-                            var connector = new DBConnector.OracleDBConnector();
-                            OracleConnection connection = connector.OracleOpenConnection(orclConnString);
-
-                            string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM " + platformDBAdminUser + "." + "OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
-
-                            OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, connection) {
-                                CommandTimeout = configurations.queryTimeout
-                            };
-
-                            cmd.ExecuteNonQuery();
-                            int count = Convert.ToInt32(cmd.ExecuteScalar());
-
-                            using (connection) {
-                                FileLogger.TraceLog("Starting exporting tables: ");
-                                foreach (string table in FormConfigurations.metamodelTables) {
-                                    if ((count.Equals(0) && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                                        FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                                        string selectAllQuery = "SELECT * FROM " + platformDBAdminUser + "." + table;
-                                        CSVExporter.ORCLToCsvExport(connection, table, _osDatabaseTablesDest, configurations.queryTimeout, platformDBAdminUser, selectAllQuery);
-                                    }
-                                }
-                            }
+                    FileLogger.TraceLog("Starting exporting tables: ");
+                    foreach (string table in FormConfigurations.metamodelTables) {
+                        if ((isLifeTimeEnvironment && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                            FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                            string selectAllQuery = "SELECT * FROM " + table;
+                            CSVExporter.SQLToCSVExport(dbEngine, table, _osMetamodelTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
                         }
                     }
 
-                } catch (Exception e) {
-
-                    FileLogger.LogError("Unable to export database tables", e.Message + e.StackTrace);
-
                 }
-                FileLogger.TraceLog("DONE", true);
+
+            }
+            else if (dbEngine.Equals("oracle")) {
+
+                var connector = new DBConnector.OracleDBConnector();
+                OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
+
+                string platformDBAdminUser = Platform.PlatformUtils.GetPlatformDBAdminUser();
+
+                using (connection) {
+
+                    bool isLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, null, connection, platformDBAdminUser);
+
+                    FileLogger.TraceLog("Starting exporting tables: ");
+                    foreach (string table in FormConfigurations.metamodelTables) {
+                        if ((isLifeTimeEnvironment && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
+                            FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                            string selectAllQuery = "SELECT * FROM " + platformDBAdminUser + "." + table;
+                            CSVExporter.ORCLToCsvExport(connection, table, _osMetamodelTablesDest, configurations.queryTimeout, platformDBAdminUser, selectAllQuery);
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void ExportServiceCenterLogs(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
+            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, string adminSchema = null) {
+
+            FileLogger.TraceLog(string.Format("Exporting Platform logs ({0} records)...", FormConfigurations.osLogTopRecords));
+
+            Directory.CreateDirectory(_osPlatformLogs);
+
+            List<string> platformLogs = new List<string>();
+            foreach (string table in configurations.tableNames) { // add only oslog tables to list
+                if (table.ToLower().StartsWith("oslog")) {
+                    platformLogs.Add(table);
+                }
+            }
+
+            if (dbEngine.Equals("sqlserver")) {
+                Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
+            } else if (dbEngine.Equals("oracle")) {
+                Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
             }
 
 
-            if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdIis, out bool getIisThreadDumps) && getIisThreadDumps == true) ||
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool _getOsThreadDumps) && _getOsThreadDumps == true)) {
 
-                FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool getOsThreadDumps); // necessary because the first condition can be evaluated to true and second condition may never be checked
-                CollectThreadDumps(getIisThreadDumps, getOsThreadDumps);
-            }
+        }
 
-            if ((FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdIis, out bool getIisMemDumps) && getIisMemDumps == true) ||
-                (FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdOsServices, out bool _getOsMemDumps) && _getOsMemDumps == true)) {
+        public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps) {
 
-                FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdOsServices, out bool getOsMemDumps); // necessary because the first condition can be evaluated to true and second condition may never be checked
+            FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS thread dumps: {0} ; OutSystems Services thread dumps: {1})", getIisThreadDumps, getOsThreadDumps));
+            CollectThreadDumps(getIisThreadDumps, getOsThreadDumps); // evaluate if this method is really necessary
 
-                FileLogger.TraceLog("Initiating collection of memory dumps..." + Environment.NewLine);
-                CollectMemoryDumps(getIisMemDumps, getOsMemDumps);
-            }
+        }
 
+        public static void CollectMemoryDumpsProgram(bool getIisMemDumps, bool getOsMemDumps) {
 
-            // Generate zip file
-            Console.WriteLine();
+            FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS memory dumps: {0} ; OutSystems Services memory dumps: {1})", getIisMemDumps, getOsMemDumps));
+            CollectMemoryDumps(getIisMemDumps, getOsMemDumps);
+
+        }
+
+        public static void GenerateZipFile() {
+
             FileLogger.TraceLog("Creating zip file... ");
+            FileSystemHelper fsHelper = new FileSystemHelper();
             _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip"); // need to assign again in case the user runs the tool a second time
             fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true);
-            Console.WriteLine("DONE");
 
             // Delete temp folder
             Directory.Delete(_tempFolderPath, true);
 
-            _endFeedback = "File Location: " +_targetZipFile;
-
-            // Print process end
-            PrintEnd();
-
+            _endFeedback = "File Location: " + _targetZipFile;
         }
 
-        // write a generic exit line and wait for user input
-        private static void WriteExitLines()
-        {
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadKey();
-        }
-
-        private static void CopyPlatformAndServerConfFiles()
-        {
-            // List of OS services and components
-            IDictionary<string, string> osServiceNames = new Dictionary<string, string> {
-                { "ConfigurationTool", "Configuration Tool" },
-                { "LogServer", "Log Service" },
-                { "CompilerService", "Deployment Controller Service" },
-                { "DeployService", "Deployment Service" },
-                { "Scheduler", "Scheduler Service" },
-                { "SMSConnector", "SMS Service" }
-            };
-
-            // Initialize dictionary with all the files that we need to get and can be accessed directly
-            IDictionary<string, string> files = new Dictionary<string, string> {
-                { "ServerHSConf", Path.Combine(_osInstallationFolder, "server.hsconf") },
-                { "OSVersion", Path.Combine(_osInstallationFolder, "version.txt") },
-                { "applicationHost.config", _iisApplicationHostPath },
-                { "machine.config", _machineConfigPath }
-            };
-
-            // Add OS log and configuration files
-            foreach (KeyValuePair<string, string> serviceFileEntry in osServiceNames)
-            {
-                string confFilePath = Path.Combine(_osInstallationFolder, serviceFileEntry.Key + ".exe.config");
-
-                // Get log file location from conf file
-                OSServiceConfigFileParser confParser = new OSServiceConfigFileParser(serviceFileEntry.Value, confFilePath);
-                string logPath = confParser.LogFilePath;
-
-                // Add properties file
-                files.Add(serviceFileEntry.Value + " config", confFilePath);
-
-                // Add log file
-                files.Add(serviceFileEntry.Value + " log", logPath);
-            }
-
-            // Copy all files to the temporary folder
-            foreach (KeyValuePair<string, string> fileEntry in files)
-            {
-                String filepath = fileEntry.Value;
-                String fileAlias = fileEntry.Key;
-
-                FileLogger.TraceLog("Copying " + fileAlias + "... ");
-                if (File.Exists(filepath))
-                {
-                    String realFilename = Path.GetFileName(filepath);
-                    File.Copy(filepath, Path.Combine(_osPlatFilesDest, realFilename));
-
-                    FileLogger.TraceLog("DONE", true);
-                }
-                else
-                {
-                    FileLogger.TraceLog("(File does not exist)", true);
-                }
-            }
-        }
+        /* REFACTOR */
 
         private static void ExecuteCommands()
         {
+
             IDictionary<string, CmdLineCommand> commands = new Dictionary<string, CmdLineCommand>
             {
                 { "appcmd " , new CmdLineCommand(string.Format("{0} list requests", _appCmdPath), Path.Combine(_tempFolderPath, "IISRequests.txt")) },
@@ -461,14 +316,13 @@ namespace OSDiagTool
                 { "app_evtx", new CmdLineCommand("WEVTUtil epl Application " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx") + "\"") },
                 { "sys_evtx", new CmdLineCommand("WEVTUtil epl System " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx") + "\"") },
                 { "sec_evtx", new CmdLineCommand("WEVTUtil epl Security " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx") + "\"") }
-                
+
             };
 
             foreach (KeyValuePair<string, CmdLineCommand> commandEntry in commands)
             {
                 FileLogger.TraceLog("Getting " + commandEntry.Key + "...");
                 commandEntry.Value.Execute();
-                FileLogger.TraceLog("DONE" + Environment.NewLine);
             }
         }
 
@@ -514,7 +368,6 @@ namespace OSDiagTool
                         }
                     }
 
-                    FileLogger.TraceLog("DONE", true);
                 }
             } catch (Exception e) {
                 FileLogger.LogError("Failed to get thread dump: ", e.Message + e.StackTrace);
@@ -570,21 +423,12 @@ namespace OSDiagTool
                         command.Execute();
                     }
 
-                    FileLogger.TraceLog("DONE", true);
                 }
             } catch(Exception e) {
                 FileLogger.LogError("Failed to get memory dump: ", e.Message + e.StackTrace);
             }
 
             
-        }
-
-        private static void PrintEnd()
-        {
-            Console.WriteLine();
-            Console.WriteLine("OSDiagTool data collection has finished. Resulting zip file path:");
-            Console.WriteLine(_targetZipFile);
-            Console.WriteLine();
         }
 
         private static string DateTimeToTimestamp(DateTime dateTime)

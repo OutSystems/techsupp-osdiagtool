@@ -2,15 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Data.SqlClient;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using OSDiagTool.OSDiagToolConf;
 using System.Threading;
+using OSDiagTool.Platform.ConfigFiles;
+using System.IO;
 
 namespace OSDiagTool.OSDiagToolForm {
     public partial class OsDiagForm : Form {
@@ -18,8 +18,9 @@ namespace OSDiagTool.OSDiagToolForm {
         private static string _helpLink = "https://success.outsystems.com/Support/Enterprise_Customers/Troubleshooting/OSDiagTool_-_OutSystems_Support_Diagnostics_Tool";
         private static string _failedConnectionTest = "Test Connection: Failed";
         private static string _successConnectionTest = "Test Connection: Successful";
-        private static string _waitMessage = "OSDiagTool running. Please wait...";
+        public static string _waitMessage = "OSDiagTool running. Please wait...";
         private static string _doneMessage = "OSDiagTool has finished!";
+        private static string _operationCancelled = "Operation was cancelled.";
         public static string _tdIis = "Threads IIS";
         public static string _tdOsServices = "Threads OS Services";
         public static string _mdIis = "Memory IIS";
@@ -31,6 +32,21 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _plPlatformLogs = "Platform Logs";
         public static string _plPlatformAndServerFiles = "Platform and Server Configuration files";
         // new check box items must be added to dictHelper dictionary
+
+        public SortedDictionary<int, string> FeedbackSteps = new SortedDictionary<int, string> {
+            { 1, "Collecting IIS thread dumps" },
+            { 2, "Collecting OutSystems Services thread dumps" },
+            { 3, "Collecting IIS memory dumps" },
+            { 4, "Collecting OutSystems Services memory dumps" },
+            { 5, "Exporting Event Viewer and Server logs" },
+            { 6, "Exporting IIS Access logs" },
+            { 7, "Exporting Platform logs" },
+            { 8, "Exporting Platform and Server Configuration files" },
+            { 9, "Exporting Platform metamodel" },
+            { 10, "Performing Database Troubleshoot" },
+            { 11, "Zipping file..." },
+            { 12, "" }, // Last step for closing the pop up
+        };
 
         public OsDiagForm(OSDiagToolConf.ConfModel.strConfModel configurations, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
 
@@ -54,13 +70,6 @@ namespace OSDiagTool.OSDiagToolForm {
             this.cb_dbTroubleshoot.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_databaseTroubleshoot];
 
             this.lb_metamodelTables.Items.AddRange(configurations.tableNames.ToArray()); // add Platform Metamodel tables to list box
-
-            /*BackgroundWorker backgroundWorker1 = new BackgroundWorker();
-            backgroundWorker1.DoWork += new DoWorkEventHandler(backgroundWorker1_DoWork);
-            backgroundWorker1.ProgressChanged += backgroundWorker1_ProgressChanged;
-            backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;  //Tell the user how the process went
-            backgroundWorker1.WorkerReportsProgress = true;
-            backgroundWorker1.WorkerSupportsCancellation = true;*/
 
 
             bt_TestSaConnection.Click += delegate (object sender, EventArgs e) { bt_TestSaConnection_Click(sender, e, dbms, SQLConnectionString, OracleConnectionString); };
@@ -99,19 +108,15 @@ namespace OSDiagTool.OSDiagToolForm {
                 }
 
             }
-            
+
+            //string test = Utils.CryptoUtils.Encrypt(Utils.CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath), tb_iptSaPwd.Text);
+
             puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackTestConnectionType ,testConnectionResult);
             DialogResult dg = popup.ShowDialog();
         }
 
         private void bt_runOsDiagTool_Click(object sender, EventArgs e, OSDiagToolConf.ConfModel.strConfModel configurations) {
-
-            Cursor = Cursors.WaitCursor;
             
-            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, _waitMessage);
-            popup.Show();
-            popup.Refresh();
-
             var formConfigurations = new OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel();
             List<string> tableNameHelper = new List<string>();
 
@@ -143,17 +148,23 @@ namespace OSDiagTool.OSDiagToolForm {
             };
 
             formConfigurations.cbConfs = dictHelper;
+            
+            var configurationsHelper = new DataHelperClass.strConfigurations();
 
-            /*backgroundWorker1.RunWorkerAsync();*/
+            configurationsHelper.FormConfigurations = new OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel();
+            configurationsHelper.FormConfigurations = formConfigurations;
 
-            OSDiagTool.Program.RunOsDiagTool(formConfigurations, configurations);
+            int numberOfSteps = OSDiagToolHelper.CountSteps(configurationsHelper.FormConfigurations.cbConfs);
+            puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackWaitType, OsDiagForm._waitMessage, totalSteps: numberOfSteps + 2); // totalSteps + 2 for the zipping and pop up close
+            popup.Show();
+            popup.Refresh();
+            configurationsHelper.popup = popup;
 
-            popup.Dispose();
-            popup.Close();
+            configurationsHelper.ConfigFileConfigurations = new OSDiagToolConf.ConfModel.strConfModel();
+            configurationsHelper.ConfigFileConfigurations = configurations;
 
-            puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + Program._endFeedback);
-            popup2.ShowDialog();
 
+            backgroundWorker1.RunWorkerAsync(configurationsHelper);
             Cursor = Cursors.Arrow;
 
         }
@@ -173,14 +184,16 @@ namespace OSDiagTool.OSDiagToolForm {
 
             MetamodelTables mtTables = new MetamodelTables();
 
-            if (mtTables.ValidateMetamodelTableName(tb_inptMetamodelTables.Text.ToString().ToLower())) {
+            List<string> listBoxTableList = lb_metamodelTables.Items.Cast<string>().ToList();
+
+            if (mtTables.ValidateMetamodelTableName(tb_inptMetamodelTables.Text.ToString().ToLower(), listBoxTableList.ConvertAll(d => d.ToLower()))) {
 
                 string escapedTableName = mtTables.TableNameEscapeCharacters(tb_inptMetamodelTables.Text.ToString());
 
                 this.lb_metamodelTables.Items.Add(escapedTableName);
                 this.tb_inptMetamodelTables.Text = "";
             } else {
-                puf_popUpForm popup = new puf_popUpForm("errorAddTable", "Failed to add table: " + Environment.NewLine + "Cannot contain spaces and must start" + Environment.NewLine + "with prefix OSSYS or OSLTM.");
+                puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackErrorType, "Failed to add table: " + Environment.NewLine + "Input contains spaces, already exists or " + Environment.NewLine + "does not have prefix OSSYS or OSLTM.");
                 DialogResult dg = popup.ShowDialog();
             }
 
@@ -193,18 +206,185 @@ namespace OSDiagTool.OSDiagToolForm {
 
         }
 
-        /*private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e) {
-            for (int i = 0; i < 100; i++) {
-                Thread.Sleep(1000);
-                backgroundWorker1.ReportProgress(i);
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e) {
 
-                //Check if there is a request to cancel the process
-                if (backgroundWorker1.CancellationPending) {
-                    e.Cancel = true;
-                    backgroundWorker1.ReportProgress(0);
-                    return;
+            /* REFACTOR */
+
+            OSDiagToolForm.DataHelperClass.strConfigurations configurationsHelper = (OSDiagToolForm.DataHelperClass.strConfigurations)e.Argument;
+
+            // Initialization
+            Program.OSDiagToolInitialization();
+
+
+            // Get Platform and Server files
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformAndServerFiles, out bool getPSandServerConfFiles) && getPSandServerConfFiles == true) {
+
+                    backgroundWorker1.ReportProgress(8, configurationsHelper.popup);
+                    Program.GetPlatformAndServerFiles();
                 }
             }
-        */
+                
+
+            // Export Event Viewer and Server logs
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slEvt, out bool getEvt) && getEvt == true) {
+
+                    backgroundWorker1.ReportProgress(5, configurationsHelper.popup);
+                    Program.ExportEventViewerAndServerLogs();
+                }
+            }
+
+            // Copy IIS Access logs
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slIisLogs, out bool getIisLogs) && getIisLogs == true) {
+
+                    backgroundWorker1.ReportProgress(6, configurationsHelper.popup);
+                    Program.CopyIISAccessLogs(configurationsHelper.FormConfigurations.iisLogsNrDays);
+                }
+            }
+                
+            // Database Troubleshoot
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true) {
+
+                    backgroundWorker1.ReportProgress(10, configurationsHelper.popup);
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, true, ConnectionStringDefiner, configurationsHelper.FormConfigurations.saUser, configurationsHelper.FormConfigurations.saPwd);
+
+                    if (Program.dbEngine.Equals("sqlserver")) {
+                        Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper.SQLConnString);
+
+                    } else if (Program.dbEngine.Equals("oracle")) {
+                        Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper.OracleConnString);
+
+                    }
+                }
+            }
+                
+            // Export Platform Metamodel
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool _getPlatformMetamodel) && _getPlatformMetamodel == true) {
+
+                    backgroundWorker1.ReportProgress(9, configurationsHelper.popup);
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner);
+
+                    if (Program.dbEngine.Equals("sqlserver")) {
+                        Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper.SQLConnString, null);
+
+                    } else if (Program.dbEngine.Equals("oracle")) {
+                        Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper.OracleConnString);
+
+                    }
+                }
+            }
+                
+            // Export Platform Logs
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformLogs, out bool _getPlatformLogs) && _getPlatformLogs == true) {
+
+                    backgroundWorker1.ReportProgress(7, configurationsHelper.popup);
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, Program.separateLogCatalog, false, ConnectionStringDefiner);
+
+                    if (Program.dbEngine.Equals("sqlserver")) {
+                        Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper.SQLConnString, null);
+
+                    } else if (Program.dbEngine.Equals("oracle")) {
+                        Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper.OracleConnString, ConnStringHelper.AdminSchema);
+
+                    }
+                }
+            }
+                
+            // IIS Thread dumps
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdIis, out bool getIisThreadDumps) && getIisThreadDumps == true) {
+
+                    backgroundWorker1.ReportProgress(1, configurationsHelper.popup);
+                    Program.CollectThreadDumpsProgram(getIisThreadDumps, false);
+
+                }
+            }
+                
+            // OutSystems Services Thread dumps
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool _getOsThreadDumps) && _getOsThreadDumps == true) {
+
+                    backgroundWorker1.ReportProgress(2, configurationsHelper.popup);
+                    Program.CollectThreadDumpsProgram(false, _getOsThreadDumps);
+
+                }
+            }
+                
+            // IIS Memory Dumps 
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdIis, out bool getIisMemDumps) && getIisMemDumps == true) {
+
+                    backgroundWorker1.ReportProgress(3, configurationsHelper.popup);
+                    Program.CollectMemoryDumpsProgram(getIisMemDumps, false);
+
+                }
+            }
+                
+            // OutSystems Services Memory Dumps
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdOsServices, out bool getOsMemDumps) && getOsMemDumps == true) {
+
+                    backgroundWorker1.ReportProgress(4, configurationsHelper.popup);
+                    Program.CollectMemoryDumpsProgram(false, getOsMemDumps);
+
+                }
+            }
+                
+            backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
+            Program.GenerateZipFile();
+            backgroundWorker1.ReportProgress(12, configurationsHelper.popup); // Last step to close pop up
+
+            /* REFACTOR */
+
+            
+
+            if (!backgroundWorker1.CancellationPending == true) {
+                puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + Program._endFeedback);
+                popup2.ShowDialog();
+            } else {
+                puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _operationCancelled + Environment.NewLine + Program._endFeedback);
+                popup2.ShowDialog();
+
+            }
+
+        }
+
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e) {
+
+            puf_popUpForm popup = (puf_popUpForm)e.UserState;
+            int stepId = e.ProgressPercentage;
+
+            if (puf_popUpForm.isBackgroundWorkerCancelled == true) {
+                backgroundWorker1.CancelAsync();
+                puf_popUpForm.isBackgroundWorkerCancelled = false; // reset
+            } else {
+
+                FeedbackSteps.TryGetValue(stepId, out string feedbackText);
+
+                popup.lb_ProgressFeedback.Items.Add(feedbackText);
+                popup.lb_ProgressFeedback.SelectedIndex = popup.lb_ProgressFeedback.Items.Count - 1;
+                popup.lb_ProgressFeedback.SelectedIndex = -1;
+
+                if (!(popup.pb_progressBar.Value >= popup.pb_progressBar.Maximum)) {
+                    popup.pb_progressBar.PerformStep();
+                }
+
+                popup.Refresh();
+
+            }
+
+            if (stepId == FeedbackSteps.Keys.Last<int>()) {
+                popup.Dispose();
+                popup.Close();
+            }
+        }
     }
 }
