@@ -109,8 +109,6 @@ namespace OSDiagTool.OSDiagToolForm {
 
             }
 
-            //string test = Utils.CryptoUtils.Encrypt(Utils.CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath), tb_iptSaPwd.Text);
-
             puf_popUpForm popup = new puf_popUpForm(puf_popUpForm._feedbackTestConnectionType ,testConnectionResult);
             DialogResult dg = popup.ShowDialog();
         }
