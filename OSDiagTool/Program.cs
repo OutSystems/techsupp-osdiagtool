@@ -52,16 +52,6 @@ namespace OSDiagTool
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
-            /*
-             REMOVE THIS. It's here just for tests in CryptoUtils 
-            _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
-            privateKeyFilepath = Path.Combine(_osInstallationFolder, "private.key");
-            platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
-            osPlatformVersion = Platform.PlatformUtils.GetPlatformVersion(_osServerRegistry);
-            separateLogCatalog = !osPlatformVersion.StartsWith("10.");
-             REMOVE THIS. It's here just for tests in CryptoUtils 
-            */
-
 
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
@@ -76,6 +66,9 @@ namespace OSDiagTool
 
             }
             else {
+
+                _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
+                _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
 
                 ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, osPlatformVersion);
                 ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
