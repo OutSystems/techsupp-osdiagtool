@@ -29,7 +29,7 @@ namespace OSDiagTool
         private static string _iisWebConfigPath = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), @"inetpub\wwwroot\web.config");
         private static string _machineConfigPath = Path.Combine(_windir, @"Microsoft.NET\Framework64\v4.0.30319\CONFIG\machine.config");
         private static string _evtVwrLogsDest = Path.Combine(_tempFolderPath, "EventViewerLogs");
-        private static string _osPlatFilesDest = Path.Combine(_tempFolderPath, "OSPlatformFiles");
+        private static string _osPlatFilesDest = Path.Combine(_tempFolderPath, "Windows_And_OutSystems_Files");
         private static string _osMetamodelTablesDest = Path.Combine(_tempFolderPath, "PlatformMetamodelTables");
         private static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");

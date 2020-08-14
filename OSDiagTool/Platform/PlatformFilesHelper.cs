@@ -75,6 +75,15 @@ namespace OSDiagTool.Platform {
                     FileLogger.TraceLog("(File does not exist)", true);
                 }
             }
+
+            // Export Environment variables
+            foreach (System.Collections.DictionaryEntry env in Environment.GetEnvironmentVariables()) {
+                string name = (string)env.Key;
+                string value = (string)env.Value;
+
+                Utils.WinUtils.WriteToFile(Path.Combine(_osPlatFilesDest, "EnvironmentVariables.txt"), name + ": " + value);
+                
+            }
         }
 
 
