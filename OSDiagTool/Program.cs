@@ -20,11 +20,6 @@ namespace OSDiagTool
         private static string _tempFolderPath = Path.Combine(Directory.GetCurrentDirectory(),"collect_data"); 
         private static string _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip");
         private static string _osInstallationFolder = @"C:\Program Files\OutSystems\Platform Server";
-        private static string _osServerRegistry = @"SOFTWARE\OutSystems\Installer\Server";
-        private static string _sslProtocolsRegistryPath = @"SYSTEM\CurrentControlSet\Control\SecurityProviders\Schannel\Protocols";
-        private static string _iisRegistryPath = @"SOFTWARE\Microsoft\InetStp";
-        private static string _netFrameworkRegistryPath = @"SOFTWARE\Microsoft\NET Framework Setup\NDP";
-        private static string _outSystemsPlatformRegistryPath = @"SOFTWARE\OutSystems";
         private static string _iisApplicationHostPath = Path.Combine(_windir, @"system32\inetsrv\config\applicationHost.config");
         private static string _iisWebConfigPath = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), @"inetpub\wwwroot\web.config");
         private static string _machineConfigPath = Path.Combine(_windir, @"Microsoft.NET\Framework64\v4.0.30319\CONFIG\machine.config");
@@ -37,6 +32,15 @@ namespace OSDiagTool
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
+
+        // Registry paths
+        private static string _netFrameworkRegistryPath = @"SOFTWARE\Microsoft\NET Framework Setup\NDP";
+        private static string _outSystemsPlatformRegistryPath = @"SOFTWARE\OutSystems";
+        private static string _osServerRegistry = @"SOFTWARE\OutSystems\Installer\Server";
+        private static string _sslProtocolsRegistryPath = @"SYSTEM\CurrentControlSet\Control\SecurityProviders\Schannel\Protocols";
+        private static string _iisRegistryPath = @"SOFTWARE\Microsoft\InetStp";
+        private static string _rabbitMQRegistryPath = @"SOFTWARE\Ericsson\Erlang\ErlSrv\1.1\RabbitMQ";
+
 
         public static string privateKeyFilepath;
         public static string platformConfigurationFilepath;
@@ -126,18 +130,6 @@ namespace OSDiagTool
             Directory.CreateDirectory(_osPlatFilesDest);
             Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _iisWebConfigPath, _machineConfigPath, _osPlatFilesDest);
 
-        }
-
-        public static void ExportEventViewerAndServerLogs() {
-
-            WindowsEventLogHelper welHelper = new WindowsEventLogHelper();
-
-            FileLogger.TraceLog("Exporting Event Viewer and Server logs... ");
-            Directory.CreateDirectory(_evtVwrLogsDest);
-            Directory.CreateDirectory(_windowsInfoDest);
-            welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
-            ExecuteCommands();
-
             // Export Registry information
             // Create directory for Registry information
             Directory.CreateDirectory(Path.Combine(_tempFolderPath, "RegistryInformation"));
@@ -151,10 +143,23 @@ namespace OSDiagTool
                 RegistryClass.RegistryCopy(_netFrameworkRegistryPath, Path.Combine(registryInformationPath, "NetFramework.txt"), true);
                 RegistryClass.RegistryCopy(_iisRegistryPath, Path.Combine(registryInformationPath, "IIS.txt"), true);
                 RegistryClass.RegistryCopy(_outSystemsPlatformRegistryPath, Path.Combine(registryInformationPath, "OutSystemsPlatform.txt"), true);
+                RegistryClass.RegistryCopy(_rabbitMQRegistryPath, Path.Combine(registryInformationPath, "RabbitMQ.txt"), true);
 
             } catch (Exception e) {
                 FileLogger.LogError("Failed to export Registry:", e.Message + e.StackTrace);
             }
+
+        }
+
+        public static void ExportEventViewerAndServerLogs() {
+
+            WindowsEventLogHelper welHelper = new WindowsEventLogHelper();
+
+            FileLogger.TraceLog("Exporting Event Viewer and Server logs... ");
+            Directory.CreateDirectory(_evtVwrLogsDest);
+            Directory.CreateDirectory(_windowsInfoDest);
+            welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
+            ExecuteCommands();
             
         }                       
 
