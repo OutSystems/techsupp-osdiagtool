@@ -47,7 +47,7 @@ namespace OSDiagTool
         }
 
         // Use this function to copy all the contents of a path. Set the copySubDirs to True if you want to copy as well all subfolders contents
-        public void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs, int daysToFetch = 3)
+        public void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs, bool isLimitedDays, int daysToFetch = 3)
         {
             DateTime dtNow = DateTime.Now;
             DateTime dtSubLastWrite = dtNow.AddDays(-daysToFetch);
@@ -73,10 +73,16 @@ namespace OSDiagTool
             FileInfo[] files = dir.GetFiles();
             foreach (FileInfo file in files)
             {
-                if (file.LastWriteTime > dtSubLastWrite) {
+                if (isLimitedDays) {
+                    if (file.LastWriteTime > dtSubLastWrite) {
+                        string temppath = Path.Combine(destDirName, file.Name);
+                        file.CopyTo(temppath, false);
+                    }
+                } else {
                     string temppath = Path.Combine(destDirName, file.Name);
                     file.CopyTo(temppath, false);
                 }
+                
             }
 
             // If copying subdirectories, copy them and their contents to new location.
@@ -85,9 +91,21 @@ namespace OSDiagTool
                 foreach (DirectoryInfo subdir in dirs)
                 {
                     string temppath = Path.Combine(destDirName, subdir.Name);
-                    DirectoryCopy(subdir.FullName, temppath, copySubDirs, daysToFetch);
+                    DirectoryCopy(subdir.FullName, temppath, copySubDirs, isLimitedDays, daysToFetch);
                 }
             }
+        }
+
+        public string GetPathWithWindowsRoot (string path) {
+
+            path = path.ToLower();
+
+            if (path.Contains("%systemdrive%")) {
+                return path.Replace("%systemdrive%\\", Path.GetPathRoot(Environment.SystemDirectory));
+            }
+
+            return path;
+
         }
     }
 }
