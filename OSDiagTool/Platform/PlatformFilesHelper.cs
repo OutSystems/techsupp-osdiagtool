@@ -8,6 +8,8 @@ using System.IO;
 namespace OSDiagTool.Platform {
     class PlatformFilesHelper {
 
+        private static string appPoolConfigPath = @"%SYSTEMDRIVE%\inetpub\temp\appPools";
+
         public static void CopyPlatformAndServerConfFiles(string _osInstallationFolder, string _iisApplicationHostPath, string _iisWebConfigPath, string _machineConfigPath, string _osPlatFilesDest) {
 
             string confFilePath = "";
@@ -75,6 +77,21 @@ namespace OSDiagTool.Platform {
                     FileLogger.TraceLog("(File does not exist)", true);
                 }
             }
+
+            // Export Environment variables
+            foreach (System.Collections.DictionaryEntry env in Environment.GetEnvironmentVariables()) {
+                string name = (string)env.Key;
+                string value = (string)env.Value;
+
+                Utils.WinUtils.WriteToFile(Path.Combine(_osPlatFilesDest, "EnvironmentVariables.txt"), name + ": " + value);
+                
+            }
+
+            // Copy application pool configurations %SYSTEMDRIVE%\inetpub\temp\appPools
+            FileSystemHelper fsHelper = new FileSystemHelper();
+            appPoolConfigPath = fsHelper.GetPathWithWindowsRoot(appPoolConfigPath);
+            fsHelper.DirectoryCopy(appPoolConfigPath, Path.Combine(_osPlatFilesDest, "AppPoolConfigurations"), true, false);
+
         }
 
 
