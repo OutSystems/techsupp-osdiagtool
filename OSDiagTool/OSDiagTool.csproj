@@ -104,6 +104,7 @@
     <Compile Include="FileSystemHelper.cs" />
     <Compile Include="DBConnector\IDBConnector.cs" />
     <Compile Include="IISHelper.cs" />
+    <Compile Include="OSDGTCmdLine.cs" />
     <Compile Include="OSDiagToolConf\ConfModel.cs" />
     <Compile Include="OSDiagToolConf\MetamodelTables.cs" />
     <Compile Include="OSDiagToolConf\OSDiagToolConfReader.cs" />

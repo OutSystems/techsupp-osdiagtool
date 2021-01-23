@@ -94,9 +94,35 @@ namespace OSDiagTool
                     orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
                 }
 
-                Application.EnableVisualStyles();
-                Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
+                // Checking if run is via cmd prompt
+                // args[0] RunOnCmdPrompt to run on CmdLine
+                // args[1] saUser; args[2] sapwd;
 
+                OSDiagToolInitialization();
+
+                if (!args.Length.Equals(0)) {
+
+                    if (args[0].Equals("RunOnCmdPrompt")) {
+
+                        if (args.Equals(3)) {
+
+                            OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString, args[1].ToString(), args[2].ToString());
+
+                        } else {
+
+                            OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString);
+
+                        }
+
+                    }
+
+
+                } else {
+
+                    Application.EnableVisualStyles();
+                    Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
+
+                }              
             }
 
         }
