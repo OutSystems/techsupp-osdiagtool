@@ -14,6 +14,7 @@ using System.Data.SqlClient;
 using OSDiagTool.Database.DatabaseQueries;
 using OSDiagTool;
 
+
 namespace OSDiagTool.Tests
 {
     class Class1
@@ -27,9 +28,9 @@ namespace OSDiagTool.Tests
         static void Main(string[] args)
         {
 
+            float test = WinPerfCounters.GetIISQueue();
 
-
-            Program.CollectMemoryDumps(true, true);
+            //Program.CollectMemoryDumps(true, true);
 
             /*string dbEngine = "oracle";
             int queryTimeout = 30;
@@ -47,22 +48,6 @@ namespace OSDiagTool.Tests
 
 
             Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _tempPath, null, orclConnString);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

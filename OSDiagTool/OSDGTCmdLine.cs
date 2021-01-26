@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OSDiagTool.OSDiagToolConf;
 using System.Diagnostics;
+using System.Threading;
 
 
 
@@ -14,9 +15,38 @@ namespace OSDiagTool {
 
         private static string osDiagToolEventSource = "OSDiagTool";
 
+        public static bool IISQueueAlarm(int timeInterval, float queueThreshold) {
+
+            Console.WriteLine("Starting IIS monitorization... Close console to stop");
+
+            bool alarm = false;
+
+            while (alarm.Equals(false)) {
+
+                float iisQueue = WinPerfCounters.GetIISQueue();
+
+                if (iisQueue >= queueThreshold) {
+
+                    return alarm = true;
+
+                } else {
+
+                    if (Wind)
+
+                    Thread.Sleep(timeInterval * 1000);
+
+                }
+
+            }
+
+            return alarm;
+
+        }
+
         public static void CmdLineRun(OSDiagToolConf.ConfModel.strConfModel configurations, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null,
             string dbSaUser = null, string dbSaPwd = null) {
 
+            Console.WriteLine("Starting OSDiagTool data collection.");
             EventLog.WriteEntry(osDiagToolEventSource, "Command Line run of OSDiagTool started", EventLogEntryType.Information);
 
             // Get Platform and Server files
