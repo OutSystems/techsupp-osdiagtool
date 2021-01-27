@@ -108,23 +108,7 @@ namespace OSDiagTool
 
                             OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString, args[1].ToString(), args[2].ToString());
 
-                        } else if (args[1].ToLower().Equals("iisqueuemonit")) { // Monitor mode: runcmdline + iisqueuemonit + saUser (opt) + saPwd (opt)
-
-                            int timeInterval = 30; //seconds; parameter should be declared in config file
-
-                            bool isIISQueueAlarm = OSDGTCmdLine.IISQueueAlarm(timeInterval, 10);
-
-                            if (args.Length.Equals(4)) {
-
-                               if (isIISQueueAlarm.Equals(true)) OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString, args[2].ToString(), args[3].ToString());
-
-                            } else OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString);
-
-                            // What next ? continues ? interrumpts? increases timeinterval?
-
-                        }
-                        
-                        else {
+                        } else {
 
                             OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString);
 

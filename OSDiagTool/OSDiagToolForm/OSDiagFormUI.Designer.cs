@@ -73,9 +73,19 @@
             this.cb_dbPlatformMetamodel = new System.Windows.Forms.CheckBox();
             this.label11 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
+            this.tp_iisMonit = new System.Windows.Forms.TabPage();
+            this.lb_iisMonitStatus = new System.Windows.Forms.Label();
+            this.bt_iisMonitStop = new System.Windows.Forms.Button();
+            this.bt_iisMonitRun = new System.Windows.Forms.Button();
+            this.label24 = new System.Windows.Forms.Label();
+            this.nud_iisTimestep = new System.Windows.Forms.NumericUpDown();
+            this.label23 = new System.Windows.Forms.Label();
+            this.nud_iisQueueThreshold = new System.Windows.Forms.NumericUpDown();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             this.bt_runOsDiagTool = new System.Windows.Forms.Button();
             this.lbl_feedbackOsDiagForm = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.bw_iisMonit = new System.ComponentModel.BackgroundWorker();
             this.menuStrip1.SuspendLayout();
             this.tb_osDiagConf.SuspendLayout();
             this.tb_osDiagGenConf.SuspendLayout();
@@ -83,6 +93,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_iisLogsNrDays)).BeginInit();
             this.tb_databaseConf.SuspendLayout();
             this.DBCredentials.SuspendLayout();
+            this.tp_iisMonit.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_iisTimestep)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_iisQueueThreshold)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -228,6 +241,7 @@
             // 
             // menuStrip1
             // 
+            this.menuStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
@@ -263,6 +277,7 @@
             // 
             this.tb_osDiagConf.Controls.Add(this.tb_osDiagGenConf);
             this.tb_osDiagConf.Controls.Add(this.tb_databaseConf);
+            this.tb_osDiagConf.Controls.Add(this.tp_iisMonit);
             this.tb_osDiagConf.Location = new System.Drawing.Point(12, 36);
             this.tb_osDiagConf.Name = "tb_osDiagConf";
             this.tb_osDiagConf.SelectedIndex = 0;
@@ -301,6 +316,7 @@
             this.tb_osDiagGenConf.TabIndex = 0;
             this.tb_osDiagGenConf.Text = "General Configurations";
             this.tb_osDiagGenConf.UseVisualStyleBackColor = true;
+            this.tb_osDiagGenConf.Enter += new System.EventHandler(this.GeneralDatabaseConfigurationsTabClick);
             // 
             // label22
             // 
@@ -411,6 +427,7 @@
             this.tb_databaseConf.TabIndex = 1;
             this.tb_databaseConf.Text = "Database Configurations";
             this.tb_databaseConf.UseVisualStyleBackColor = true;
+            this.tb_databaseConf.Enter += new System.EventHandler(this.GeneralDatabaseConfigurationsTabClick);
             // 
             // bt_removeMetamodelTables
             // 
@@ -594,14 +611,134 @@
             this.label12.TabIndex = 21;
             this.label12.Text = "Database Information";
             // 
+            // tp_iisMonit
+            // 
+            this.tp_iisMonit.Controls.Add(this.lb_iisMonitStatus);
+            this.tp_iisMonit.Controls.Add(this.bt_iisMonitStop);
+            this.tp_iisMonit.Controls.Add(this.bt_iisMonitRun);
+            this.tp_iisMonit.Controls.Add(this.label24);
+            this.tp_iisMonit.Controls.Add(this.nud_iisTimestep);
+            this.tp_iisMonit.Controls.Add(this.label23);
+            this.tp_iisMonit.Controls.Add(this.nud_iisQueueThreshold);
+            this.tp_iisMonit.Controls.Add(this.textBox1);
+            this.tp_iisMonit.Location = new System.Drawing.Point(4, 22);
+            this.tp_iisMonit.Name = "tp_iisMonit";
+            this.tp_iisMonit.Padding = new System.Windows.Forms.Padding(3);
+            this.tp_iisMonit.Size = new System.Drawing.Size(441, 457);
+            this.tp_iisMonit.TabIndex = 2;
+            this.tp_iisMonit.Text = "IIS Monitorization mode";
+            this.tp_iisMonit.UseVisualStyleBackColor = true;
+            this.tp_iisMonit.Enter += new System.EventHandler(this.IISMonitorizationTabClick);
+            // 
+            // lb_iisMonitStatus
+            // 
+            this.lb_iisMonitStatus.AutoSize = true;
+            this.lb_iisMonitStatus.Location = new System.Drawing.Point(12, 300);
+            this.lb_iisMonitStatus.Name = "lb_iisMonitStatus";
+            this.lb_iisMonitStatus.Size = new System.Drawing.Size(0, 13);
+            this.lb_iisMonitStatus.TabIndex = 28;
+            // 
+            // bt_iisMonitStop
+            // 
+            this.bt_iisMonitStop.Enabled = false;
+            this.bt_iisMonitStop.Location = new System.Drawing.Point(135, 420);
+            this.bt_iisMonitStop.Name = "bt_iisMonitStop";
+            this.bt_iisMonitStop.Size = new System.Drawing.Size(167, 23);
+            this.bt_iisMonitStop.TabIndex = 27;
+            this.bt_iisMonitStop.Text = "Stop IIS Monitorization";
+            this.bt_iisMonitStop.UseVisualStyleBackColor = true;
+            this.bt_iisMonitStop.Click += new System.EventHandler(this.bt_iisMonitStop_Click);
+            // 
+            // bt_iisMonitRun
+            // 
+            this.bt_iisMonitRun.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.bt_iisMonitRun.Location = new System.Drawing.Point(135, 390);
+            this.bt_iisMonitRun.Name = "bt_iisMonitRun";
+            this.bt_iisMonitRun.Size = new System.Drawing.Size(167, 23);
+            this.bt_iisMonitRun.TabIndex = 26;
+            this.bt_iisMonitRun.Text = "Run IIS Monitorization";
+            this.bt_iisMonitRun.UseVisualStyleBackColor = true;
+            this.bt_iisMonitRun.Click += new System.EventHandler(this.bt_iisMonitRun_Click);
+            // 
+            // label24
+            // 
+            this.label24.AutoSize = true;
+            this.label24.Location = new System.Drawing.Point(12, 206);
+            this.label24.Name = "label24";
+            this.label24.Size = new System.Drawing.Size(104, 13);
+            this.label24.TabIndex = 25;
+            this.label24.Text = "Timestep in seconds";
+            // 
+            // nud_iisTimestep
+            // 
+            this.nud_iisTimestep.Location = new System.Drawing.Point(135, 204);
+            this.nud_iisTimestep.Maximum = new decimal(new int[] {
+            600,
+            0,
+            0,
+            0});
+            this.nud_iisTimestep.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.nud_iisTimestep.Name = "nud_iisTimestep";
+            this.nud_iisTimestep.Size = new System.Drawing.Size(38, 20);
+            this.nud_iisTimestep.TabIndex = 24;
+            this.nud_iisTimestep.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // label23
+            // 
+            this.label23.AutoSize = true;
+            this.label23.Location = new System.Drawing.Point(12, 166);
+            this.label23.Name = "label23";
+            this.label23.Size = new System.Drawing.Size(105, 13);
+            this.label23.TabIndex = 23;
+            this.label23.Text = "IIS Queue Threshold";
+            // 
+            // nud_iisQueueThreshold
+            // 
+            this.nud_iisQueueThreshold.Location = new System.Drawing.Point(135, 164);
+            this.nud_iisQueueThreshold.Maximum = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            this.nud_iisQueueThreshold.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.nud_iisQueueThreshold.Name = "nud_iisQueueThreshold";
+            this.nud_iisQueueThreshold.Size = new System.Drawing.Size(38, 20);
+            this.nud_iisQueueThreshold.TabIndex = 22;
+            this.nud_iisQueueThreshold.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(15, 19);
+            this.textBox1.Multiline = true;
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(394, 121);
+            this.textBox1.TabIndex = 0;
+            this.textBox1.Text = resources.GetString("textBox1.Text");
+            // 
             // bt_runOsDiagTool
             // 
             this.bt_runOsDiagTool.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.bt_runOsDiagTool.Location = new System.Drawing.Point(175, 538);
+            this.bt_runOsDiagTool.Location = new System.Drawing.Point(180, 530);
             this.bt_runOsDiagTool.Name = "bt_runOsDiagTool";
             this.bt_runOsDiagTool.Size = new System.Drawing.Size(107, 23);
             this.bt_runOsDiagTool.TabIndex = 25;
-            this.bt_runOsDiagTool.Text = "Run";
+            this.bt_runOsDiagTool.Text = "Single Run";
             this.bt_runOsDiagTool.UseVisualStyleBackColor = true;
             // 
             // lbl_feedbackOsDiagForm
@@ -619,15 +756,20 @@
             this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
             this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
             // 
+            // bw_iisMonit
+            // 
+            this.bw_iisMonit.WorkerSupportsCancellation = true;
+            this.bw_iisMonit.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bw_iisMonit_DoWork);
+            // 
             // OsDiagForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(465, 573);
+            this.Controls.Add(this.tb_osDiagConf);
             this.Controls.Add(this.lbl_feedbackOsDiagForm);
             this.Controls.Add(this.bt_runOsDiagTool);
-            this.Controls.Add(this.tb_osDiagConf);
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
@@ -645,6 +787,10 @@
             this.tb_databaseConf.PerformLayout();
             this.DBCredentials.ResumeLayout(false);
             this.DBCredentials.PerformLayout();
+            this.tp_iisMonit.ResumeLayout(false);
+            this.tp_iisMonit.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_iisTimestep)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_iisQueueThreshold)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -704,5 +850,15 @@
         private System.Windows.Forms.CheckBox cb_platformAndServerFiles;
         private System.Windows.Forms.Label label22;
         public System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.TabPage tp_iisMonit;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Label label23;
+        private System.Windows.Forms.NumericUpDown nud_iisQueueThreshold;
+        private System.Windows.Forms.Label label24;
+        private System.Windows.Forms.NumericUpDown nud_iisTimestep;
+        private System.Windows.Forms.Button bt_iisMonitRun;
+        private System.Windows.Forms.Button bt_iisMonitStop;
+        private System.Windows.Forms.Label lb_iisMonitStatus;
+        private System.ComponentModel.BackgroundWorker bw_iisMonit;
     }
 }

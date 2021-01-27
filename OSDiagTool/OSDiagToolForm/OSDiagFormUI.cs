@@ -11,6 +11,7 @@ using OSDiagTool.OSDiagToolConf;
 using System.Threading;
 using OSDiagTool.Platform.ConfigFiles;
 using System.IO;
+using System.Threading;
 
 namespace OSDiagTool.OSDiagToolForm {
     public partial class OsDiagForm : Form {
@@ -71,9 +72,10 @@ namespace OSDiagTool.OSDiagToolForm {
 
             this.lb_metamodelTables.Items.AddRange(configurations.tableNames.ToArray()); // add Platform Metamodel tables to list box
 
-
             bt_TestSaConnection.Click += delegate (object sender, EventArgs e) { bt_TestSaConnection_Click(sender, e, dbms, SQLConnectionString, OracleConnectionString); };
             bt_runOsDiagTool.Click += delegate (object sender, EventArgs e) { bt_runOsDiagTool_Click(sender, e, configurations); };
+
+            //bt_iisMonitRun.Click += delegate (object sender, EventArgs e) { bt_iisMonitRun_Click(sender, e, ); };
         }
 
         private void bt_TestSaConnection_Click(object sender, EventArgs e, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
@@ -384,5 +386,61 @@ namespace OSDiagTool.OSDiagToolForm {
                 popup.Close();
             }
         }
+
+        private void IISMonitorizationTabClick(object sender, EventArgs e) {
+
+            bt_runOsDiagTool.Enabled = false;
+
+        }
+
+        private void GeneralDatabaseConfigurationsTabClick(object sender, EventArgs e) {
+
+            bt_runOsDiagTool.Enabled = true;
+
+        }
+
+        private void bt_iisMonitRun_Click(object sender, EventArgs e) {
+
+            lb_iisMonitStatus.Text = "IIS Monitorization currently running...";
+
+            this.bt_iisMonitRun.Enabled = false;
+            this.bt_iisMonitStop.Enabled = true;
+
+
+            bw_iisMonit.RunWorkerAsync();
+
+        }
+
+        private void bt_iisMonitStop_Click(object sender, EventArgs e) {
+
+            lb_iisMonitStatus.Text = "Cancelling IIS Monitorization...";
+            this.bw_iisMonit.CancelAsync();
+
+            this.bt_iisMonitRun.Enabled = true;
+            this.bt_iisMonitStop.Enabled = false;
+
+            lb_iisMonitStatus.Text = "";
+
+        }
+
+        private void bw_iisMonit_DoWork(object sender, DoWorkEventArgs e) {
+
+            bool alarm = false;
+
+            int timeStep = Convert.ToInt32(this.nud_iisTimestep.Value);
+            float iisQueueThreshold = (float) this.nud_iisQueueThreshold.Value;
+
+            while (alarm.Equals(false)) {
+
+                alarm = WinPerfCounters.IISQueueAlarm(iisQueueThreshold);
+
+                Thread.Sleep(timeStep);
+
+            } 
+
+
+        }
+
     }
 }
+
