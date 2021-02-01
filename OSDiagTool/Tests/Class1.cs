@@ -28,7 +28,10 @@ namespace OSDiagTool.Tests
         static void Main(string[] args)
         {
 
-            float test = WinPerfCounters.GetIISQueue();
+            Program.CollectMemoryDumps(true, false);
+
+
+            //float test = WinPerfCounters.GetIISQueue();
 
             //Program.CollectMemoryDumps(true, true);
 

@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Microsoft.Win32;
-using OSDiagTool.Utils;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
 using System.Data.SqlClient;
 using System.Windows.Forms;
-using OSDiagTool.OSDiagToolForm;
+using System.Diagnostics;
 
 namespace OSDiagTool
 {
@@ -404,6 +402,8 @@ namespace OSDiagTool
         {
 
             List<string> processList = new List<string>();
+            bool parentPrcNeedsResume = false;
+            int parentProcessId = 0;
 
             if (iisMemDumps && osMemDumps) {
                 processList.AddRange(new List<string>() { "w3wp", "deployment_controller", "deployment_service", "scheduler", "log_service" });
@@ -429,6 +429,7 @@ namespace OSDiagTool
                 { "w3wp", "w3wp.exe" }
             };
 
+            // TODO: suspend w3wp parent svchost.exe to prevent recycle
             try {
 
                 foreach (string processTag in processList) {
@@ -441,14 +442,33 @@ namespace OSDiagTool
                         string pidSuf = pids.Count > 1 ? "_" + pid : "";
                         string filename = "memdump_" + processTag + pidSuf + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".dmp";
 
+                        if(processName.Equals("w3wp.exe")) { // suspend parent svchost to prevent recycle
+
+                            parentProcessId = WinPerfCounters.GetParentProcess(pid);
+                            var svchostProcess = Process.GetProcessById(parentProcessId);
+                            // TODO: implement suspend
+
+                            Utils.WinUtils.SuspendProcess(parentProcessId);
+                            parentPrcNeedsResume = true;
+
+                        }
+                        
+                        
+
                         FileLogger.TraceLog(" - PID " + pid + " - ");
                         command = new CmdLineCommand("procdump64.exe -ma " + pid + " /accepteula " + "\"" + Path.Combine(memoryDumpsPath, filename) + "\"");
                         command.Execute();
+
+                        if (parentPrcNeedsResume) Utils.WinUtils.ResumeProcess(parentProcessId);
+
                     }
 
                 }
             } catch(Exception e) {
                 FileLogger.LogError("Failed to get memory dump: ", e.Message + e.StackTrace);
+
+            } finally {
+                if (parentPrcNeedsResume) Utils.WinUtils.ResumeProcess(parentProcessId);
             }
 
             
