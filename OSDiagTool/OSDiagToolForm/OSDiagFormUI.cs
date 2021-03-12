@@ -25,6 +25,7 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _tdIis = "Threads IIS";
         public static string _tdOsServices = "Threads OS Services";
         public static string _mdIis = "Memory IIS";
+        public static string _osRequirements = "Platform Requirements";
         public static string _mdOsServices = "Memory OS Services";
         public static string _slEvt = "Event Viewer Logs";
         public static string _slIisLogs = "IIS Access Logs";
@@ -138,6 +139,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _tdIis, cb_iisThreads.Checked},
                 { _tdOsServices, cb_osServicesThreads.Checked},
                 { _mdIis, cb_iisMemDumps.Checked},
+                { _osRequirements, cb_osRequirements.Checked},
                 { _mdOsServices, cb_osMemDumps.Checked},
                 { _slEvt, cb_EvtViewerLogs.Checked},
                 { _slIisLogs, cb_iisAccessLogs.Checked},
@@ -337,7 +339,19 @@ namespace OSDiagTool.OSDiagToolForm {
 
                 }
             }
-                
+
+            // Platform Requirements
+            if (!backgroundWorker1.CancellationPending)
+            {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._osRequirements, out bool getOsRequirements) && getOsRequirements == true)
+                {
+
+                    backgroundWorker1.ReportProgress(5, configurationsHelper.popup);
+                    Program.CheckPlatformRequirementsProgram();
+
+                }
+            }
+
             backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
             Program.GenerateZipFile();
             backgroundWorker1.ReportProgress(12, configurationsHelper.popup); // Last step to close pop up

@@ -283,9 +283,6 @@ namespace OSDiagTool
             } else if (dbEngine.Equals("oracle")) {
                 Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
             }
-
-
-
         }
 
         public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps) {
@@ -299,6 +296,14 @@ namespace OSDiagTool
 
             FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS memory dumps: {0} ; OutSystems Services memory dumps: {1})", getIisMemDumps, getOsMemDumps));
             CollectMemoryDumps(getIisMemDumps, getOsMemDumps);
+
+        }
+
+        public static void CheckPlatformRequirementsProgram()
+        {
+
+            FileLogger.TraceLog(string.Format("Checking the OutSystems Platform Requirements..."));
+            CheckPlatformRequirements();
 
         }
 
@@ -395,8 +400,12 @@ namespace OSDiagTool
             }
 
 
-            }
-            
+        }
+
+        private static void CheckPlatformRequirements()
+        {
+            // TODO
+        }
 
         public static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
         {
