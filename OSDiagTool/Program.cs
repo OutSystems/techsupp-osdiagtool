@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Data.SqlClient;
+using System.Windows.Forms;
+using System.Diagnostics;
+using System.Net.NetworkInformation;
+using System.Net;
+using System.Linq;
 using Microsoft.Win32;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
-using System.Data.SqlClient;
-using System.Windows.Forms;
-using System.Diagnostics;
+
 
 namespace OSDiagTool
 {
@@ -404,10 +408,48 @@ namespace OSDiagTool
 
         private static void CheckPlatformRequirements()
         {
-            // TODO
+            string PlatformRequirementsPath = Path.Combine(_tempFolderPath, "PlatformRequirements");
+            Directory.CreateDirectory(PlatformRequirementsPath);
+            // Set the name of the file that we will create
+            string filename = "requirements_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".log";
+
+            bool checkNetworkRequirements = false;
+
+            try
+            {
+                
+                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(PlatformRequirementsPath, filename))))
+                {
+
+                    // ICMP echo request
+                    Ping pinger = new Ping();
+                    // Test localhost forced to IPv4 - works if ICMP requests are blocked
+                    IPAddress addressToPing = Dns.GetHostAddresses("localhost")
+                        .First(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+
+                    PingReply reply = pinger.Send(addressToPing);
+
+                    // Write the results to log file
+                    writer.WriteLine("Network Requirements:\n");
+
+                    // Validate if localhost is resolving to 127.0.0.1
+                    if (addressToPing.ToString() == "127.0.0.1")
+                        writer.WriteLine(DateTime.Now.ToString() + ": Localhost resolves to " + reply.Address);
+                    else { 
+                        writer.WriteLine(DateTime.Now.ToString() + ": [ERROR] Localhost is resolving to " + reply.Address + " instead of 127.0.0.1");
+                        checkNetworkRequirements = true;
+                    }
+
+
+                }
+            }
+            catch (Exception e)
+            {
+                FileLogger.LogError("Failed process the Platform Requirements file: ", e.Message + e.StackTrace);
+            }
         }
 
-        public static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
+            public static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
         {
 
             List<string> processList = new List<string>();
