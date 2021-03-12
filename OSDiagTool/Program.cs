@@ -62,7 +62,7 @@ namespace OSDiagTool
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
-            } catch (Exception e) {
+            } catch (Exception) {
                 osPlatformVersion = null;
             }    
 
