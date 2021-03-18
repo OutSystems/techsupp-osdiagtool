@@ -156,6 +156,7 @@
     <Compile Include="RegistryClass.cs" />
     <Compile Include="Tests\Class1.cs" />
     <Compile Include="ThreadDumpCollector.cs" />
+    <Compile Include="Utils\NetworkUtils.cs" />
     <Compile Include="Utils\CryptoUtils.cs" />
     <Compile Include="Utils\WinUtils.cs" />
     <Compile Include="WindowsEventLogHelper.cs" />

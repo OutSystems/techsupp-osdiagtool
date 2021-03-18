@@ -4,15 +4,12 @@ using System.IO;
 using System.Data.SqlClient;
 using System.Windows.Forms;
 using System.Diagnostics;
-using System.Net.NetworkInformation;
-using System.Net;
-using System.Linq;
 using Microsoft.Win32;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
-
+using OSDiagTool.Utils;
 
 namespace OSDiagTool
 {
@@ -415,31 +412,42 @@ namespace OSDiagTool
 
             bool checkNetworkRequirements = false;
 
+            // Default ports
+            int[] portArray = {80, 443, 12000};
+
             try
             {
                 
                 using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(PlatformRequirementsPath, filename))))
                 {
-
-                    // ICMP echo request
-                    Ping pinger = new Ping();
-                    // Test localhost forced to IPv4 - works if ICMP requests are blocked
-                    IPAddress addressToPing = Dns.GetHostAddresses("localhost")
-                        .First(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-
-                    PingReply reply = pinger.Send(addressToPing);
-
                     // Write the results to log file
                     writer.WriteLine("Network Requirements:\n");
 
+                    NetworkUtils test = new NetworkUtils();
+                    string reply = test.PingAddress("localhost");
+
                     // Validate if localhost is resolving to 127.0.0.1
-                    if (addressToPing.ToString() == "127.0.0.1")
-                        writer.WriteLine(DateTime.Now.ToString() + ": Localhost resolves to " + reply.Address);
+                    if (reply == "127.0.0.1")
+                        writer.WriteLine(DateTime.Now.ToString() + ": Localhost resolves to " + reply + ".");
                     else { 
-                        writer.WriteLine(DateTime.Now.ToString() + ": [ERROR] Localhost is resolving to " + reply.Address + " instead of 127.0.0.1");
+                        writer.WriteLine(DateTime.Now.ToString() + ": [ERROR] Localhost is resolving to " + reply + " instead of 127.0.0.1");
                         checkNetworkRequirements = true;
                     }
 
+                    // Validate ports
+                    foreach (int port in portArray)
+                    {
+                        // Port available
+                        if (test.IsPortListening(port)) {
+                            writer.WriteLine(DateTime.Now.ToString() + ": The TCP port " + port + " is listening.");
+                        } else {
+                            writer.WriteLine(DateTime.Now.ToString() + ": [ERROR] The TCP port " + port + " is not listening.");
+                            checkNetworkRequirements = true;
+                        }
+                        
+                    }
+                    if (checkNetworkRequirements)
+                        writer.WriteLine("\n[ERROR] Please review the OutSystems Network Requirements.");
 
                 }
             }
