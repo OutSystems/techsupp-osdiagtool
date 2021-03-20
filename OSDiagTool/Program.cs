@@ -29,6 +29,7 @@ namespace OSDiagTool
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
+        private static string _osPlatformRequirements = Path.Combine(_tempFolderPath, "PlatformRequirements");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
 
@@ -300,14 +301,6 @@ namespace OSDiagTool
 
         }
 
-        public static void CheckPlatformRequirementsProgram()
-        {
-
-            FileLogger.TraceLog(string.Format("Checking the OutSystems Platform Requirements..."));
-            CheckPlatformRequirements();
-
-        }
-
         public static void GenerateZipFile() {
 
             FileLogger.TraceLog("Creating zip file... ");
@@ -403,28 +396,43 @@ namespace OSDiagTool
 
         }
 
-        private static void CheckPlatformRequirements()
+        /* Checks the Platform Requirements below:
+         * OutSystems Network Requirements
+         */
+        public static void CheckPlatformRequirements()
         {
-            string PlatformRequirementsPath = Path.Combine(_tempFolderPath, "PlatformRequirements");
-            Directory.CreateDirectory(PlatformRequirementsPath);
-            // Set the name of the file that we will create
-            string filename = "requirements_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".log";
+            FileLogger.TraceLog(string.Format("Checking the OutSystems Platform Requirements..."));
+            Directory.CreateDirectory(_osPlatformRequirements);
 
             bool checkNetworkRequirements = false;
 
-            // Default ports
-            int[] portArray = {80, 443, 12000};
+            // TODO - check if applicationServerPort and applicationServerSecurePort are correct
+            // TODO - include LogServerPort? OS 10?
+
+            // Getting the ports set in Configuration Tool (server.hsconf file)
+            /*
+            string[] portArray = {
+                Platform.PlatformUtils.GetPlatformConfigValue("CompilerServerPort"), // Default port 12000
+                Platform.PlatformUtils.GetPlatformConfigValue("DeploymentServerPort"), // Default port 12001
+                Platform.PlatformUtils.GetPlatformConfigValue("SchedulerServerPort"), // Default port 12002
+                Platform.PlatformUtils.GetPlatformConfigValue("ApplicationServerPort"), // Port 80
+                Platform.PlatformUtils.GetPlatformConfigValue("ApplicationServerSecurePort") // Port 443
+            };*/
+            string[] portArray = { Platform.PlatformUtils.GetPlatformConfigValue("CompilerServerPort"), "443" };
 
             try
             {
-                
-                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(PlatformRequirementsPath, filename))))
+                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(_osPlatformRequirements, "requirements.log"))))
                 {
                     // Write the results to log file
                     writer.WriteLine("Network Requirements:\n");
 
-                    NetworkUtils test = new NetworkUtils();
-                    string reply = test.PingAddress("localhost");
+                    NetworkUtils check = new NetworkUtils();
+
+                    // Get server IP address
+                    writer.WriteLine(DateTime.Now.ToString() + ": IP address detected in this server: " + check.PingAddress("") + ".");
+
+                    string reply = check.PingAddress("localhost");
 
                     // Validate if localhost is resolving to 127.0.0.1
                     if (reply == "127.0.0.1")
@@ -435,20 +443,19 @@ namespace OSDiagTool
                     }
 
                     // Validate ports
-                    foreach (int port in portArray)
+                    foreach (string port in portArray)
                     {
                         // Port available
-                        if (test.IsPortListening(port)) {
+                        if (check.IsPortListening(port)) {
                             writer.WriteLine(DateTime.Now.ToString() + ": The TCP port " + port + " is listening.");
                         } else {
-                            writer.WriteLine(DateTime.Now.ToString() + ": [ERROR] The TCP port " + port + " is not listening.");
+                            writer.WriteLine(DateTime.Now.ToString() + ": [ERROR] Could not detect if port " + port + " is listening.");
                             checkNetworkRequirements = true;
                         }
-                        
                     }
+                    
                     if (checkNetworkRequirements)
-                        writer.WriteLine("\n[ERROR] Please review the OutSystems Network Requirements.");
-
+                        writer.WriteLine("\n[ERROR] Please review the OutSystems Network Requirements."); 
                 }
             }
             catch (Exception e)

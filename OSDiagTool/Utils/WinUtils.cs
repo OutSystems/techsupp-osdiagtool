@@ -67,8 +67,6 @@ namespace OSDiagTool.Utils {
             }
         }
 
-
-
         public static void WriteToFile(string filePath, string message) {
 
             if (!File.Exists(filePath)) { 
@@ -78,6 +76,5 @@ namespace OSDiagTool.Utils {
             File.AppendAllText(filePath, message + Environment.NewLine);
 
         }
-
     }
 }

@@ -17,18 +17,28 @@ namespace OSDiagTool.Utils
             return reply.Address.ToString();
         }
 
-        public bool IsPortListening (int port)
+        public bool IsPortListening (string port)
         {
-            IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-            IPEndPoint[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpListeners();
-
-            // Search for the port in the active TCP listeners list
-            foreach (IPEndPoint endpoint in tcpConnInfoArray)
+            try
             {
-                if (endpoint.Port == port)
-                    return true;
+                IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                IPEndPoint[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpListeners();
+
+                // Search for the port in the active TCP listeners list
+                foreach (IPEndPoint endpoint in tcpConnInfoArray)
+                {
+                    if (endpoint.Port.ToString() == port)
+                        return true;
+                }
+                return false;
             }
-            return false;
+            // Exception thrown when an error occurs while retrieving network information.
+            catch (NetworkInformationException e)
+            {
+                FileLogger.LogError("Failed to retrieve network information: ", e.Message + e.StackTrace);
+                // Return false, since we could not validate the port
+                return false;
+            }
         }
     }
 }

@@ -11,7 +11,6 @@ using OSDiagTool.OSDiagToolConf;
 using System.Threading;
 using OSDiagTool.Platform.ConfigFiles;
 using System.IO;
-using System.Threading;
 
 namespace OSDiagTool.OSDiagToolForm {
     public partial class OsDiagForm : Form {
@@ -46,8 +45,9 @@ namespace OSDiagTool.OSDiagToolForm {
             { 8, "Exporting Platform and Server Configuration files" },
             { 9, "Exporting Platform metamodel" },
             { 10, "Performing Database Troubleshoot" },
-            { 11, "Zipping file..." },
-            { 12, "" }, // Last step for closing the pop up
+            { 11, "Checking the OutSystems Platform Requirements" },
+            { 12, "Zipping file..." },
+            { 13, "" }, // Last step for closing the pop up
         };
 
         public OsDiagForm(OSDiagToolConf.ConfModel.strConfModel configurations, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
@@ -346,15 +346,15 @@ namespace OSDiagTool.OSDiagToolForm {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._osRequirements, out bool getOsRequirements) && getOsRequirements == true)
                 {
 
-                    backgroundWorker1.ReportProgress(5, configurationsHelper.popup);
-                    Program.CheckPlatformRequirementsProgram();
+                    backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
+                    Program.CheckPlatformRequirements();
 
                 }
             }
 
-            backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
+            backgroundWorker1.ReportProgress(12, configurationsHelper.popup);
             Program.GenerateZipFile();
-            backgroundWorker1.ReportProgress(12, configurationsHelper.popup); // Last step to close pop up
+            backgroundWorker1.ReportProgress(13, configurationsHelper.popup); // Last step to close pop up
 
             /* REFACTOR */
 

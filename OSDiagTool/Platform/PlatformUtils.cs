@@ -85,12 +85,26 @@ namespace OSDiagTool.Platform {
 
         }
 
+        // Ask Francisco if I can make this generic
         public static string GetPlatformDBAdminUser() {
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
             ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
             return platformDBInfo.GetProperty("AdminUser").Value;
+
+        }
+
+        /*
+         * Generic implementation of getting data from the server.hsconf file
+         */
+        public static string GetPlatformConfigValue(string element)
+        {
+
+            ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
+            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+
+            return platformDBInfo.GetProperty(element).Value;
 
         }
     }
