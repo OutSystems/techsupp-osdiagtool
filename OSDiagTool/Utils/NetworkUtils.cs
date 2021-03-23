@@ -6,9 +6,11 @@ namespace OSDiagTool.Utils
 {
     class NetworkUtils
     {
+        /*
+         *  Performs an ICMP echo request
+         */
         public string PingAddress(string hostAddress)
         {
-            // ICMP echo request
             Ping pinger = new Ping();
             IPAddress addressToPing = Dns.GetHostAddresses(hostAddress)
                 .First(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
@@ -17,6 +19,9 @@ namespace OSDiagTool.Utils
             return reply.Address.ToString();
         }
 
+        /*
+         * Check if a TCP port is listening in the server
+         */
         public bool IsPortListening (string port)
         {
             try
