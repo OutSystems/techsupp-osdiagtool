@@ -12,7 +12,6 @@ namespace OSDiagTool.Platform.ConfigFiles
         private string _dbms;
         private IDictionary<string, ConfigFileProperty> _properties;
 
-
         public ConfigFileDBInfo(string platformDbType, string dbms)
         {
             _platformDBType = platformDbType;
@@ -20,7 +19,6 @@ namespace OSDiagTool.Platform.ConfigFiles
 
             _properties = new Dictionary<string, ConfigFileProperty>();
         }
-
 
         public string PlatformDBType
         {

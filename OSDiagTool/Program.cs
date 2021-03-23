@@ -396,29 +396,22 @@ namespace OSDiagTool
 
         }
 
-        /* Checks the Platform Requirements below:
-         * OutSystems Network Requirements
+        /* 
+         * Check the Platform Requirements 
          */
         public static void CheckPlatformRequirements()
         {
-            FileLogger.TraceLog(string.Format("Checking the OutSystems Platform Requirements..."));
+            FileLogger.TraceLog("Checking the OutSystems Platform Requirements...");
             Directory.CreateDirectory(_osPlatformRequirements);
 
             bool checkNetworkRequirements = false;
 
-            // TODO - check if applicationServerPort and applicationServerSecurePort are correct
-            // TODO - include LogServerPort? OS 10?
-
             // Getting the ports set in Configuration Tool (server.hsconf file)
-            /*
             string[] portArray = {
-                Platform.PlatformUtils.GetPlatformConfigValue("CompilerServerPort"), // Default port 12000
-                Platform.PlatformUtils.GetPlatformConfigValue("DeploymentServerPort"), // Default port 12001
-                Platform.PlatformUtils.GetPlatformConfigValue("SchedulerServerPort"), // Default port 12002
-                Platform.PlatformUtils.GetPlatformConfigValue("ApplicationServerPort"), // Port 80
-                Platform.PlatformUtils.GetPlatformConfigValue("ApplicationServerSecurePort") // Port 443
-            };*/
-            string[] portArray = { Platform.PlatformUtils.GetPlatformConfigValue("CompilerServerPort"), "443" };
+                "80",
+                "443",
+                Platform.PlatformUtils.GetServiceConfigurationValue("DeploymentServerPort"), // Default port 12001
+            };
 
             try
             {
@@ -430,15 +423,14 @@ namespace OSDiagTool
                     NetworkUtils check = new NetworkUtils();
 
                     // Get server IP address
-                    writer.WriteLine(DateTime.Now.ToString() + ": IP address detected in this server: " + check.PingAddress("") + ".");
-
-                    string reply = check.PingAddress("localhost");
+                    writer.WriteLine(string.Format("{0}: IP address detected in this server: {1}.", DateTime.Now.ToString(), check.PingAddress("")));
 
                     // Validate if localhost is resolving to 127.0.0.1
+                    string reply = check.PingAddress("localhost");
                     if (reply == "127.0.0.1")
-                        writer.WriteLine(DateTime.Now.ToString() + ": Localhost resolves to " + reply + ".");
+                        writer.WriteLine(string.Format("{0}: Localhost resolves to {1}.", DateTime.Now.ToString(), reply));
                     else { 
-                        writer.WriteLine(DateTime.Now.ToString() + ": [ERROR] Localhost is resolving to " + reply + " instead of 127.0.0.1");
+                        writer.WriteLine(string.Format("{0}: [ERROR] Localhost is resolving to {1} instead of 127.0.0.1.", DateTime.Now.ToString(), reply));
                         checkNetworkRequirements = true;
                     }
 
@@ -447,9 +439,9 @@ namespace OSDiagTool
                     {
                         // Port available
                         if (check.IsPortListening(port)) {
-                            writer.WriteLine(DateTime.Now.ToString() + ": The TCP port " + port + " is listening.");
+                            writer.WriteLine(string.Format("{0}: The TCP port {1} is listening.", DateTime.Now.ToString(), port));
                         } else {
-                            writer.WriteLine(DateTime.Now.ToString() + ": [ERROR] Could not detect if port " + port + " is listening.");
+                            writer.WriteLine(string.Format("{0}: [ERROR] Could not detect if port {1} is listening.", DateTime.Now.ToString(), port));
                             checkNetworkRequirements = true;
                         }
                     }
@@ -464,9 +456,8 @@ namespace OSDiagTool
             }
         }
 
-            public static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
+        public static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
         {
-
             List<string> processList = new List<string>();
             bool parentPrcNeedsResume = false;
             int parentProcessId = 0;
@@ -518,8 +509,6 @@ namespace OSDiagTool
                             parentPrcNeedsResume = true;
 
                         }
-                        
-                        
 
                         FileLogger.TraceLog(" - PID " + pid + " - ");
                         command = new CmdLineCommand("procdump64.exe -ma " + pid + " /accepteula " + "\"" + Path.Combine(memoryDumpsPath, filename) + "\"");
@@ -536,7 +525,6 @@ namespace OSDiagTool
             } finally {
                 if (parentPrcNeedsResume) Utils.WinUtils.ResumeProcess(parentProcessId);
             }
-
             
         }
 
