@@ -1,0 +1,6 @@
+C:\Users\sad\Source\Repos\techsupp-osdiagtool\OSDiagTool\obj\Release\OSDiagTool.csprojAssemblyReference.cache
+C:\Users\sad\Source\Repos\techsupp-osdiagtool\OSDiagTool\obj\Release\OSDiagTool.OSDiagToolForm.OsDiagForm.resources
+C:\Users\sad\Source\Repos\techsupp-osdiagtool\OSDiagTool\obj\Release\OSDiagTool.OSDiagToolForm.puf_popUpForm.resources
+C:\Users\sad\Source\Repos\techsupp-osdiagtool\OSDiagTool\obj\Release\OSDiagTool.Properties.Resources.resources
+C:\Users\sad\Source\Repos\techsupp-osdiagtool\OSDiagTool\obj\Release\OSDiagTool.csproj.GenerateResource.cache
+C:\Users\sad\Source\Repos\techsupp-osdiagtool\OSDiagTool\obj\Release\OSDiagTool.csproj.CoreCompileInputs.cache

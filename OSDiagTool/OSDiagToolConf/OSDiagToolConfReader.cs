@@ -143,7 +143,7 @@ namespace OSDiagTool.OSDiagToolConf {
             try {
                 int iisLogsNrDays = Convert.ToInt32(query.First().daysOfLogs);
                 return iisLogsNrDays;
-            } catch (Exception e){
+            } catch (Exception){
                 int iisLogsNrDays = 3;
                 return iisLogsNrDays;
             }
@@ -159,7 +159,7 @@ namespace OSDiagTool.OSDiagToolConf {
             try {
                 int queryTimeout = Convert.ToInt32(query.First().qTimeout);
                 return queryTimeout;
-            } catch (Exception e) {
+            } catch (Exception) {
                 int queryTimeout = 30;
                 return queryTimeout;
             }
@@ -175,7 +175,7 @@ namespace OSDiagTool.OSDiagToolConf {
             try {
                 int osLogTopRecords = Convert.ToInt32(query.First().value);
                 return osLogTopRecords;
-            } catch (Exception e) {
+            } catch (Exception) {
                 int osLogTopRecords = 500;
                 return osLogTopRecords;
             }

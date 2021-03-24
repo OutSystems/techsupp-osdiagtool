@@ -11,7 +11,6 @@ using OSDiagTool.OSDiagToolConf;
 using System.Threading;
 using OSDiagTool.Platform.ConfigFiles;
 using System.IO;
-using System.Threading;
 
 namespace OSDiagTool.OSDiagToolForm {
     public partial class OsDiagForm : Form {
@@ -25,6 +24,7 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _tdIis = "Threads IIS";
         public static string _tdOsServices = "Threads OS Services";
         public static string _mdIis = "Memory IIS";
+        public static string _osRequirements = "Platform Requirements";
         public static string _mdOsServices = "Memory OS Services";
         public static string _slEvt = "Event Viewer Logs";
         public static string _slIisLogs = "IIS Access Logs";
@@ -45,8 +45,9 @@ namespace OSDiagTool.OSDiagToolForm {
             { 8, "Exporting Platform and Server Configuration files" },
             { 9, "Exporting Platform metamodel" },
             { 10, "Performing Database Troubleshoot" },
-            { 11, "Zipping file..." },
-            { 12, "" }, // Last step for closing the pop up
+            { 11, "Checking the OutSystems Platform Requirements" },
+            { 12, "Zipping file..." },
+            { 13, "" }, // Last step for closing the pop up
         };
 
         public OsDiagForm(OSDiagToolConf.ConfModel.strConfModel configurations, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
@@ -138,6 +139,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _tdIis, cb_iisThreads.Checked},
                 { _tdOsServices, cb_osServicesThreads.Checked},
                 { _mdIis, cb_iisMemDumps.Checked},
+                { _osRequirements, cb_osRequirements.Checked},
                 { _mdOsServices, cb_osMemDumps.Checked},
                 { _slEvt, cb_EvtViewerLogs.Checked},
                 { _slIisLogs, cb_iisAccessLogs.Checked},
@@ -337,10 +339,22 @@ namespace OSDiagTool.OSDiagToolForm {
 
                 }
             }
-                
-            backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
+
+            // Platform Requirements
+            if (!backgroundWorker1.CancellationPending)
+            {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._osRequirements, out bool getOsRequirements) && getOsRequirements == true)
+                {
+
+                    backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
+                    Program.CheckPlatformRequirements();
+
+                }
+            }
+
+            backgroundWorker1.ReportProgress(12, configurationsHelper.popup);
             Program.GenerateZipFile();
-            backgroundWorker1.ReportProgress(12, configurationsHelper.popup); // Last step to close pop up
+            backgroundWorker1.ReportProgress(13, configurationsHelper.popup); // Last step to close pop up
 
             /* REFACTOR */
 

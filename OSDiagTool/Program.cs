@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Data.SqlClient;
+using System.Windows.Forms;
+using System.Diagnostics;
 using Microsoft.Win32;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
-using System.Data.SqlClient;
-using System.Windows.Forms;
-using System.Diagnostics;
+using OSDiagTool.Utils;
 
 namespace OSDiagTool
 {
@@ -28,6 +29,7 @@ namespace OSDiagTool
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
+        private static string _osPlatformRequirements = Path.Combine(_tempFolderPath, "PlatformRequirements");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
 
@@ -58,7 +60,7 @@ namespace OSDiagTool
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
-            } catch (Exception e) {
+            } catch (Exception) {
                 osPlatformVersion = null;
             }    
 
@@ -283,9 +285,6 @@ namespace OSDiagTool
             } else if (dbEngine.Equals("oracle")) {
                 Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
             }
-
-
-
         }
 
         public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps) {
@@ -395,12 +394,70 @@ namespace OSDiagTool
             }
 
 
+        }
+
+        /* 
+         * Check the Platform Requirements 
+         */
+        public static void CheckPlatformRequirements()
+        {
+            FileLogger.TraceLog("Checking the OutSystems Platform Requirements...");
+            Directory.CreateDirectory(_osPlatformRequirements);
+
+            bool checkNetworkRequirements = false;
+
+            // Getting the ports set in Configuration Tool (server.hsconf file)
+            string[] portArray = {
+                "80",
+                "443",
+                Platform.PlatformUtils.GetServiceConfigurationValue("DeploymentServerPort"), // Default port 12001
+            };
+
+            try
+            {
+                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(_osPlatformRequirements, "requirements.log"))))
+                {
+                    // Write the results to log file
+                    writer.WriteLine("Network Requirements:\n");
+
+                    NetworkUtils check = new NetworkUtils();
+
+                    // Get server IP address
+                    writer.WriteLine(string.Format("{0}: IP address detected in this server: {1}.", DateTime.Now.ToString(), check.PingAddress("")));
+
+                    // Validate if localhost is resolving to 127.0.0.1
+                    string reply = check.PingAddress("localhost");
+                    if (reply == "127.0.0.1")
+                        writer.WriteLine(string.Format("{0}: Localhost resolves to {1}.", DateTime.Now.ToString(), reply));
+                    else { 
+                        writer.WriteLine(string.Format("{0}: [ERROR] Localhost is resolving to {1} instead of 127.0.0.1.", DateTime.Now.ToString(), reply));
+                        checkNetworkRequirements = true;
+                    }
+
+                    // Validate ports
+                    foreach (string port in portArray)
+                    {
+                        // Port available
+                        if (check.IsPortListening(port)) {
+                            writer.WriteLine(string.Format("{0}: The TCP port {1} is listening.", DateTime.Now.ToString(), port));
+                        } else {
+                            writer.WriteLine(string.Format("{0}: [ERROR] Could not detect if port {1} is listening.", DateTime.Now.ToString(), port));
+                            checkNetworkRequirements = true;
+                        }
+                    }
+                    
+                    if (checkNetworkRequirements)
+                        writer.WriteLine("\n[ERROR] Please review the OutSystems Network Requirements."); 
+                }
             }
-            
+            catch (Exception e)
+            {
+                FileLogger.LogError("Failed process the Platform Requirements file: ", e.Message + e.StackTrace);
+            }
+        }
 
         public static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
         {
-
             List<string> processList = new List<string>();
             bool parentPrcNeedsResume = false;
             int parentProcessId = 0;
@@ -452,8 +509,6 @@ namespace OSDiagTool
                             parentPrcNeedsResume = true;
 
                         }
-                        
-                        
 
                         FileLogger.TraceLog(" - PID " + pid + " - ");
                         command = new CmdLineCommand("procdump64.exe -ma " + pid + " /accepteula " + "\"" + Path.Combine(memoryDumpsPath, filename) + "\"");
@@ -470,7 +525,6 @@ namespace OSDiagTool
             } finally {
                 if (parentPrcNeedsResume) Utils.WinUtils.ResumeProcess(parentProcessId);
             }
-
             
         }
 

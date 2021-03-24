@@ -4,6 +4,7 @@ using OSDiagTool.Platform.ConfigFiles;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -89,9 +90,27 @@ namespace OSDiagTool.Platform {
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
             ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
-
+            
             return platformDBInfo.GetProperty("AdminUser").Value;
 
+        }
+
+        /*
+         * Read ServiceConfiguration section from the server.hsconf file
+         */
+        public static string GetServiceConfigurationValue(string element)
+        {
+            // We need to check if ServiceConfiguration exists, if not, return null
+            try
+            {
+                ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
+                ConfigFileDBInfo platformDBInfo = confFileParser.SrvConfigurationInfo;
+                return platformDBInfo.GetProperty(element).Value;
+
+            } catch (Exception e) {
+                FileLogger.LogError("Failed to retrieve platform configuration value " + element + " from section: ", e.Message + e.StackTrace);
+                return null;
+            }
         }
     }
 }

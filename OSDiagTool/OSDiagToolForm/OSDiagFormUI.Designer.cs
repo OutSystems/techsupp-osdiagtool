@@ -86,6 +86,7 @@
             this.lbl_feedbackOsDiagForm = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.bw_iisMonit = new System.ComponentModel.BackgroundWorker();
+            this.cb_osRequirements = new System.Windows.Forms.CheckBox();
             this.menuStrip1.SuspendLayout();
             this.tb_osDiagConf.SuspendLayout();
             this.tb_osDiagGenConf.SuspendLayout();
@@ -286,6 +287,7 @@
             // 
             // tb_osDiagGenConf
             // 
+            this.tb_osDiagGenConf.Controls.Add(this.cb_osRequirements);
             this.tb_osDiagGenConf.Controls.Add(this.label22);
             this.tb_osDiagGenConf.Controls.Add(this.cb_platformAndServerFiles);
             this.tb_osDiagGenConf.Controls.Add(this.nud_topLogs);
@@ -761,6 +763,18 @@
             this.bw_iisMonit.WorkerSupportsCancellation = true;
             this.bw_iisMonit.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bw_iisMonit_DoWork);
             // 
+            // cb_osRequirements
+            // 
+            this.cb_osRequirements.AutoSize = true;
+            this.cb_osRequirements.Checked = true;
+            this.cb_osRequirements.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cb_osRequirements.Location = new System.Drawing.Point(24, 393);
+            this.cb_osRequirements.Name = "cb_osRequirements";
+            this.cb_osRequirements.Size = new System.Drawing.Size(91, 17);
+            this.cb_osRequirements.TabIndex = 29;
+            this.cb_osRequirements.Text = "Requirements";
+            this.cb_osRequirements.UseVisualStyleBackColor = true;
+            // 
             // OsDiagForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -860,5 +874,6 @@
         private System.Windows.Forms.Button bt_iisMonitStop;
         private System.Windows.Forms.Label lb_iisMonitStatus;
         private System.ComponentModel.BackgroundWorker bw_iisMonit;
+        private System.Windows.Forms.CheckBox cb_osRequirements;
     }
 }
