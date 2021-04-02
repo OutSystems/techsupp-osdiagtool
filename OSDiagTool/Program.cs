@@ -9,7 +9,6 @@ using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
-using OSDiagTool.Utils;
 
 namespace OSDiagTool
 {
@@ -399,60 +398,29 @@ namespace OSDiagTool
         /* 
          * Check the Platform Requirements 
          */
-        public static void CheckPlatformRequirements()
+        public static void PlatformRequirementsProgram(OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
+            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null)
         {
-            FileLogger.TraceLog("Checking the OutSystems Platform Requirements...");
             Directory.CreateDirectory(_osPlatformRequirements);
-
-            bool checkNetworkRequirements = false;
-
-            // Getting the ports set in Configuration Tool (server.hsconf file)
-            string[] portArray = {
-                "80",
-                "443",
-                Platform.PlatformUtils.GetServiceConfigurationValue("DeploymentServerPort"), // Default port 12001
-            };
 
             try
             {
-                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(_osPlatformRequirements, "requirements.log"))))
+                FileLogger.TraceLog("Checking the OutSystems Platform Requirements...");
+
+                if (dbEngine.Equals("sqlserver"))
                 {
-                    // Write the results to log file
-                    writer.WriteLine("Network Requirements:\n");
+                    Platform.Requirements.PlatformRequirements.ValidateRequirements(dbEngine, _osPlatformRequirements, configurations, FormConfigurations, sqlConnString, null);
 
-                    NetworkUtils check = new NetworkUtils();
-
-                    // Get server IP address
-                    writer.WriteLine(string.Format("{0}: IP address detected in this server: {1}.", DateTime.Now.ToString(), check.PingAddress("")));
-
-                    // Validate if localhost is resolving to 127.0.0.1
-                    string reply = check.PingAddress("localhost");
-                    if (reply == "127.0.0.1")
-                        writer.WriteLine(string.Format("{0}: Localhost resolves to {1}.", DateTime.Now.ToString(), reply));
-                    else { 
-                        writer.WriteLine(string.Format("{0}: [ERROR] Localhost is resolving to {1} instead of 127.0.0.1.", DateTime.Now.ToString(), reply));
-                        checkNetworkRequirements = true;
-                    }
-
-                    // Validate ports
-                    foreach (string port in portArray)
-                    {
-                        // Port available
-                        if (check.IsPortListening(port)) {
-                            writer.WriteLine(string.Format("{0}: The TCP port {1} is listening.", DateTime.Now.ToString(), port));
-                        } else {
-                            writer.WriteLine(string.Format("{0}: [ERROR] Could not detect if port {1} is listening.", DateTime.Now.ToString(), port));
-                            checkNetworkRequirements = true;
-                        }
-                    }
-                    
-                    if (checkNetworkRequirements)
-                        writer.WriteLine("\n[ERROR] Please review the OutSystems Network Requirements."); 
                 }
+                else if (dbEngine.Equals("oracle"))
+                {
+                    Platform.Requirements.PlatformRequirements.ValidateRequirements(dbEngine, _osPlatformRequirements, configurations, FormConfigurations, null, oracleConnString);
+                }
+
             }
             catch (Exception e)
             {
-                FileLogger.LogError("Failed process the Platform Requirements file: ", e.Message + e.StackTrace);
+                FileLogger.LogError("Failed process the Platform Requirements: ", e.Message + e.StackTrace);
             }
         }
 

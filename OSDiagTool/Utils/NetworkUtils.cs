@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Net.NetworkInformation;
 using System.Net;
+using System.Net.Sockets;
 
 namespace OSDiagTool.Utils
 {
@@ -20,29 +21,28 @@ namespace OSDiagTool.Utils
         }
 
         /*
-         * Check if a TCP port is listening in the server
+         * Check if a TCP port is open in the server
          */
-        public bool IsPortListening (string port)
+        public bool IsPortOpen (string address, int port)
         {
+            TcpClient tc = null;
             try
             {
-                IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-                IPEndPoint[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpListeners();
-
-                // Search for the port in the active TCP listeners list
-                foreach (IPEndPoint endpoint in tcpConnInfoArray)
-                {
-                    if (endpoint.Port.ToString() == port)
-                        return true;
-                }
+                tc = new TcpClient(address, port);
+                // If we get here, port is open
+                return true;
+            } 
+            catch (SocketException se) 
+            {
+                // If we get here, port is not open, or host is not reachable
+                FileLogger.LogError("Failed to check if port is open: ", se.Message + se.StackTrace);
                 return false;
             }
-            // Exception thrown when an error occurs while retrieving network information.
-            catch (NetworkInformationException e)
+            finally
             {
-                FileLogger.LogError("Failed to retrieve network information: ", e.Message + e.StackTrace);
-                // Return false, since we could not validate the port
-                return false;
+                // Close the tcp conection
+                if (tc != null)
+                    tc.Close();
             }
         }
     }

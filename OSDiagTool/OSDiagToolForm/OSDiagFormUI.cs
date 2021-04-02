@@ -345,12 +345,25 @@ namespace OSDiagTool.OSDiagToolForm {
             {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._osRequirements, out bool getOsRequirements) && getOsRequirements == true)
                 {
-
                     backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
-                    Program.CheckPlatformRequirements();
 
+                    // Connecting to the database, by using the credentials located in the server.hsconf
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner);
+
+                    if (Program.dbEngine.Equals("sqlserver"))
+                    {
+                        Program.PlatformRequirementsProgram(configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper.SQLConnString, null);
+
+                    }
+                    else if (Program.dbEngine.Equals("oracle"))
+                    {
+                        Program.PlatformRequirementsProgram(configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper.OracleConnString);
+
+                    }
                 }
             }
+
 
             backgroundWorker1.ReportProgress(12, configurationsHelper.popup);
             Program.GenerateZipFile();

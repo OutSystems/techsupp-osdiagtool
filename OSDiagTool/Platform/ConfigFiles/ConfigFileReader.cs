@@ -9,6 +9,7 @@ namespace OSDiagTool.Platform.ConfigFiles
         public static string LoggingDatabaseConfigurationElement = "LoggingDatabaseConfiguration";
         public static string SessionDatabaseConfigurationElement = "SessionDatabaseConfiguration";
         public static string ServiceConfigurationElement = "ServiceConfiguration"; // Read ServiceConfiguration section from server.hsconf
+        public static string NetworkConfigurationElement = "NetworkConfiguration"; // Read NetworkConfiguration section from server.hsconf
         public static string IsEncryptedAttributeName = "encrypted";
         public static string ProviderKeyAttributeName = "ProviderKey";
         
