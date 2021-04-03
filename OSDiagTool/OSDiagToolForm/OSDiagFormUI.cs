@@ -353,13 +353,11 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (Program.dbEngine.Equals("sqlserver"))
                     {
-                        Program.PlatformRequirementsProgram(configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper.SQLConnString, null);
-
+                        Program.PlatformRequirementsProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper.SQLConnString, null);
                     }
                     else if (Program.dbEngine.Equals("oracle"))
                     {
-                        Program.PlatformRequirementsProgram(configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper.OracleConnString);
-
+                        Program.PlatformRequirementsProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper.OracleConnString);
                     }
                 }
             }

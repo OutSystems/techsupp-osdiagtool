@@ -40,15 +40,12 @@ namespace OSDiagTool
         private static string _iisRegistryPath = @"SOFTWARE\Microsoft\InetStp";
         private static string _rabbitMQRegistryPath = @"SOFTWARE\Ericsson\Erlang\ErlSrv\1.1\RabbitMQ";
 
-
         public static string privateKeyFilepath;
         public static string platformConfigurationFilepath;
         public static string osPlatformVersion;
         public static string dbEngine;
         public static string _endFeedback;
         public static bool separateLogCatalog;
-
-
 
         static void Main(string[] args) {
 
@@ -398,8 +395,8 @@ namespace OSDiagTool
         /* 
          * Check the Platform Requirements 
          */
-        public static void PlatformRequirementsProgram(OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
-            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null)
+        public static void PlatformRequirementsProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, 
+            DBConnector.OracleConnStringModel oracleConnString = null)
         {
             Directory.CreateDirectory(_osPlatformRequirements);
 
@@ -409,14 +406,13 @@ namespace OSDiagTool
 
                 if (dbEngine.Equals("sqlserver"))
                 {
-                    Platform.Requirements.PlatformRequirements.ValidateRequirements(dbEngine, _osPlatformRequirements, configurations, FormConfigurations, sqlConnString, null);
+                    Platform.Requirements.PlatformRequirements.ValidateRequirements(dbEngine, _osPlatformRequirements, configurations, sqlConnString, null);
 
                 }
                 else if (dbEngine.Equals("oracle"))
                 {
-                    Platform.Requirements.PlatformRequirements.ValidateRequirements(dbEngine, _osPlatformRequirements, configurations, FormConfigurations, null, oracleConnString);
+                    Platform.Requirements.PlatformRequirements.ValidateRequirements(dbEngine, _osPlatformRequirements, configurations,null, oracleConnString);
                 }
-
             }
             catch (Exception e)
             {

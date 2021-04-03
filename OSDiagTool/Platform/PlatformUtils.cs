@@ -86,6 +86,35 @@ namespace OSDiagTool.Platform {
 
         }
 
+        public static string GetCompilerServiceHostName(string dbEngine, int queryTimeout, SqlConnection SqlConnection = null, OracleConnection orclConnection = null, string platformDBAdminUser = null)
+        {
+
+            if (dbEngine.Equals("sqlserver"))
+            {
+                string _selectPlatSVCSObserver = "SELECT VAL FROM OSSYS_PARAMETER WHERE NAME = 'CompilerService.HostName'";
+
+                SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, SqlConnection)
+                {
+                    CommandTimeout = queryTimeout
+                };
+                // Convert.ToString handles null strings
+                return Convert.ToString(cmd.ExecuteScalar());
+
+            }
+            else if (dbEngine.Equals("oracle"))
+            {
+                string _selectPlatSVCSObserver = "SELECT VAL FROM " + platformDBAdminUser + "." + "OSSYS_PARAMETER WHERE NAME = 'CompilerService.HostName'";
+
+                OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, orclConnection)
+                {
+                    CommandTimeout = queryTimeout
+                };
+                // Convert.ToString handles null strings
+                return Convert.ToString(cmd.ExecuteScalar());
+            }
+            return null;
+        }
+
         public static string GetPlatformDBAdminUser() {
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
