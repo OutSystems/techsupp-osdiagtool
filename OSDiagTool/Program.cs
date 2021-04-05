@@ -71,7 +71,7 @@ namespace OSDiagTool
                 _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
 
                 ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, osPlatformVersion);
-                ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+                ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
                 dbEngine = platformDBInfo.DBMS.ToLower();
 

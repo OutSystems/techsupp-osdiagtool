@@ -77,7 +77,7 @@ namespace OSDiagTool.Tests
             //DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");
 
             //ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, "test");
-            //ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            //ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
             //string dbEngine = platformDBInfo.DBMS;
 
@@ -148,7 +148,7 @@ namespace OSDiagTool.Tests
         {
             //IDictionary<string,string> HsConfPropertiesVal;
             ConfigFileReader confFileParser = new ConfigFileReader("<ServerHsConfLocation>", "test");
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
             string _propValue;
 
             IDictionary<string, string> HsConfPropertiesVal = new Dictionary<string, string>();

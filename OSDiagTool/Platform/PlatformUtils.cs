@@ -86,58 +86,25 @@ namespace OSDiagTool.Platform {
 
         }
 
-        public static string GetCompilerServiceHostName(string dbEngine, int queryTimeout, SqlConnection SqlConnection = null, OracleConnection orclConnection = null, string platformDBAdminUser = null)
-        {
-
-            if (dbEngine.Equals("sqlserver"))
-            {
-                string _selectPlatSVCSObserver = "SELECT VAL FROM OSSYS_PARAMETER WHERE NAME = 'CompilerService.HostName'";
-
-                SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, SqlConnection)
-                {
-                    CommandTimeout = queryTimeout
-                };
-                // Convert.ToString handles null strings
-                return Convert.ToString(cmd.ExecuteScalar());
-
-            }
-            else if (dbEngine.Equals("oracle"))
-            {
-                string _selectPlatSVCSObserver = "SELECT VAL FROM " + platformDBAdminUser + "." + "OSSYS_PARAMETER WHERE NAME = 'CompilerService.HostName'";
-
-                OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, orclConnection)
-                {
-                    CommandTimeout = queryTimeout
-                };
-                // Convert.ToString handles null strings
-                return Convert.ToString(cmd.ExecuteScalar());
-            }
-            return null;
-        }
-
         public static string GetPlatformDBAdminUser() {
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
             
             return platformDBInfo.GetProperty("AdminUser").Value;
 
         }
 
         /*
-         * Read ServiceConfiguration section from the server.hsconf file
+         * Read configuration section from the server.hsconf file
          */
-        public static string GetServiceConfigurationValue(string element)
+        public static string GetConfigurationValue(string element, ConfigFileInfo platformInfo)
         {
-            // We need to check if ServiceConfiguration exists, if not, return null
-            try
-            {
-                ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-                ConfigFileDBInfo platformDBInfo = confFileParser.SrvConfigurationInfo;
-                return platformDBInfo.GetProperty(element).Value;
-
+            // We need to check if the configuration exists, if not, return null
+            try {
+                return platformInfo.GetProperty(element).Value;
             } catch (Exception e) {
-                FileLogger.LogError("Failed to retrieve platform configuration value " + element + " from section: ", e.Message + e.StackTrace);
+                FileLogger.LogError("Failed to retrieve platform configuration value " + element + " : ", e.Message + e.StackTrace);
                 return null;
             }
         }
