@@ -61,7 +61,6 @@ namespace OSDiagTool
             }    
 
             if(osPlatformVersion == null) {
-
                 Application.Run(new OSDiagToolForm.puf_popUpForm(OSDiagToolForm.puf_popUpForm._feedbackErrorType, "OutSystems Platform Server not found. "));
 
             }
@@ -416,7 +415,7 @@ namespace OSDiagTool
             }
             catch (Exception e)
             {
-                FileLogger.LogError("Failed process the Platform Requirements: ", e.Message + e.StackTrace);
+                FileLogger.LogError("Failed to process the Platform Requirements: ", e.Message + e.StackTrace);
             }
         }
 

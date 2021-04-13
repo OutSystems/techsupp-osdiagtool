@@ -8,16 +8,17 @@ namespace OSDiagTool.Platform.ConfigFiles
         public static string PlatformDatabaseConfigurationElement = "PlatformDatabaseConfiguration";
         public static string LoggingDatabaseConfigurationElement = "LoggingDatabaseConfiguration";
         public static string SessionDatabaseConfigurationElement = "SessionDatabaseConfiguration";
-        public static string ServiceConfigurationElement = "ServiceConfiguration"; // Read ServiceConfiguration section from server.hsconf
-        public static string NetworkConfigurationElement = "NetworkConfiguration"; // Read NetworkConfiguration section from server.hsconf
+        public static string ServiceConfigurationElement = "ServiceConfiguration"; // Read ServiceConfiguration element from server.hsconf
+        public static string ServerConfigurationElement = "ServerConfiguration"; // Read ServerConfiguration element from server.hsconf
+        
         public static string IsEncryptedAttributeName = "encrypted";
         public static string ProviderKeyAttributeName = "ProviderKey";
         
-
         private ConfigFileInfo _dbPlatformDetails;
         private ConfigFileInfo _dbLoggingDetails;
         private ConfigFileInfo _dbSessionDetails;
-        private ConfigFileInfo _srvConfigurationDetails;
+        private ConfigFileInfo _serviceConfigurationDetails;
+        private ConfigFileInfo _serverConfigurationDetails;
 
         private string _configFilePath;
 
@@ -40,7 +41,8 @@ namespace OSDiagTool.Platform.ConfigFiles
                     _dbLoggingDetails = ReadDbLoggingInfo(root);
                 }
                 _dbSessionDetails = ReadDbSessionInfo(root);
-                _srvConfigurationDetails = ReadSrvConfigurationInfo(root);
+                _serviceConfigurationDetails = ReadServiceConfigurationInfo(root);
+                _serverConfigurationDetails = ReadServerConfigurationInfo(root);
             }
         }
 
@@ -67,11 +69,16 @@ namespace OSDiagTool.Platform.ConfigFiles
             return ReadSection(SessionDatabaseConfigurationElement, root);
         }
 
-        private ConfigFileInfo ReadSrvConfigurationInfo(XElement root)
+        private ConfigFileInfo ReadServiceConfigurationInfo(XElement root)
         {
             return ReadSection(ServiceConfigurationElement, root);
         }
 
+        private ConfigFileInfo ReadServerConfigurationInfo(XElement root)
+        {
+            return ReadSection(ServerConfigurationElement, root);
+        }
+        
         private ConfigFileInfo ReadSection(string sectionName, XElement root)
         {
             // If we are unable to retrieve the ProviderKey value, then the readType should be empty
@@ -128,9 +135,14 @@ namespace OSDiagTool.Platform.ConfigFiles
         }
 
         // ServiceConfiguration section of the server.hsconfig
-        public ConfigFileInfo SrvConfigurationInfo
+        public ConfigFileInfo ServiceConfigurationInfo
         {
-            get { return _srvConfigurationDetails; }
+            get { return _serviceConfigurationDetails; }
+        }
+        // ServerConfiguration section of the server.hsconfig
+        public ConfigFileInfo ServerConfigurationInfo
+        {
+            get { return _serverConfigurationDetails; }
         }
     }
 }
