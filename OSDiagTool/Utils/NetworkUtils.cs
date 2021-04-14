@@ -35,13 +35,16 @@ namespace OSDiagTool.Utils
                 var request = Encoding.ASCII.GetBytes("GET / HTTP/1.1\r\nHost: " + address + ":" + port + "\r\nConnection: Close\r\n\r\n");
 
                 NetworkStream stream = tcpClient.GetStream();
+                // Wait 1 second for the response
                 stream.ReadTimeout = 1000;
                 stream.Write(request, 0, request.Length);
                 stream.Flush();
 
                 int bytesRead = stream.Read(request, 0, request.Length);
                 // Returning the response string
-                return Encoding.ASCII.GetString(request, 0, bytesRead);
+                string response = Encoding.ASCII.GetString(request, 0, bytesRead);
+
+                return response.Substring(response.LastIndexOf("HTTP/1.1 "), 3);
             }
             catch (Exception e) 
             {
@@ -66,7 +69,7 @@ namespace OSDiagTool.Utils
         /*
          * Checks if a port is an active TCP listener (all TCP states except the Listen state)
          */
-        public static bool IsPortInUse(int port)
+        private static bool IsPortInUse(int port)
         {
             bool inUse = false;
 
@@ -82,6 +85,15 @@ namespace OSDiagTool.Utils
                 }
             }
             return inUse;
+        }
+
+        /*
+         * Checks if any network interface is marked as "up" and is not a loopback or tunnel interface.
+         * Keep in mind that this does not check for internet connections
+         */
+        public static bool IsNetworkUp()
+        {
+            return System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
         }
     }
 }

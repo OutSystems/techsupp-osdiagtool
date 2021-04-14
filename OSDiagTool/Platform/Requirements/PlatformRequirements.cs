@@ -19,15 +19,16 @@ namespace OSDiagTool.Platform.Requirements
              */
 
             bool checkNetworkRequirements = false;
+            bool IsControllerServer;
             string compilerServiceHostName;
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            NetworkUtils check = new NetworkUtils();
+            NetworkUtils networkUtils = new NetworkUtils();
 
             // Get current server's IP address
-            string serverIP = check.PingAddress("");
+            string serverIP = networkUtils.PingAddress("");
 
             // Validate if localhost is resolving to 127.0.0.1
-            string getLocalhostAddress = check.PingAddress("localhost"); 
+            string getLocalhostAddress = networkUtils.PingAddress("localhost"); 
 
             // Get the compiler service hostname
             compilerServiceHostName = Convert.ToString(Platform.PlatformUtils.GetConfigurationValue("CompilerServerHostname", confFileParser.ServiceConfigurationInfo));
@@ -36,7 +37,13 @@ namespace OSDiagTool.Platform.Requirements
              * This will also convert a localhost value to 127.0.0.1
              */
             if (Uri.CheckHostName(compilerServiceHostName) == UriHostNameType.Dns)
-                compilerServiceHostName = check.PingAddress(compilerServiceHostName);
+                compilerServiceHostName = networkUtils.PingAddress(compilerServiceHostName);
+
+            /* Check if we are inside a Controller server
+             * The serverIP should be the same as the compilerServiceHostName or 
+             * The compilerServiceHostName should be localhost
+             */
+            IsControllerServer = (serverIP == compilerServiceHostName || compilerServiceHostName == "127.0.0.1");
 
             // Getting the ports set in Configuration Tool (server.hsconf file)
             List<int> portArray = new List<int>{
@@ -46,8 +53,8 @@ namespace OSDiagTool.Platform.Requirements
                 Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("SchedulerServerPort", confFileParser.ServiceConfigurationInfo)) // Default port 12002
             };
 
-            // We are inside a Controller server
-            if (serverIP == compilerServiceHostName || compilerServiceHostName == "127.0.0.1")
+            // If we are inside a Controller server 
+            if (IsControllerServer)
                 // Add the port to the list above
                 portArray.Add(Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("CompilerServerPort", confFileParser.ServiceConfigurationInfo))); // Default port 12000
 
@@ -92,16 +99,15 @@ namespace OSDiagTool.Platform.Requirements
                 writer.WriteLine(string.Format("{0}: [INFO] Retrieving compiler service host name from the Configuration Tool..." +
                     "\n{0}: [INFO] Compiler service host name detected in the Configuration Tool: {1}.", DateTime.Now.ToString(), compilerServiceHostName));
 
-                /* Check if we are inside a Controller server
-                 * The serverIP should be the same as the compilerServiceHostName or 
-                 * The compilerServiceHostName should be localhost
-                 */
-                if (serverIP == compilerServiceHostName || compilerServiceHostName == "127.0.0.1")
+                // Inform if we are in a controller server
+                if (IsControllerServer)
                     writer.WriteLine(string.Format("{0}: [INFO] Detected that this is a server with a Deployment Controller role.", DateTime.Now.ToString()));
-                else
+                else {
                     writer.WriteLine(string.Format("{0}: [INFO] Detected that this is a server with a Front-end role.", DateTime.Now.ToString()));
+                    checkNetworkRequirements = true;
+                }                    
 
-                // Inform if localhost is resolving correctly
+                // Inform if localhost is resolving to 127.0.0.1
                 writer.WriteLine(string.Format("\n{0}: [INFO] Performing a ping request to localhost...", DateTime.Now.ToString()));
                 if (getLocalhostAddress == "127.0.0.1")
                     writer.WriteLine(string.Format("{0}: [INFO] Localhost resolves to {1}.", DateTime.Now.ToString(), getLocalhostAddress));
@@ -110,16 +116,21 @@ namespace OSDiagTool.Platform.Requirements
                     writer.WriteLine(string.Format("{0}: [ERROR] Localhost is resolving to {1} instead of 127.0.0.1.", DateTime.Now.ToString(), getLocalhostAddress));
                     checkNetworkRequirements = true;
                 }
+
                 // Localhost must be accessible by HTTP on 127.0.0.1
-                writer.WriteLine(string.Format("{0}: [INFO] Localhost is returning the following response when using port {1}:\n{2}", 
-                    DateTime.Now.ToString(), portArray[0], check.OpenTcpStream("localhost", portArray[0])));
+                if (networkUtils.OpenTcpStream("localhost", portArray[0]) == "200")
+                    writer.WriteLine(string.Format("{0}: [INFO] Localhost is returning the following response when using port {1}: {2}", 
+                        DateTime.Now.ToString(), portArray[0], networkUtils.OpenTcpStream("localhost", portArray[0])));
+                else
+                    writer.WriteLine(string.Format("{0}: [ERROR] Localhost is returning the following response when using port {1}: {2}",
+                        DateTime.Now.ToString(), portArray[0], networkUtils.OpenTcpStream("localhost", portArray[0])));
 
                 // Validate ports
                 writer.WriteLine(string.Format("\n{0}: [INFO] Checking if the required ports are open for the IP {1}...", DateTime.Now.ToString(), serverIP));
                 foreach (int port in portArray)
                 {
                     // Check ports for the server IP
-                    if (check.OpenTcpStream(serverIP, port) != null)
+                    if (networkUtils.OpenTcpStream(serverIP, port) != null)
                         writer.WriteLine(string.Format("{0}: [INFO] The TCP port {1} is open for the IP {2}.", DateTime.Now.ToString(), port, serverIP));
                     else {
                         writer.WriteLine(string.Format("{0}: [ERROR] Could not detect if port {1} is open for the IP {2}.", DateTime.Now.ToString(), port, serverIP));
@@ -127,12 +138,19 @@ namespace OSDiagTool.Platform.Requirements
                     }
                 }
 
-                // Check OutSystems services
+                // Check OutSystems services status
                 writer.WriteLine(string.Format("\n{0}: [INFO] Checking if the status of the OutSystems services...", DateTime.Now.ToString()));
                 writer.WriteLine(string.Format("{0}: [{1}] The status of the OutSystems Deployment Controller Service is: {2}", 
                     DateTime.Now.ToString(),
                     Utils.WinUtils.ServiceStatus("OutSystems Deployment Controller Service") == "Running" ? "INFO" : "ERROR",
                     Utils.WinUtils.ServiceStatus("OutSystems Deployment Controller Service")));
+
+                // Validating Network interface status
+                writer.WriteLine(string.Format("\n{0}: [INFO] Examining the network interface of the server...", DateTime.Now.ToString()));
+                if (NetworkUtils.IsNetworkUp())
+                    writer.WriteLine(string.Format("{0}: [INFO] The server returned that there is network interfaces marked as 'up'.", DateTime.Now.ToString()));
+                else
+                    writer.WriteLine(string.Format("{0}: [WARNING] Could not find any network interface is marked as 'up' and is not a loopback or tunnel interface.", DateTime.Now.ToString()));
 
                 // Warn the customer that he should review the Network Requirements of the Platform
                 if (checkNetworkRequirements)
