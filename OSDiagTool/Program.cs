@@ -392,7 +392,7 @@ namespace OSDiagTool
         }
 
         /* 
-         * Check the Platform Requirements 
+         * Diagnose the OutSystems Platform
          */
         public static void PlatformDiagnosticProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, 
             DBConnector.OracleConnStringModel oracleConnString = null)
@@ -401,7 +401,7 @@ namespace OSDiagTool
 
             try
             {
-                FileLogger.TraceLog("Checking the OutSystems Platform Requirements...");
+                FileLogger.TraceLog("Diagnosing the OutSystems Platform...");
 
                 if (dbEngine.Equals("sqlserver"))
                 {
@@ -415,7 +415,7 @@ namespace OSDiagTool
             }
             catch (Exception e)
             {
-                FileLogger.LogError("Failed to process the Platform Requirements: ", e.Message + e.StackTrace);
+                FileLogger.LogError("Failed to diagnose the OutSystems Platform: ", e.Message + e.StackTrace);
             }
         }
 

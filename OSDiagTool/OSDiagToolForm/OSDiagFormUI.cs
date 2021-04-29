@@ -24,7 +24,7 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _tdIis = "Threads IIS";
         public static string _tdOsServices = "Threads OS Services";
         public static string _mdIis = "Memory IIS";
-        public static string _osRequirements = "Platform Diagnostic";
+        public static string _osDiagnostic = "Platform Diagnostic";
         public static string _mdOsServices = "Memory OS Services";
         public static string _slEvt = "Event Viewer Logs";
         public static string _slIisLogs = "IIS Access Logs";
@@ -45,7 +45,7 @@ namespace OSDiagTool.OSDiagToolForm {
             { 8, "Exporting Platform and Server Configuration files" },
             { 9, "Exporting Platform metamodel" },
             { 10, "Performing Database Troubleshoot" },
-            { 11, "Checking the OutSystems Platform Requirements" },
+            { 11, "Diagnosing the OutSystems Platform" },
             { 12, "Zipping file..." },
             { 13, "" }, // Last step for closing the pop up
         };
@@ -139,7 +139,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _tdIis, cb_iisThreads.Checked},
                 { _tdOsServices, cb_osServicesThreads.Checked},
                 { _mdIis, cb_iisMemDumps.Checked},
-                { _osRequirements, cb_osRequirements.Checked},
+                { _osDiagnostic, cb_osDiagnotic.Checked},
                 { _mdOsServices, cb_osMemDumps.Checked},
                 { _slEvt, cb_EvtViewerLogs.Checked},
                 { _slIisLogs, cb_iisAccessLogs.Checked},
@@ -343,7 +343,7 @@ namespace OSDiagTool.OSDiagToolForm {
             // Platform Diagnostic
             if (!backgroundWorker1.CancellationPending)
             {
-                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._osRequirements, out bool getOsRequirements) && getOsRequirements == true)
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._osDiagnostic, out bool getOsDiagnostic) && getOsDiagnostic == true)
                 {
                     backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
 
