@@ -23,7 +23,7 @@ namespace OSDiagTool.Platform {
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
                 //FileLogger.TraceLog("Platform version: " + osPlatformVersion);
 
-            } catch (Exception e) {
+            } catch (Exception) {
                 //FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message + e.StackTrace);
                 return null;
             }
@@ -42,7 +42,7 @@ namespace OSDiagTool.Platform {
 
                 return osInstallationFolder;
 
-            } catch (Exception e) {
+            } catch (Exception) {
                 //FileLogger.LogError(" * Unable to find OutSystems Platform Version... * ", e.Message + e.StackTrace);
                 return null;
             }

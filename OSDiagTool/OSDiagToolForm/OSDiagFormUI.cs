@@ -24,7 +24,7 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _tdIis = "Threads IIS";
         public static string _tdOsServices = "Threads OS Services";
         public static string _mdIis = "Memory IIS";
-        public static string _osRequirements = "Platform Requirements";
+        public static string _osRequirements = "Platform Diagnostic";
         public static string _mdOsServices = "Memory OS Services";
         public static string _slEvt = "Event Viewer Logs";
         public static string _slIisLogs = "IIS Access Logs";
@@ -340,7 +340,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 }
             }
 
-            // Platform Requirements
+            // Platform Diagnostic
             if (!backgroundWorker1.CancellationPending)
             {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._osRequirements, out bool getOsRequirements) && getOsRequirements == true)
@@ -353,11 +353,11 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (Program.dbEngine.Equals("sqlserver"))
                     {
-                        Program.PlatformRequirementsProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper.SQLConnString, null);
+                        Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper.SQLConnString, null);
                     }
                     else if (Program.dbEngine.Equals("oracle"))
                     {
-                        Program.PlatformRequirementsProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper.OracleConnString);
+                        Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper.OracleConnString);
                     }
                 }
             }

@@ -28,7 +28,7 @@ namespace OSDiagTool
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
-        private static string _osPlatformRequirements = Path.Combine(_tempFolderPath, "PlatformRequirements");
+        private static string _osPlatformDiagnostic = Path.Combine(_tempFolderPath, "PlatformDiagnostic");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
 
@@ -394,10 +394,10 @@ namespace OSDiagTool
         /* 
          * Check the Platform Requirements 
          */
-        public static void PlatformRequirementsProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, 
+        public static void PlatformDiagnosticProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, 
             DBConnector.OracleConnStringModel oracleConnString = null)
         {
-            Directory.CreateDirectory(_osPlatformRequirements);
+            Directory.CreateDirectory(_osPlatformDiagnostic);
 
             try
             {
@@ -405,12 +405,12 @@ namespace OSDiagTool
 
                 if (dbEngine.Equals("sqlserver"))
                 {
-                    Platform.Requirements.PlatformRequirements.ValidateRequirements(dbEngine, _osPlatformRequirements, configurations, sqlConnString, null);
+                    Platform.Diagnostic.PlatformDiagnostic.ValidateRequirements(dbEngine, _osPlatformDiagnostic, configurations, sqlConnString, null);
 
                 }
                 else if (dbEngine.Equals("oracle"))
                 {
-                    Platform.Requirements.PlatformRequirements.ValidateRequirements(dbEngine, _osPlatformRequirements, configurations,null, oracleConnString);
+                    Platform.Diagnostic.PlatformDiagnostic.ValidateRequirements(dbEngine, _osPlatformDiagnostic, configurations,null, oracleConnString);
                 }
             }
             catch (Exception e)

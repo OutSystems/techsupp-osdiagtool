@@ -772,7 +772,7 @@
             this.cb_osRequirements.Name = "cb_osRequirements";
             this.cb_osRequirements.Size = new System.Drawing.Size(91, 17);
             this.cb_osRequirements.TabIndex = 29;
-            this.cb_osRequirements.Text = "Requirements";
+            this.cb_osRequirements.Text = "Diagnostic";
             this.cb_osRequirements.UseVisualStyleBackColor = true;
             // 
             // OsDiagForm
