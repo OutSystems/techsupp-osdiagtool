@@ -399,19 +399,18 @@ namespace OSDiagTool
             DBConnector.OracleConnStringModel oracleConnString = null)
         {
             Directory.CreateDirectory(_osPlatformDiagnostic);
-
             try
             {
                 FileLogger.TraceLog("Diagnosing the OutSystems Platform...");
 
                 if (dbEngine.Equals("sqlserver"))
                 {
-                    Platform.Diagnostic.PlatformDiagnostic.ValidateRequirements(dbEngine, _osPlatformDiagnostic, configurations, sqlConnString, null);
+                    Platform.PlatformDiagnostic.ValidateRequirements(dbEngine, _osPlatformDiagnostic, configurations, sqlConnString, null);
 
                 }
                 else if (dbEngine.Equals("oracle"))
                 {
-                    Platform.Diagnostic.PlatformDiagnostic.ValidateRequirements(dbEngine, _osPlatformDiagnostic, configurations,null, oracleConnString);
+                    Platform.PlatformDiagnostic.ValidateRequirements(dbEngine, _osPlatformDiagnostic, configurations,null, oracleConnString);
                 }
             }
             catch (Exception e)

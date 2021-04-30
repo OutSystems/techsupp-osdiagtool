@@ -12,7 +12,7 @@ namespace OSDiagTool.Utils
         /*
          *  Performs an ICMP echo request
          */
-        public string PingAddress(string hostAddress)
+        public static string PingAddress(string hostAddress)
         {
             Ping pinger = new Ping();
             IPAddress addressToPing = Dns.GetHostAddresses(hostAddress)
@@ -25,7 +25,7 @@ namespace OSDiagTool.Utils
         /*
          * Opens a TCP stream to an address and a port
          */
-        public string OpenTcpStream (string address, int port)
+        public static string OpenTcpStream (string address, int port)
         {
             TcpClient tcpClient = null;
 

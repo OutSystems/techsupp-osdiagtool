@@ -6,68 +6,30 @@ using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.Utils;
 
-namespace OSDiagTool.Platform.Diagnostic
+namespace OSDiagTool.Platform
 {
     class PlatformDiagnostic
     {
-        public static void ValidateRequirements(string dbEngine, string reqFilePath, OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, 
+        public static void ValidateRequirements(string dbEngine, string reqFilePath, OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null,
             DBConnector.OracleConnStringModel oracleConnString = null)
         {
             /* TODO:
-             *  - Add date and time to file log name
-             *  - Validate if we are inside a pure Controller
-             *  - Check RabbitMQ port
-             *  - Check conectivity to other FEs
+             *  Add date and time to file log name
+             *  Validate if we are inside a pure Controller
+             *  Validate if we are inside a LifeTime server
+             *  Check RabbitMQ port
+             *  Check conectivity to other FEs
              */
 
-            bool checkNetworkRequirements = false;
-            bool IsControllerServer;
-            string compilerServiceHostName;
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            NetworkUtils networkUtils = new NetworkUtils();
-
             // Get current server's IP address
-            string serverIP = networkUtils.PingAddress("");
-
+            string serverIP = Utils.NetworkUtils.PingAddress("");
             // Validate if localhost is resolving to 127.0.0.1
-            string getLocalhostAddress = networkUtils.PingAddress("localhost"); 
-
-            // Get the compiler service hostname
-            compilerServiceHostName = Convert.ToString(Platform.PlatformUtils.GetConfigurationValue("CompilerServerHostname", confFileParser.ServiceConfigurationInfo));
-
-            /* If the compilerServiceHostName is a Dns, then replace it with the IP address
-             * This will also convert a localhost value to 127.0.0.1
-             */
-            if (Uri.CheckHostName(compilerServiceHostName) == UriHostNameType.Dns)
-                compilerServiceHostName = networkUtils.PingAddress(compilerServiceHostName);
-
-            /* Check if we are inside a Controller server
-             * The serverIP should be the same as the compilerServiceHostName or 
-             * The compilerServiceHostName should be localhost
-             */
-            IsControllerServer = (serverIP == compilerServiceHostName || compilerServiceHostName == "127.0.0.1");
-
-            // Getting the ports set in Configuration Tool (server.hsconf file)
-            List<int> portArray = new List<int> {
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerPort", confFileParser.ServerConfigurationInfo)), // Default port 80
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerSecurePort", confFileParser.ServerConfigurationInfo)), // Default port 443
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("DeploymentServerPort", confFileParser.ServiceConfigurationInfo)), // Default port 12001
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("SchedulerServerPort", confFileParser.ServiceConfigurationInfo)) // Default port 12002
-            };
-
-            // Setting the OutSystems Services names
-            List<string> osServices = new List<string> {
-                "OutSystems Deployment Service",
-                "OutSystems Scheduler Service"
-            };
-
-            // If we are inside a Controller server 
-            if (IsControllerServer) {
-                // Add the compiler port to be validated
-                portArray.Add(Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("CompilerServerPort", confFileParser.ServiceConfigurationInfo))); // Default port 12000
-                // Add the deployment controller service to be validated
-                osServices.Add("OutSystems Deployment Controller Service");
-            }
+            string getLocalhostAddress = Utils.NetworkUtils.PingAddress("localhost");
+            string compilerServiceHostName = GetCompilerHostname(confFileParser);
+            bool IsController = IsControllerServer(serverIP, compilerServiceHostName);
+            List<int> portArray = getportArray(confFileParser, IsController);
+            List<string> osServices = GetOsServices(confFileParser, IsController);
 
             // Getting the information that we need from the database
             if (dbEngine.Equals("sqlserver"))
@@ -80,7 +42,7 @@ namespace OSDiagTool.Platform.Diagnostic
                 {
 
                 }*/
-            connector.SQLCloseConnection(connection);
+                connector.SQLCloseConnection(connection);
             }
             else if (dbEngine.Equals("oracle"))
             {
@@ -98,10 +60,11 @@ namespace OSDiagTool.Platform.Diagnostic
                 connector.OracleCloseConnection(connection);
             }
 
-            
             // Write the results to log file
             using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(reqFilePath, "PlatformDiagnostic.log"))))
             {
+                bool checkNetworkRequirements = false;
+
                 writer.WriteLine("Platform Diagnostic\n\n========== Validating Network Requirements ==========\n");
 
                 // Inform the server IP
@@ -111,12 +74,12 @@ namespace OSDiagTool.Platform.Diagnostic
                     "\n{0}: [INFO] Compiler service host name detected in the Configuration Tool: {1}.", DateTime.Now.ToString(), compilerServiceHostName));
 
                 // Inform if we are in a controller server
-                if (IsControllerServer)
+                if (IsController)
                     writer.WriteLine(string.Format("{0}: [INFO] Detected that this is a server with a Deployment Controller role.", DateTime.Now.ToString()));
                 else {
                     writer.WriteLine(string.Format("{0}: [INFO] Detected that this is a server with a Front-end role.", DateTime.Now.ToString()));
                     checkNetworkRequirements = true;
-                }                    
+                }
 
                 // Inform if localhost is resolving to 127.0.0.1
                 writer.WriteLine(string.Format("\n{0}: [INFO] Performing a ping request to localhost...", DateTime.Now.ToString()));
@@ -129,13 +92,13 @@ namespace OSDiagTool.Platform.Diagnostic
                 }
 
                 // Localhost must be accessible by HTTP on 127.0.0.1
-                if (networkUtils.OpenTcpStream("localhost", portArray[0]) == "200")
-                    writer.WriteLine(string.Format("{0}: [INFO] Localhost is returning the following status code response when using port {1}: Status code {2}", 
-                        DateTime.Now.ToString(), portArray[0], networkUtils.OpenTcpStream("localhost", portArray[0])));
+                if (Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0]) == "200")
+                    writer.WriteLine(string.Format("{0}: [INFO] Localhost is returning the following status code response when using port {1}: Status code {2}",
+                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0])));
                 else
                 {
                     writer.WriteLine(string.Format("{0}: [ERROR] Localhost is returning the following status code response when using port {1}: Status code {2}",
-                        DateTime.Now.ToString(), portArray[0], networkUtils.OpenTcpStream("localhost", portArray[0])));
+                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0])));
                     checkNetworkRequirements = true;
                 }
 
@@ -144,7 +107,7 @@ namespace OSDiagTool.Platform.Diagnostic
                 foreach (int port in portArray)
                 {
                     // Check ports for the server IP
-                    if (networkUtils.OpenTcpStream(serverIP, port) != null)
+                    if (Utils.NetworkUtils.OpenTcpStream(serverIP, port) != null)
                         writer.WriteLine(string.Format("{0}: [INFO] The TCP port {1} is open for the IP {2}.", DateTime.Now.ToString(), port, serverIP));
                     else {
                         writer.WriteLine(string.Format("{0}: [ERROR] Could not detect if port {1} is open for the IP {2}.", DateTime.Now.ToString(), port, serverIP));
@@ -180,7 +143,64 @@ namespace OSDiagTool.Platform.Diagnostic
 
                 writer.WriteLine(string.Format("\n========== Log ended at {0} ==========", DateTime.Now.ToString()));
             }
+        }
 
+        // Getting the ports set in Configuration Tool (server.hsconf file)
+        private static List<int> getportArray(ConfigFileReader confFileParser, bool IsController) {
+            
+            List<int> ports = new List<int> {
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerPort", confFileParser.ServerConfigurationInfo)), // Default port 80
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerSecurePort", confFileParser.ServerConfigurationInfo)), // Default port 443
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("DeploymentServerPort", confFileParser.ServiceConfigurationInfo)), // Default port 12001
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("SchedulerServerPort", confFileParser.ServiceConfigurationInfo)) // Default port 12002
+            };
+
+            // If we are inside a Controller server 
+            if (IsController)
+                // Add the compiler port to be validated
+                ports.Add(Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("CompilerServerPort", confFileParser.ServiceConfigurationInfo))); // Default port 12000
+
+            return ports;
+        }
+
+        // Getting OS services list
+        private static List<string> GetOsServices(ConfigFileReader confFileParser, bool IsController)
+        {
+            // Setting the OutSystems Services names
+            List<string> services = new List<string> {
+                "OutSystems Deployment Service",
+                "OutSystems Scheduler Service"
+            };
+
+            // If we are inside a Controller server 
+            if (IsController)
+                // Add the deployment controller service to be validated
+                services.Add("OutSystems Deployment Controller Service");
+
+            return services;
+        }
+
+        // Getting compiler service hostname
+        private static string GetCompilerHostname(ConfigFileReader confFileParser)
+        {
+            String compilerHostName = Convert.ToString(Platform.PlatformUtils.GetConfigurationValue("CompilerServerHostname", confFileParser.ServiceConfigurationInfo));
+
+            /* If the compilerServiceHostName is a Dns, then replace it with the IP address
+             * This will also convert a localhost value to 127.0.0.1
+             */
+            if (Uri.CheckHostName(compilerHostName) == UriHostNameType.Dns)
+                compilerHostName = Utils.NetworkUtils.PingAddress(compilerHostName);
+
+            return compilerHostName;
+        }
+
+        // Check if we are inside a Controller server
+        private static bool IsControllerServer(string IP, string compilerHostName)
+        {
+            /* The serverIP should be the same as the compilerServiceHostName or 
+             * The compilerServiceHostName should be localhost
+             */
+            return IP == compilerHostName || compilerHostName == "127.0.0.1";
         }
     }
 }
