@@ -143,7 +143,7 @@
     <Compile Include="OSDiagToolForm\PopUpForm.Designer.cs">
       <DependentUpon>PopUpForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="PlatformDiagnostic.cs" />
+    <Compile Include="Platform\PlatformDiagnostic.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileInfo.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileProperty.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileReader.cs" />

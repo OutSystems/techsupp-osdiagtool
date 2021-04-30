@@ -118,7 +118,7 @@ namespace OSDiagTool.Utils {
                     case ServiceControllerStatus.StartPending:
                         return "Starting";
                     default:
-                        return "Status Changing";
+                        return "Changing status";
                 }
             }
         }

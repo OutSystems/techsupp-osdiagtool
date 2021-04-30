@@ -15,7 +15,7 @@ namespace OSDiagTool.Platform.Diagnostic
         {
             /* TODO:
              *  - Add date and time to file log name
-             *  - Inside a pure Controller
+             *  - Validate if we are inside a pure Controller
              *  - Check RabbitMQ port
              *  - Check conectivity to other FEs
              */

@@ -29,6 +29,7 @@ namespace OSDiagTool
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
         private static string _osPlatformDiagnostic = Path.Combine(_tempFolderPath, "PlatformDiagnostic");
+        private static string _targetDiagnosticFile = Path.Combine(Directory.GetCurrentDirectory(), "diagnostic_" + DateTimeToTimestamp(DateTime.Now) + ".log");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
 
