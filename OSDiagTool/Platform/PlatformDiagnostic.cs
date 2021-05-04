@@ -79,18 +79,18 @@ namespace OSDiagTool.Platform
                     writer.WriteLine(string.Format("{0}: [INFO] Resolving compiler service hostname..." +
                         "{0}{1}: [INFO] Compiler service hostname resolves to the IP: {2}.", Environment.NewLine, DateTime.Now.ToString(), compilerServiceIP));
 
-                // Inform the cache service IP and hostname
-                writer.WriteLine(string.Format("{1}: [INFO] Retrieving cache invalidation service hostname from the Configuration Tool..." +
-                    "{0}{1}: [INFO] Cache invalidation service hostname detected: {2}.", Environment.NewLine, DateTime.Now.ToString(), cacheServiceHostname));
-                if (cacheServiceHostname != cacheServiceIP)
-                    writer.WriteLine(string.Format("{0}: [INFO] Resolving compiler service hostname..." +
-                        "{0}{1}: [INFO] Cache invalidation service hostname resolves to the IP: {2}.", Environment.NewLine, DateTime.Now.ToString(), cacheServiceIP));
-
                 // Inform if we are in a controller server
                 if (IsController)
                     writer.WriteLine(string.Format("{0}: [INFO] Detected that this is a server with a Deployment Controller role.", DateTime.Now.ToString()));
                 else
                     writer.WriteLine(string.Format("{0}: [INFO] Detected that this is a server with a Front-end role.", DateTime.Now.ToString()));
+
+                // Inform the cache service IP and hostname
+                writer.WriteLine(string.Format("{0}{1}: [INFO] Retrieving cache invalidation service hostname from the Configuration Tool..." +
+                    "{0}{1}: [INFO] Cache invalidation service hostname detected: {2}.", Environment.NewLine, DateTime.Now.ToString(), cacheServiceHostname));
+                if (cacheServiceHostname != cacheServiceIP)
+                    writer.WriteLine(string.Format("{1}: [INFO] Resolving cache invalidation service hostname..." +
+                        "{0}{1}: [INFO] Cache invalidation service hostname resolves to the IP: {2}.", Environment.NewLine, DateTime.Now.ToString(), cacheServiceIP));
 
                 // Inform if localhost is resolving to 127.0.0.1
                 writer.WriteLine(string.Format("{0}{1}: [INFO] Performing a ping request to localhost...", Environment.NewLine, DateTime.Now.ToString()));
@@ -119,7 +119,9 @@ namespace OSDiagTool.Platform
                 }
 
                 // Validate ports
-                writer.WriteLine(string.Format("{0}{1}: [INFO] Checking if the required ports are open for the IP {2}...", Environment.NewLine, DateTime.Now.ToString(), machineIP));
+                writer.WriteLine(string.Format("{0}{1}: [INFO] Detecting ports set in the Configuration Tool..." +
+                    "{0}{1}: [INFO] Ports detected: {2}", Environment.NewLine, DateTime.Now.ToString(), String.Join(", ", portArray)));
+                writer.WriteLine(string.Format("{0}: [INFO] Checking if the ports are open for the IP {1}...", DateTime.Now.ToString(), machineIP));
                 foreach (int port in portArray)
                 {
                     // Check ports for the server IP
@@ -148,9 +150,9 @@ namespace OSDiagTool.Platform
                 // Validating Network interface status
                 writer.WriteLine(string.Format("{0}{1}: [INFO] Examining the network interface of the server...", Environment.NewLine, DateTime.Now.ToString()));
                 if (NetworkUtils.IsNetworkUp())
-                    writer.WriteLine(string.Format("{0}: [INFO] The server returned that there are network interfaces marked as 'up'.", DateTime.Now.ToString()));
+                    writer.WriteLine(string.Format("{0}: [INFO] The server returned that there are network connections available.", DateTime.Now.ToString()));
                 else
-                    writer.WriteLine(string.Format("{0}: [WARNING] Could not find any network interface is marked as 'up'.", DateTime.Now.ToString()));
+                    writer.WriteLine(string.Format("{0}: [WARNING] Could not find any network connections available.", DateTime.Now.ToString()));
 
                 // Warn the customer that he should review the Network Requirements of the Platform
                 if (checkNetworkRequirements)
