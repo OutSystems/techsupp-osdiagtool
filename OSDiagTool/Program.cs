@@ -405,12 +405,12 @@ namespace OSDiagTool
 
                 if (dbEngine.Equals("sqlserver"))
                 {
-                    Platform.PlatformDiagnostic.ValidateRequirements(dbEngine, _osPlatformDiagnostic, configurations, sqlConnString, null);
+                    Platform.PlatformDiagnostic.WriteLog(dbEngine, _osPlatformDiagnostic, configurations, sqlConnString, null);
 
                 }
                 else if (dbEngine.Equals("oracle"))
                 {
-                    Platform.PlatformDiagnostic.ValidateRequirements(dbEngine, _osPlatformDiagnostic, configurations,null, oracleConnString);
+                    Platform.PlatformDiagnostic.WriteLog(dbEngine, _osPlatformDiagnostic, configurations,null, oracleConnString);
                 }
             }
             catch (Exception e)

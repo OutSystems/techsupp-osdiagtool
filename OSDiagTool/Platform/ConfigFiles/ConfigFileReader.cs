@@ -9,6 +9,7 @@ namespace OSDiagTool.Platform.ConfigFiles
         public static string LoggingDatabaseConfigurationElement = "LoggingDatabaseConfiguration";
         public static string SessionDatabaseConfigurationElement = "SessionDatabaseConfiguration";
         public static string ServiceConfigurationElement = "ServiceConfiguration"; // Read ServiceConfiguration element from server.hsconf
+        public static string CacheConfigurationElement = "CacheInvalidationConfiguration"; // Read CacheInvalidationConfiguration element from server.hsconf
         public static string ServerConfigurationElement = "ServerConfiguration"; // Read ServerConfiguration element from server.hsconf
         
         public static string IsEncryptedAttributeName = "encrypted";
@@ -19,6 +20,7 @@ namespace OSDiagTool.Platform.ConfigFiles
         private ConfigFileInfo _dbSessionDetails;
         private ConfigFileInfo _serviceConfigurationDetails;
         private ConfigFileInfo _serverConfigurationDetails;
+        private ConfigFileInfo _cacheConfigurationDetails;
 
         private string _configFilePath;
 
@@ -43,6 +45,7 @@ namespace OSDiagTool.Platform.ConfigFiles
                 _dbSessionDetails = ReadDbSessionInfo(root);
                 _serviceConfigurationDetails = ReadServiceConfigurationInfo(root);
                 _serverConfigurationDetails = ReadServerConfigurationInfo(root);
+                _cacheConfigurationDetails = ReadCacheConfigurationInfo(root);
             }
         }
 
@@ -78,7 +81,12 @@ namespace OSDiagTool.Platform.ConfigFiles
         {
             return ReadSection(ServerConfigurationElement, root);
         }
-        
+
+        private ConfigFileInfo ReadCacheConfigurationInfo(XElement root)
+        {
+            return ReadSection(CacheConfigurationElement, root);
+        }
+
         private ConfigFileInfo ReadSection(string sectionName, XElement root)
         {
             // If we are unable to retrieve the ProviderKey value, then the readType should be empty
@@ -139,10 +147,17 @@ namespace OSDiagTool.Platform.ConfigFiles
         {
             get { return _serviceConfigurationDetails; }
         }
+
         // ServerConfiguration section of the server.hsconfig
         public ConfigFileInfo ServerConfigurationInfo
         {
             get { return _serverConfigurationDetails; }
+        }
+
+        // CacheInvalidationConfiguration section of the server.hsconfig
+        public ConfigFileInfo CacheConfigurationInfo
+        {
+            get { return _cacheConfigurationDetails; }
         }
     }
 }
