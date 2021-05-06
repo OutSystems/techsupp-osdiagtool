@@ -32,7 +32,14 @@ namespace OSDiagTool.Utils
             try
             {  
                 tcpClient = new TcpClient(address, port);
-                // Set the HTTP protocol
+                // If we reached here, then we could connect to the port
+
+                // We are not waiting for a status code response for ports like 12001 or 5672, for example
+                if (port != 80 && port != 443) 
+                    return "Port listening";
+
+                // Getting a status code
+                // Setting the HTTP protocol
                 string httpProtocol = "HTTP/1.1 ";
 
                 // Let's try sending the bare minimum to compose a request
@@ -51,17 +58,17 @@ namespace OSDiagTool.Utils
                 // The status code is after the HTTP protocol
                 string statusCode = response.Substring(response.IndexOf(httpProtocol) + httpProtocol.Length, 3);
 
-                // Validating the status code, in case an invalid info is got
+                // Validating the status code
                 if (int.TryParse(statusCode, out _))
-                    return statusCode;
+                    return "Status code " + statusCode;
                 else
-                    return "Could retrieve the status code - retrieved the value: " + statusCode + "instead.";
+                    return "Could not parse status code - returned " + statusCode;
             }
             catch (Exception e) 
             {
+                // Let's check if the port is in use
                 if (IsPortInUse(port))
-                    // Let's check if the port is in use
-                    return "The port " + port + " is in use.";
+                    return "Port " + port + " is opened but its currently in use";
                 else
                 {
                     // If we get here, something else happened, like the port is not open, or host is not reachable

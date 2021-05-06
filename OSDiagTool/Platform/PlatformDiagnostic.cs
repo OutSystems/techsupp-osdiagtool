@@ -14,14 +14,38 @@ namespace OSDiagTool.Platform
             DBConnector.OracleConnStringModel oracleConnString = null)
         {
             /* TODO:
-             *  Check if machineIP = compilerServiceIP if IsController is true
-             *  Validate if we are in the OutSystems Cloud
              *  Validate if we are inside a pure Controller
-             *  Validate if we are inside a LifeTime server
-             *  Check RabbitMQ port
              *  Check conectivity to other FEs
              */
 
+            // Getting the information that we need from the database
+            bool IsLifeTimeEnvironment = false;
+
+            if (dbEngine.Equals("sqlserver"))
+            {
+                var connector = new DBConnector.SLQDBConnector();
+                SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
+
+                using (connection)
+                {
+                    IsLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, connection);
+                }
+                connector.SQLCloseConnection(connection);
+            }
+            else if (dbEngine.Equals("oracle"))
+            {
+                var connector = new DBConnector.OracleDBConnector();
+                OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
+                string platformDBAdminUser = Platform.PlatformUtils.GetPlatformDBAdminUser();
+
+                using (connection)
+                {
+                    IsLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, null, connection, platformDBAdminUser);
+                }
+                connector.OracleCloseConnection(connection);
+            }
+
+            // Setting variables
             bool checkNetworkRequirements = false;
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
             // Get current server's IP address
@@ -33,42 +57,13 @@ namespace OSDiagTool.Platform
             string cacheServiceIP = GetHostname(confFileParser, "ServiceHost", true);
             string cacheServiceHostname = GetHostname(confFileParser, "ServiceHost", false);
             bool IsController = IsControllerServer(machineIP, compilerServiceIP);
-            List<int> portArray = GetPortArray(confFileParser, IsController);
+            List<int> portArray = GetPortArray(confFileParser);
             List<string> osServices = GetOsServices(IsController);
-
-            // Getting the information that we need from the database
-            if (dbEngine.Equals("sqlserver"))
-            {
-                var connector = new DBConnector.SLQDBConnector();
-                SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
-
-                /* TODO - implement here any queries to the database
-                using (connection)
-                {
-
-                }*/
-                connector.SQLCloseConnection(connection);
-            }
-            else if (dbEngine.Equals("oracle"))
-            {
-                var connector = new DBConnector.OracleDBConnector();
-                OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
-
-                string platformDBAdminUser = Platform.PlatformUtils.GetPlatformDBAdminUser();
-
-                // Same operations as SQL Server
-                /* TODO - implement here any queries to the database
-                using (connection)
-                {
-
-                }*/
-                connector.OracleCloseConnection(connection);
-            }
 
             // Write the results to log file
             using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(reqFilePath, "IP_" + machineIP + "_Diagnostic.log"))))
             {
-                writer.WriteLine(string.Format("Platform Diagnostic{0}{0}========== Validating Network Requirements =========={0}", Environment.NewLine));
+                writer.WriteLine(string.Format("== Platform Diagnostic =={0}{0}========== Validating Network Requirements =========={0}", Environment.NewLine));
 
                 // Inform the server IP and hostname
                 writer.WriteLine(string.Format("{1}: [INFO] Retrieving IP address from this server..." +
@@ -84,6 +79,10 @@ namespace OSDiagTool.Platform
                     writer.WriteLine(string.Format("{0}: [INFO] Detected that this is a server with a Deployment Controller role.", DateTime.Now.ToString()));
                 else
                     writer.WriteLine(string.Format("{0}: [INFO] Detected that this is a server with a Front-end role.", DateTime.Now.ToString()));
+
+                // Inform if we detect LifeTime
+                if (IsLifeTimeEnvironment)
+                    writer.WriteLine(string.Format("{0}: [INFO] Detected that this server has LifeTime installed.", DateTime.Now.ToString()));
 
                 // Inform the cache service IP and hostname
                 writer.WriteLine(string.Format("{0}{1}: [INFO] Retrieving cache invalidation service hostname from the Configuration Tool..." +
@@ -103,34 +102,46 @@ namespace OSDiagTool.Platform
                 }
 
                 // Localhost must be accessible by HTTP on 127.0.0.1
-                if (Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0]) == "200")
-                    writer.WriteLine(string.Format("{0}: [INFO] Localhost is returning the following status code response when using port {1}: STATUS CODE {2}.",
-                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0])));
-                
-                // OutSystems Cloud can return 302 in the Controller server
-                else if (Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0]) == "302")
-                    writer.WriteLine(string.Format("{0}: [WARNING] Localhost is returning the following status code response when using port {1}: STATUS CODE {2}.",
+                if (Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0]) == "Status code 200" ||
+                    Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0]) == "Status code 302")
+                    writer.WriteLine(string.Format("{0}: [INFO] Localhost is returning the following response when using port {1}: {2}.",
                         DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0])));
                 else
                 {
-                    writer.WriteLine(string.Format("{0}: [WARNING] Localhost is returning the following status code response when using port {1}: STATUS CODE {2}.",
+                    writer.WriteLine(string.Format("{0}: [ERROR] Localhost is returning the following response when using port {1}: {2}.",
                         DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0])));
                     checkNetworkRequirements = true;
                 }
 
-                // Validate ports
+                // Validate connectivity requirements
                 writer.WriteLine(string.Format("{0}{1}: [INFO] Detecting ports set in the Configuration Tool..." +
                     "{0}{1}: [INFO] Ports detected: {2}", Environment.NewLine, DateTime.Now.ToString(), String.Join(", ", portArray)));
-                writer.WriteLine(string.Format("{0}: [INFO] Checking if the ports are open for the IP {1}...", DateTime.Now.ToString(), machineIP));
+                writer.WriteLine(string.Format("{0}: [INFO] Performing connectivity tests...", DateTime.Now.ToString()));
+
+                string response, ipNumber;
                 foreach (int port in portArray)
                 {
-                    // Check ports for the server IP
-                    if (Utils.NetworkUtils.OpenTcpStream(machineIP, port) != null)
-                        writer.WriteLine(string.Format("{0}: [INFO] The TCP port {1} is open for the IP {2}.", DateTime.Now.ToString(), port, machineIP));
-                    else {
-                        writer.WriteLine(string.Format("{0}: [ERROR] Could not detect if port {1} is open for the IP {2}.", DateTime.Now.ToString(), port, machineIP));
+                    if (port == portArray[4]) { // Deployment controller port and IP
+                        response = Utils.NetworkUtils.OpenTcpStream(compilerServiceIP, port); 
+                        ipNumber = compilerServiceIP;
+                    } else if (port == portArray[5]) { // RabbitMQ port and IP
+                        response = Utils.NetworkUtils.OpenTcpStream(cacheServiceIP, port);
+                        ipNumber = cacheServiceIP;
+                    } else {
+                        response = Utils.NetworkUtils.OpenTcpStream(machineIP, port);
+                        ipNumber = machineIP;
+                    }
+                    writer.WriteLine(string.Format("{0}: [INFO] Trying to connect to the IP {1} and TCP port {2}...",
+                            DateTime.Now.ToString(), ipNumber, port));
+
+                    if (response == null) {
+                        writer.WriteLine(string.Format("{0}: [ERROR] Could not connect to the IP {1} and TCP port {2} - Check the ConsoleLog for details.", 
+                            DateTime.Now.ToString(), ipNumber, port));
                         checkNetworkRequirements = true;
                     }
+                    else
+                        writer.WriteLine(string.Format("{0}: [INFO] Connected to the IP {1}, TCP port {2} - Response: {3}.",
+                            DateTime.Now.ToString(), ipNumber, port, response));
                 }
 
                 // Check OutSystems services status
@@ -164,20 +175,15 @@ namespace OSDiagTool.Platform
         }
 
         // Getting the ports set in Configuration Tool (server.hsconf file)
-        private static List<int> GetPortArray(ConfigFileReader confFileParser, bool IsController) {
-            
+        private static List<int> GetPortArray(ConfigFileReader confFileParser) {
             List<int> ports = new List<int> {
                 Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerPort", confFileParser.ServerConfigurationInfo)), // Default port 80
                 Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerSecurePort", confFileParser.ServerConfigurationInfo)), // Default port 443
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("DeploymentServerPort", confFileParser.ServiceConfigurationInfo)), // Default port 12001
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("SchedulerServerPort", confFileParser.ServiceConfigurationInfo)) // Default port 12002
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("DeploymentServerPort", confFileParser.ServiceConfigurationInfo)), // Deployment Service - Default value: 12001
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("SchedulerServerPort", confFileParser.ServiceConfigurationInfo)), // Scheduler Service  - Default value: 12002
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("CompilerServerPort", confFileParser.ServiceConfigurationInfo)), // Deployment Controller Service - Default value: 12000
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ServicePort", confFileParser.CacheConfigurationInfo)) // RabbitMQ port - Default value: 5672
             };
-
-            // If we are inside a Controller server 
-            if (IsController)
-                // Add the compiler port to be validated
-                ports.Add(Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("CompilerServerPort", confFileParser.ServiceConfigurationInfo))); // Default port 12000
-
             return ports;
         }
 
