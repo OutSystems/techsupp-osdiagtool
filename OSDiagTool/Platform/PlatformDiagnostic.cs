@@ -48,16 +48,17 @@ namespace OSDiagTool.Platform
             // Setting variables
             bool checkNetworkRequirements = false;
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
+            // Getting list of ports from server.conf
+            List<int> portArray = GetPortArray(confFileParser);
             // Get current server's IP address
             string machineIP = Utils.NetworkUtils.PingAddress("");
             // Validate if localhost is resolving to 127.0.0.1
             string getLocalhostAddress = Utils.NetworkUtils.PingAddress("localhost");
-            string compilerServiceIP = GetHostname(confFileParser, "CompilerServerHostname", true);
-            string compilerServiceHostname = GetHostname(confFileParser, "CompilerServerHostname", false);
-            string cacheServiceIP = GetHostname(confFileParser, "ServiceHost", true);
-            string cacheServiceHostname = GetHostname(confFileParser, "ServiceHost", false);
+            string compilerServiceHostname = GetHostname(confFileParser, "CompilerServerHostname");
+            string cacheServiceHostname = GetHostname(confFileParser, "ServiceHost");
+            string compilerServiceIP = HostnameToIP(compilerServiceHostname, portArray[0]);
+            string cacheServiceIP = HostnameToIP(cacheServiceHostname, portArray[0]);
             bool IsController = IsControllerServer(machineIP, compilerServiceIP);
-            List<int> portArray = GetPortArray(confFileParser);
             List<string> osServices = GetOsServices(IsController);
 
             // Write the results to log file
@@ -102,14 +103,14 @@ namespace OSDiagTool.Platform
                 }
 
                 // Localhost must be accessible by HTTP on 127.0.0.1
-                if (Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0]) == "Status code 200" ||
-                    Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0]) == "Status code 302")
+                if (Utils.NetworkUtils.OpenTcpStream(getLocalhostAddress, portArray[0]) == "Status code 200" ||
+                    Utils.NetworkUtils.OpenTcpStream(getLocalhostAddress, portArray[0]) == "Status code 302")
                     writer.WriteLine(string.Format("{0}: [INFO] Localhost is returning the following response when using port {1}: {2}.",
-                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0])));
+                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream(getLocalhostAddress, portArray[0])));
                 else
                 {
                     writer.WriteLine(string.Format("{0}: [ERROR] Localhost is returning the following response when using port {1}: {2}.",
-                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream("localhost", portArray[0])));
+                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream(getLocalhostAddress, portArray[0])));
                     checkNetworkRequirements = true;
                 }
 
@@ -167,7 +168,7 @@ namespace OSDiagTool.Platform
 
                 // Warn the customer that he should review the Network Requirements of the Platform
                 if (checkNetworkRequirements)
-                    writer.WriteLine("{0}[ERROR] Please review the OutSystems Network Requirements." +
+                    writer.WriteLine("{0}[ERROR] Please review the OutSystems Network Requirements:" +
                         "{0}https://success.outsystems.com/Documentation/11/Setting_Up_OutSystems/OutSystems_network_requirements", Environment.NewLine);
 
                 writer.WriteLine(string.Format("{0}========== Log ended at {1} ==========", Environment.NewLine, DateTime.Now.ToString()));
@@ -205,7 +206,7 @@ namespace OSDiagTool.Platform
         }
 
         // Getting hostname from server.conf
-        private static string GetHostname(ConfigFileReader confFileParser, string confValue, bool convertToIP)
+        private static string GetHostname(ConfigFileReader confFileParser, string confValue)
         {
             String hostname = null;
             switch (confValue)
@@ -217,13 +218,14 @@ namespace OSDiagTool.Platform
                     hostname = Convert.ToString(Platform.PlatformUtils.GetConfigurationValue(confValue, confFileParser.CacheConfigurationInfo));
                     break;
             }
+            return hostname;
+        }
 
-            /* If the hostname is a Dns, then replace it with the IP address
-             * This will also convert a localhost value to 127.0.0.1
-             */
-            if (Uri.CheckHostName(hostname) == UriHostNameType.Dns && convertToIP)
-                hostname = Utils.NetworkUtils.PingAddress(hostname);
-
+        // Converting the hostname to an IP address
+        private static string HostnameToIP(string hostname, int port)
+        {
+            if (Uri.CheckHostName(hostname) == UriHostNameType.Dns)
+                return Utils.NetworkUtils.OpenTcpStream(hostname, port, true);
             return hostname;
         }
 

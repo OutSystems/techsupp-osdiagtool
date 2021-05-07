@@ -17,56 +17,65 @@ namespace OSDiagTool.Utils
             Ping pinger = new Ping();
             IPAddress addressToPing = Dns.GetHostAddresses(hostAddress)
                 .First(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-
             PingReply reply = pinger.Send(addressToPing);
+
             return reply.Address.ToString();
         }
 
         /*
          * Opens a TCP stream to an address and a port
+         * Returns a IPv4 address, the status of a port or a status code of a response from the stream
          */
-        public static string OpenTcpStream (string address, int port)
+        public static string OpenTcpStream (string address, int port, bool convertToIP = false)
         {
             TcpClient tcpClient = null;
 
             try
             {  
                 tcpClient = new TcpClient(address, port);
-                // If we reached here, then we could connect to the port
+                // If we reached here, then we connected to the port
 
+                // If requested, send the remote IP
+                if (convertToIP)
+                {
+                    IPEndPoint remoteIpEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+                    return remoteIpEndPoint.Address.MapToIPv4().ToString();
+                }
                 // We are not waiting for a status code response for ports like 12001 or 5672, for example
-                if (port != 80 && port != 443) 
+                else if (port != 80 && port != 443) 
                     return "Port listening";
-
-                // Getting a status code
-                // Setting the HTTP protocol
-                string httpProtocol = "HTTP/1.1 ";
-
-                // Let's try sending the bare minimum to compose a request
-                var request = Encoding.ASCII.GetBytes("GET / " + httpProtocol + "\r\nHost: " + address + ":" + port + "\r\nConnection: Close\r\n\r\n");
-
-                NetworkStream stream = tcpClient.GetStream();
-                // Wait 1 second for the response
-                stream.ReadTimeout = 1000;
-                stream.Write(request, 0, request.Length);
-                stream.Flush();
-
-                int bytesRead = stream.Read(request, 0, request.Length);
-                // Returning the response string and getting the status code
-                string response = Encoding.ASCII.GetString(request, 0, bytesRead);
-
-                // The status code is after the HTTP protocol
-                string statusCode = response.Substring(response.IndexOf(httpProtocol) + httpProtocol.Length, 3);
-
-                // Validating the status code
-                if (int.TryParse(statusCode, out _))
-                    return "Status code " + statusCode;
                 else
-                    return "Could not parse status code - returned " + statusCode;
+                {
+                    // If we reached here, we want to build a request and get the status code of the response
+                    // Setting the HTTP protocol
+                    string httpProtocol = "HTTP/1.1 ";
+
+                    // Let's try sending the bare minimum to compose a request
+                    var request = Encoding.ASCII.GetBytes("GET / " + httpProtocol + "\r\nHost: " + address + ":" + port + "\r\nConnection: Close\r\n\r\n");
+
+                    NetworkStream stream = tcpClient.GetStream();
+                    // Wait 1 second for the response
+                    stream.ReadTimeout = 1000;
+                    stream.Write(request, 0, request.Length);
+                    stream.Flush();
+
+                    int bytesRead = stream.Read(request, 0, request.Length);
+                    // Returning the response string and getting the status code
+                    string response = Encoding.ASCII.GetString(request, 0, bytesRead);
+
+                    // The status code is after the HTTP protocol
+                    string statusCode = response.Substring(response.IndexOf(httpProtocol) + httpProtocol.Length, 3);
+
+                    // Validating the status code
+                    if (int.TryParse(statusCode, out _))
+                        return "Status code " + statusCode;
+                    else
+                        return "Could not retrieve status code - got the string " + statusCode + " instead";
+                }
             }
             catch (Exception e) 
             {
-                // Let's check if the port is in use
+                // Since we could not connect, let's check if the port is in use
                 if (IsPortInUse(port))
                     return "Port " + port + " is opened but its currently in use";
                 else
