@@ -39,10 +39,11 @@ namespace OSDiagTool.Utils
                 if (convertToIP)
                 {
                     IPEndPoint remoteIpEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
-                    return remoteIpEndPoint.Address.MapToIPv4().ToString();
+                    return remoteIpEndPoint.Address.ToString();
                 }
+
                 // We are not waiting for a status code response for ports like 12001 or 5672, for example
-                else if (port != 80 && port != 443) 
+                if (port != 80 && port != 443) 
                     return "Port listening";
                 else
                 {
@@ -77,7 +78,7 @@ namespace OSDiagTool.Utils
             {
                 // Since we could not connect, let's check if the port is in use
                 if (IsPortInUse(port))
-                    return "Port " + port + " is opened but its currently in use";
+                    return "The port " + port + " is opened but its currently in use";
                 else
                 {
                     // If we get here, something else happened, like the port is not open, or host is not reachable
@@ -89,7 +90,10 @@ namespace OSDiagTool.Utils
             {
                 // Close the tcp conection and the underlying network stream
                 if (tcpClient != null)
+                {
+                    tcpClient.Client.Close();
                     tcpClient.Close();
+                }
             }
         }
 
