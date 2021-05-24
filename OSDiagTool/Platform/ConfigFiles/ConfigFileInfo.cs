@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace OSDiagTool.Platform.ConfigFiles
 {
-    class ConfigFileDBInfo
+    class ConfigFileInfo
     {
         private string _platformDBType;
         private string _dbms;
         private IDictionary<string, ConfigFileProperty> _properties;
 
-        public ConfigFileDBInfo(string platformDbType, string dbms)
+        public ConfigFileInfo(string platformDbType, string dbms)
         {
             _platformDBType = platformDbType;
             _dbms = dbms;

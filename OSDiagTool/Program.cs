@@ -9,7 +9,6 @@ using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
-using OSDiagTool.Utils;
 
 namespace OSDiagTool
 {
@@ -29,7 +28,8 @@ namespace OSDiagTool
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
-        private static string _osPlatformRequirements = Path.Combine(_tempFolderPath, "PlatformRequirements");
+        private static string _osPlatformDiagnostic = Path.Combine(_tempFolderPath, "PlatformDiagnostic");
+        private static string _targetDiagnosticFile = Path.Combine(Directory.GetCurrentDirectory(), "diagnostic_" + DateTimeToTimestamp(DateTime.Now) + ".log");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
 
@@ -41,15 +41,12 @@ namespace OSDiagTool
         private static string _iisRegistryPath = @"SOFTWARE\Microsoft\InetStp";
         private static string _rabbitMQRegistryPath = @"SOFTWARE\Ericsson\Erlang\ErlSrv\1.1\RabbitMQ";
 
-
         public static string privateKeyFilepath;
         public static string platformConfigurationFilepath;
         public static string osPlatformVersion;
         public static string dbEngine;
         public static string _endFeedback;
         public static bool separateLogCatalog;
-
-
 
         static void Main(string[] args) {
 
@@ -65,7 +62,6 @@ namespace OSDiagTool
             }    
 
             if(osPlatformVersion == null) {
-
                 Application.Run(new OSDiagToolForm.puf_popUpForm(OSDiagToolForm.puf_popUpForm._feedbackErrorType, "OutSystems Platform Server not found. "));
 
             }
@@ -75,7 +71,7 @@ namespace OSDiagTool
                 _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
 
                 ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, osPlatformVersion);
-                ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+                ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
                 dbEngine = platformDBInfo.DBMS.ToLower();
 
@@ -397,62 +393,29 @@ namespace OSDiagTool
         }
 
         /* 
-         * Check the Platform Requirements 
+         * Diagnose the OutSystems Platform
          */
-        public static void CheckPlatformRequirements()
+        public static void PlatformDiagnosticProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, 
+            DBConnector.OracleConnStringModel oracleConnString = null)
         {
-            FileLogger.TraceLog("Checking the OutSystems Platform Requirements...");
-            Directory.CreateDirectory(_osPlatformRequirements);
-
-            bool checkNetworkRequirements = false;
-
-            // Getting the ports set in Configuration Tool (server.hsconf file)
-            string[] portArray = {
-                "80",
-                "443",
-                Platform.PlatformUtils.GetServiceConfigurationValue("DeploymentServerPort"), // Default port 12001
-            };
-
+            Directory.CreateDirectory(_osPlatformDiagnostic);
             try
             {
-                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(_osPlatformRequirements, "requirements.log"))))
+                FileLogger.TraceLog("Diagnosing the OutSystems Platform...");
+
+                if (dbEngine.Equals("sqlserver"))
                 {
-                    // Write the results to log file
-                    writer.WriteLine("Network Requirements:\n");
+                    Platform.PlatformDiagnostic.WriteLog(dbEngine, _osPlatformDiagnostic, configurations, sqlConnString, null);
 
-                    NetworkUtils check = new NetworkUtils();
-
-                    // Get server IP address
-                    writer.WriteLine(string.Format("{0}: IP address detected in this server: {1}.", DateTime.Now.ToString(), check.PingAddress("")));
-
-                    // Validate if localhost is resolving to 127.0.0.1
-                    string reply = check.PingAddress("localhost");
-                    if (reply == "127.0.0.1")
-                        writer.WriteLine(string.Format("{0}: Localhost resolves to {1}.", DateTime.Now.ToString(), reply));
-                    else { 
-                        writer.WriteLine(string.Format("{0}: [ERROR] Localhost is resolving to {1} instead of 127.0.0.1.", DateTime.Now.ToString(), reply));
-                        checkNetworkRequirements = true;
-                    }
-
-                    // Validate ports
-                    foreach (string port in portArray)
-                    {
-                        // Port available
-                        if (check.IsPortListening(port)) {
-                            writer.WriteLine(string.Format("{0}: The TCP port {1} is listening.", DateTime.Now.ToString(), port));
-                        } else {
-                            writer.WriteLine(string.Format("{0}: [ERROR] Could not detect if port {1} is listening.", DateTime.Now.ToString(), port));
-                            checkNetworkRequirements = true;
-                        }
-                    }
-                    
-                    if (checkNetworkRequirements)
-                        writer.WriteLine("\n[ERROR] Please review the OutSystems Network Requirements."); 
+                }
+                else if (dbEngine.Equals("oracle"))
+                {
+                    Platform.PlatformDiagnostic.WriteLog(dbEngine, _osPlatformDiagnostic, configurations,null, oracleConnString);
                 }
             }
             catch (Exception e)
             {
-                FileLogger.LogError("Failed process the Platform Requirements file: ", e.Message + e.StackTrace);
+                FileLogger.LogError("Failed to diagnose the OutSystems Platform: ", e.Message + e.StackTrace);
             }
         }
 

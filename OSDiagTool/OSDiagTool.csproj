@@ -13,6 +13,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -25,7 +26,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -76,6 +76,9 @@
   <PropertyGroup>
     <StartupObject>OSDiagTool.Program</StartupObject>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>false</SignManifests>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="ICSharpCode.SharpZipLib">
       <HintPath>bin\ICSharpCode.SharpZipLib.dll</HintPath>
@@ -97,6 +100,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
@@ -139,7 +143,8 @@
     <Compile Include="OSDiagToolForm\PopUpForm.Designer.cs">
       <DependentUpon>PopUpForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Platform\ConfigFiles\ConfigFileDBInfo.cs" />
+    <Compile Include="Platform\PlatformDiagnostic.cs" />
+    <Compile Include="Platform\ConfigFiles\ConfigFileInfo.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileProperty.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileReader.cs" />
     <Compile Include="Platform\OSServiceConfigFileParser.cs" />
@@ -200,6 +205,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

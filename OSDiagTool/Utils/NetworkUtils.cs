@@ -1,6 +1,9 @@
 ﻿using System.Linq;
 using System.Net.NetworkInformation;
 using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System;
 
 namespace OSDiagTool.Utils
 {
@@ -9,41 +12,119 @@ namespace OSDiagTool.Utils
         /*
          *  Performs an ICMP echo request
          */
-        public string PingAddress(string hostAddress)
+        public static string PingAddress(string hostAddress)
         {
             Ping pinger = new Ping();
             IPAddress addressToPing = Dns.GetHostAddresses(hostAddress)
                 .First(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-
             PingReply reply = pinger.Send(addressToPing);
+
             return reply.Address.ToString();
         }
 
         /*
-         * Check if a TCP port is listening in the server
+         * Opens a TCP stream to an address and a port
+         * Returns a IPv4 address, the status of a port or a status code of a response from the stream
          */
-        public bool IsPortListening (string port)
+        public static string OpenTcpStream (string address, int port, bool convertToIP = false)
         {
-            try
-            {
-                IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-                IPEndPoint[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpListeners();
+            TcpClient tcpClient = null;
 
-                // Search for the port in the active TCP listeners list
-                foreach (IPEndPoint endpoint in tcpConnInfoArray)
+            try
+            {  
+                tcpClient = new TcpClient(address, port);
+                // If we reached here, then we connected to the port
+
+                // If requested, send the remote IP
+                if (convertToIP)
                 {
-                    if (endpoint.Port.ToString() == port)
-                        return true;
+                    IPEndPoint remoteIpEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+                    return remoteIpEndPoint.Address.ToString();
                 }
-                return false;
+
+                // We are not waiting for a status code response for ports like 12001 or 5672, for example
+                if (port != 80 && port != 443) 
+                    return "Port listening";
+                else
+                {
+                    // If we reached here, we want to build a request and get the status code of the response
+                    // Setting the HTTP protocol
+                    string httpProtocol = "HTTP/1.1 ";
+
+                    // Let's try sending the bare minimum to compose a request
+                    var request = Encoding.ASCII.GetBytes("GET / " + httpProtocol + "\r\nHost: " + address + ":" + port + "\r\nConnection: Close\r\n\r\n");
+
+                    NetworkStream stream = tcpClient.GetStream();
+                    // Wait 1 second for the response
+                    stream.ReadTimeout = 1000;
+                    stream.Write(request, 0, request.Length);
+                    stream.Flush();
+
+                    int bytesRead = stream.Read(request, 0, request.Length);
+                    // Returning the response string and getting the status code
+                    string response = Encoding.ASCII.GetString(request, 0, bytesRead);
+
+                    // The status code is after the HTTP protocol
+                    string statusCode = response.Substring(response.IndexOf(httpProtocol) + httpProtocol.Length, 3);
+
+                    // Validating the status code
+                    if (int.TryParse(statusCode, out _))
+                        return "Status code " + statusCode;
+                    else
+                        return "Could not retrieve status code - got the string " + statusCode + " instead";
+                }
             }
-            // Exception thrown when an error occurs while retrieving network information.
-            catch (NetworkInformationException e)
+            catch (Exception e) 
             {
-                FileLogger.LogError("Failed to retrieve network information: ", e.Message + e.StackTrace);
-                // Return false, since we could not validate the port
-                return false;
+                // Since we could not connect, let's check if the port is in use
+                if (IsPortInUse(port))
+                    return "The port " + port + " is opened but its currently in use";
+                else
+                {
+                    // If we get here, something else happened, like the port is not open, or host is not reachable
+                    FileLogger.LogError("Network stream failed with the error: ", e.Message + e.StackTrace);
+                    return null;
+                }
             }
+            finally
+            {
+                // Close the tcp conection and the underlying network stream
+                if (tcpClient != null)
+                {
+                    tcpClient.Client.Close();
+                    tcpClient.Close();
+                }
+            }
+        }
+
+        /*
+         * Checks if a port is an active TCP listener (all TCP states except the Listen state)
+         */
+        private static bool IsPortInUse(int port)
+        {
+            bool inUse = false;
+
+            IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
+            IPEndPoint[] ipEndPoints = ipProperties.GetActiveTcpListeners();
+
+            foreach (IPEndPoint endPoint in ipEndPoints)
+            {
+                if (endPoint.Port == port)
+                {
+                    inUse = true;
+                    break;
+                }
+            }
+            return inUse;
+        }
+
+        /*
+         * Checks if any network interface is marked as "up" and is not a loopback or tunnel interface.
+         * Keep in mind that this does not check for internet connections
+         */
+        public static bool IsNetworkUp()
+        {
+            return System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
         }
     }
 }

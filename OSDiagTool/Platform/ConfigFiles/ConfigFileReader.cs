@@ -8,15 +8,19 @@ namespace OSDiagTool.Platform.ConfigFiles
         public static string PlatformDatabaseConfigurationElement = "PlatformDatabaseConfiguration";
         public static string LoggingDatabaseConfigurationElement = "LoggingDatabaseConfiguration";
         public static string SessionDatabaseConfigurationElement = "SessionDatabaseConfiguration";
-        public static string ServiceConfigurationElement = "ServiceConfiguration"; // Read ServiceConfiguration section from server.hsconf
+        public static string ServiceConfigurationElement = "ServiceConfiguration"; // Read ServiceConfiguration element from server.hsconf
+        public static string CacheConfigurationElement = "CacheInvalidationConfiguration"; // Read CacheInvalidationConfiguration element from server.hsconf
+        public static string ServerConfigurationElement = "ServerConfiguration"; // Read ServerConfiguration element from server.hsconf
+        
         public static string IsEncryptedAttributeName = "encrypted";
         public static string ProviderKeyAttributeName = "ProviderKey";
         
-
-        private ConfigFileDBInfo _dbPlatformDetails;
-        private ConfigFileDBInfo _dbLoggingDetails;
-        private ConfigFileDBInfo _dbSessionDetails;
-        private ConfigFileDBInfo _srvConfigurationDetails;
+        private ConfigFileInfo _dbPlatformDetails;
+        private ConfigFileInfo _dbLoggingDetails;
+        private ConfigFileInfo _dbSessionDetails;
+        private ConfigFileInfo _serviceConfigurationDetails;
+        private ConfigFileInfo _serverConfigurationDetails;
+        private ConfigFileInfo _cacheConfigurationDetails;
 
         private string _configFilePath;
 
@@ -39,7 +43,9 @@ namespace OSDiagTool.Platform.ConfigFiles
                     _dbLoggingDetails = ReadDbLoggingInfo(root);
                 }
                 _dbSessionDetails = ReadDbSessionInfo(root);
-                _srvConfigurationDetails = ReadSrvConfigurationInfo(root);
+                _serviceConfigurationDetails = ReadServiceConfigurationInfo(root);
+                _serverConfigurationDetails = ReadServerConfigurationInfo(root);
+                _cacheConfigurationDetails = ReadCacheConfigurationInfo(root);
             }
         }
 
@@ -51,27 +57,37 @@ namespace OSDiagTool.Platform.ConfigFiles
             return root.Element(dbType).Attribute("ProviderKey").Value;
         }
 
-        private ConfigFileDBInfo ReadDbPlatformInfo(XElement root)
+        private ConfigFileInfo ReadDbPlatformInfo(XElement root)
         {
             return ReadSection(PlatformDatabaseConfigurationElement, root);
         }
 
-        private ConfigFileDBInfo ReadDbLoggingInfo(XElement root)
+        private ConfigFileInfo ReadDbLoggingInfo(XElement root)
         {
             return ReadSection(LoggingDatabaseConfigurationElement, root);
         }
 
-        private ConfigFileDBInfo ReadDbSessionInfo(XElement root)
+        private ConfigFileInfo ReadDbSessionInfo(XElement root)
         {
             return ReadSection(SessionDatabaseConfigurationElement, root);
         }
 
-        private ConfigFileDBInfo ReadSrvConfigurationInfo(XElement root)
+        private ConfigFileInfo ReadServiceConfigurationInfo(XElement root)
         {
             return ReadSection(ServiceConfigurationElement, root);
         }
 
-        private ConfigFileDBInfo ReadSection(string sectionName, XElement root)
+        private ConfigFileInfo ReadServerConfigurationInfo(XElement root)
+        {
+            return ReadSection(ServerConfigurationElement, root);
+        }
+
+        private ConfigFileInfo ReadCacheConfigurationInfo(XElement root)
+        {
+            return ReadSection(CacheConfigurationElement, root);
+        }
+
+        private ConfigFileInfo ReadSection(string sectionName, XElement root)
         {
             // If we are unable to retrieve the ProviderKey value, then the readType should be empty
             string readType;
@@ -81,7 +97,7 @@ namespace OSDiagTool.Platform.ConfigFiles
                 readType = ""; 
             }
 
-            ConfigFileDBInfo dbInfo = new ConfigFileDBInfo(sectionName, readType);
+            ConfigFileInfo dbInfo = new ConfigFileInfo(sectionName, readType);
 
             foreach (XElement el in root.Element(sectionName).Elements())
             {
@@ -109,27 +125,39 @@ namespace OSDiagTool.Platform.ConfigFiles
         }
 
         // PlatformDatabaseConfiguration section of the server.hsconfig
-        public ConfigFileDBInfo DBPlatformInfo
+        public ConfigFileInfo DBPlatformInfo
         {
             get { return _dbPlatformDetails; }
         }
 
         // LoggingDatabaseConfiguration section of the server.hsconfig
-        public ConfigFileDBInfo DBLoggingInfo
+        public ConfigFileInfo DBLoggingInfo
         {
             get { return _dbLoggingDetails; }
         }
 
         // SessionDatabaseConfiguration section of the server.hsconfig
-        public ConfigFileDBInfo DBSessionInfo
+        public ConfigFileInfo DBSessionInfo
         {
             get { return _dbSessionDetails; }
         }
 
         // ServiceConfiguration section of the server.hsconfig
-        public ConfigFileDBInfo SrvConfigurationInfo
+        public ConfigFileInfo ServiceConfigurationInfo
         {
-            get { return _srvConfigurationDetails; }
+            get { return _serviceConfigurationDetails; }
+        }
+
+        // ServerConfiguration section of the server.hsconfig
+        public ConfigFileInfo ServerConfigurationInfo
+        {
+            get { return _serverConfigurationDetails; }
+        }
+
+        // CacheInvalidationConfiguration section of the server.hsconfig
+        public ConfigFileInfo CacheConfigurationInfo
+        {
+            get { return _cacheConfigurationDetails; }
         }
     }
 }

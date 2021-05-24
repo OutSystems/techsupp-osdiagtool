@@ -23,7 +23,7 @@ namespace OSDiagTool.Platform {
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
                 //FileLogger.TraceLog("Platform version: " + osPlatformVersion);
 
-            } catch (Exception e) {
+            } catch (Exception) {
                 //FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message + e.StackTrace);
                 return null;
             }
@@ -42,7 +42,7 @@ namespace OSDiagTool.Platform {
 
                 return osInstallationFolder;
 
-            } catch (Exception e) {
+            } catch (Exception) {
                 //FileLogger.LogError(" * Unable to find OutSystems Platform Version... * ", e.Message + e.StackTrace);
                 return null;
             }
@@ -89,26 +89,22 @@ namespace OSDiagTool.Platform {
         public static string GetPlatformDBAdminUser() {
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
             
             return platformDBInfo.GetProperty("AdminUser").Value;
 
         }
 
         /*
-         * Read ServiceConfiguration section from the server.hsconf file
+         * Read configuration section from the server.hsconf file
          */
-        public static string GetServiceConfigurationValue(string element)
+        public static string GetConfigurationValue(string element, ConfigFileInfo platformInfo)
         {
-            // We need to check if ServiceConfiguration exists, if not, return null
-            try
-            {
-                ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-                ConfigFileDBInfo platformDBInfo = confFileParser.SrvConfigurationInfo;
-                return platformDBInfo.GetProperty(element).Value;
-
+            // We need to check if the configuration exists, if not, return null
+            try {
+                return platformInfo.GetProperty(element).Value;
             } catch (Exception e) {
-                FileLogger.LogError("Failed to retrieve platform configuration value " + element + " from section: ", e.Message + e.StackTrace);
+                FileLogger.LogError("Failed to retrieve platform configuration value " + element + " : ", e.Message + e.StackTrace);
                 return null;
             }
         }
