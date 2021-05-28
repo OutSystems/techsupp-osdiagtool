@@ -53,6 +53,8 @@ namespace OSDiagTool.Utils
 
                     // Let's try sending the bare minimum to compose a request
                     var request = Encoding.ASCII.GetBytes("GET / " + httpProtocol + "\r\nHost: " + address + ":" + port + "\r\nConnection: Close\r\n\r\n");
+                    if (port == 443)
+                        request = Encoding.ASCII.GetBytes("GET https://{0}/ " + httpProtocol + "\r\nHost: " + address + ":" + port + "\r\nConnection: Close\r\n\r\n");
 
                     NetworkStream stream = tcpClient.GetStream();
                     // Wait 1 second for the response

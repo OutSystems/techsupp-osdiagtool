@@ -6,6 +6,7 @@ using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.Utils;
 
+
 namespace OSDiagTool.Platform
 {
     class PlatformDiagnostic
@@ -14,12 +15,12 @@ namespace OSDiagTool.Platform
             DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null)
         {
             /* TODO:
-             *  Review connectivity test logic, considering that the HostnameToIP might not return an IP address
-             *  Check conectivity to other FEs
+             *  Add certificate validation
              */
 
             // Getting the information that we need from the database
             bool IsLifeTimeEnvironment = false;
+            Dictionary<string, string> databaseServerList = null;
 
             if (dbEngine.Equals("sqlserver"))
             {
@@ -29,6 +30,7 @@ namespace OSDiagTool.Platform
                 using (connection)
                 {
                     IsLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, connection);
+                    databaseServerList = Platform.PlatformUtils.GetServerList(dbEngine, configurations.queryTimeout, connection);
                 }
                 connector.SQLCloseConnection(connection);
             }
@@ -41,6 +43,7 @@ namespace OSDiagTool.Platform
                 using (connection)
                 {
                     IsLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, null, connection, platformDBAdminUser);
+                    databaseServerList = Platform.PlatformUtils.GetServerList(dbEngine, configurations.queryTimeout, null, connection, platformDBAdminUser);
                 }
                 connector.OracleCloseConnection(connection);
             }
@@ -57,14 +60,17 @@ namespace OSDiagTool.Platform
             string machineIP = Utils.NetworkUtils.PingAddress("");
             // Validate if localhost is resolving to 127.0.0.1
             string getLocalhostAddress = Utils.NetworkUtils.PingAddress("localhost");
+
             string compilerServiceHostname = GetHostname(confFileParser, "CompilerServerHostname");
             string cacheServiceHostname = GetHostname(confFileParser, "ServiceHost");
-            string compilerConnectionResult = TryGetIP(compilerServiceHostname, portArray[0]); 
-            string cacheConnectionResult = TryGetIP(cacheServiceHostname, portArray[5]);
-            string serverRole = GetServerRole(osServices);            
+            string compilerConnectionResult = TryResolveIP(compilerServiceHostname, portArray[0]); 
+            string cacheConnectionResult = TryResolveIP(cacheServiceHostname, portArray[5]);
+            string serverRole = GetServerRole(osServices);
+            List<ConnectionList> connectionTestList = GetConnectionList(portArray, databaseServerList, machineIP, serverRole, 
+                cacheServiceHostname, cacheConnectionResult, compilerServiceHostname, compilerConnectionResult);
 
             // Write the results to log file
-            using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(reqFilePath, "IP_" + machineIP + "_Diagnostic.log"))))
+            using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(reqFilePath, "IP_" + machineIP + "_Network_Requirements.log"))))
             {
                 writer.WriteLine(string.Format("== Platform Diagnostic =={0}{0}========== Validating Network Requirements =========={0}", Environment.NewLine));
 
@@ -124,7 +130,7 @@ namespace OSDiagTool.Platform
                 }
 
                 // Inform the role of the server
-                if (serverRole == "Inconsistent state")
+                if (serverRole == "Unknown role")
                 {
                     writer.WriteLine(string.Format("{0}: [ERROR] Could not detect the server role - the OutSystems services seems to be in an inconsistent state.", DateTime.Now.ToString()));
                     checkOutSystemsServices = true;
@@ -156,34 +162,27 @@ namespace OSDiagTool.Platform
                 // Validate connectivity requirements
                 writer.WriteLine(string.Format("{0}{1}: [INFO] Detecting ports configured in the Configuration Tool..." +
                     "{0}{1}: [INFO] Ports detected: {2}", Environment.NewLine, DateTime.Now.ToString(), String.Join(", ", portArray)));
-                writer.WriteLine(string.Format("{0}: [INFO] Performing connectivity tests...", DateTime.Now.ToString()));
+                writer.WriteLine(string.Format("{0}: [INFO] Performing connectivity tests between servers...", DateTime.Now.ToString()));
 
-                string response, ipNumber;
-                foreach (int port in portArray)
+                string response = null; 
+                foreach (ConnectionList endpoint in connectionTestList)
                 {
-                    if (port == portArray[4]) { // Deployment controller port and IP
+                    writer.WriteLine(string.Format("{0}{1}: [INFO] Trying to connect to {2}...",
+                                Environment.NewLine, DateTime.Now.ToString(), endpoint.Name));
 
-                        response = Utils.NetworkUtils.OpenTcpStream(compilerConnectionResult, port); 
-                        ipNumber = compilerConnectionResult;
-                    } else if (port == portArray[5]) { // RabbitMQ port and IP
-
-                        response = Utils.NetworkUtils.OpenTcpStream(cacheConnectionResult, port);
-                        ipNumber = cacheConnectionResult;
-                    } else {
-                        response = Utils.NetworkUtils.OpenTcpStream(machineIP, port);
-                        ipNumber = machineIP;
+                    foreach (int port in endpoint.Ports)
+                    {
+                        response = Utils.NetworkUtils.OpenTcpStream(endpoint.Hostname, port);
+                        if (response == null)
+                        {
+                            writer.WriteLine(string.Format("{0}: [ERROR] Could not connect to {1}, with TCP port {2} - Check the 'ConsoleLog' file for details.",
+                                DateTime.Now.ToString(), endpoint.Hostname, port));
+                            checkNetworkRequirements = true;
+                        }
+                        else
+                            writer.WriteLine(string.Format("{0}: [INFO] Connected to {1} with and TCP port {2} - Response: {3}.",
+                                DateTime.Now.ToString(), endpoint.Hostname, port, response));
                     }
-                    writer.WriteLine(string.Format("{0}: [INFO] Trying to connect to {1} and TCP port {2}...",
-                            DateTime.Now.ToString(), ipNumber, port));
-
-                    if (response == null) {
-                        writer.WriteLine(string.Format("{0}: [ERROR] Could not connect to {1} and TCP port {2} - Check the 'ConsoleLog' file for details.", 
-                            DateTime.Now.ToString(), ipNumber, port));
-                        checkNetworkRequirements = true;
-                    }
-                    else
-                        writer.WriteLine(string.Format("{0}: [INFO] Connected to {1}, TCP port {2} - Response: {3}.",
-                            DateTime.Now.ToString(), ipNumber, port, response));
                 }
 
                 // Validating Network interface status
@@ -208,24 +207,11 @@ namespace OSDiagTool.Platform
             }
         }
 
-        // Getting the ports set in Configuration Tool (server.hsconf file)
-        private static List<int> GetPortArray(ConfigFileReader confFileParser) {
-            List<int> ports = new List<int> {
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerPort", confFileParser.ServerConfigurationInfo)), // Default port 80
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerSecurePort", confFileParser.ServerConfigurationInfo)), // Default port 443
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("DeploymentServerPort", confFileParser.ServiceConfigurationInfo)), // Deployment Service - Default value: 12001
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("SchedulerServerPort", confFileParser.ServiceConfigurationInfo)), // Scheduler Service  - Default value: 12002
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("CompilerServerPort", confFileParser.ServiceConfigurationInfo)), // Deployment Controller Service - Default value: 12000
-                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ServicePort", confFileParser.CacheConfigurationInfo)) // RabbitMQ port - Default value: 5672
-            };
-            return ports;
-        }
-
         // Getting OS services list
         private static Dictionary<string, string> GetOsServices()
         {
             // Setting the OutSystems Services names
-            var osServices = new Dictionary<string, string>
+            Dictionary<string, string> osServices = new Dictionary<string, string>
             {
                 { "OutSystems Deployment Service", "" },
                 { "OutSystems Scheduler Service", "" },
@@ -233,7 +219,7 @@ namespace OSDiagTool.Platform
             };
 
             // Get OS service current status
-            var keys = new List<string>(osServices.Keys);
+            List<string> keys = new List<string>(osServices.Keys);
             foreach (string key in keys)
             {
                 osServices[key] = Utils.WinUtils.ServiceStatus(key);
@@ -258,7 +244,7 @@ namespace OSDiagTool.Platform
         }
 
         // Converting the hostname to an IP address
-        private static string TryGetIP(string hostname, int port)
+        private static string TryResolveIP(string hostname, int port)
         {
             // If the hostname passed is in the DNS format, then try to get the IP address
             if (Uri.CheckHostName(hostname) == UriHostNameType.Dns)
@@ -281,7 +267,7 @@ namespace OSDiagTool.Platform
                 && osServices["OutSystems Deployment Service"] == "Running"
                 && osServices["OutSystems Scheduler Service"] == "Running")
 
-                return "Deployment Controller sharing a server with a Front-end";
+                return "Deployment Controller with a Front-end";
 
             else if (osServices["OutSystems Deployment Controller Service"] != "Running"
                 && osServices["OutSystems Deployment Service"] == "Running"
@@ -291,13 +277,70 @@ namespace OSDiagTool.Platform
 
             // Everything else means that the OS services are facing a problem
             else
-                return "Inconsistent state";
+                return "Unknown role";
         }
 
         // Check if a hostname is an IP or not
         private static bool IsIP(string hostname)
         {
             return (Uri.CheckHostName(hostname) == UriHostNameType.IPv4 || Uri.CheckHostName(hostname) == UriHostNameType.IPv6);
+        }
+
+        // Getting the ports set in Configuration Tool (from the server.hsconf file)
+        private static List<int> GetPortArray(ConfigFileReader confFileParser)
+        {
+            List<int> ports = new List<int> {
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerPort", confFileParser.ServerConfigurationInfo)), // Index [0] - Default HTTP port
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ApplicationServerSecurePort", confFileParser.ServerConfigurationInfo)), // Index [1] - Default HTTPS port
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("DeploymentServerPort", confFileParser.ServiceConfigurationInfo)), // Index [2] - Deployment Service - Default value: 12001
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("SchedulerServerPort", confFileParser.ServiceConfigurationInfo)), // Index [3] - Scheduler Service  - Default value: 12002
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("CompilerServerPort", confFileParser.ServiceConfigurationInfo)), // Index [4] - Deployment Controller Service - Default value: 12000
+                Int32.Parse(Platform.PlatformUtils.GetConfigurationValue("ServicePort", confFileParser.CacheConfigurationInfo)) // Index [5] - RabbitMQ port - Default value: 5672
+            };
+            return ports;
+        }
+
+        // Get the list used to test the connections between servers
+        private static List<ConnectionList> GetConnectionList(List<int> ports, Dictionary<string, string> serverList, string machineIP, string serverRole, 
+            string cacheServiceHostname, string cacheConnectionResult, string compilerServiceHostname, string compilerConnectionResult)
+        {
+            List<ConnectionList> testList = new List<ConnectionList>();
+
+            // Set up connectivity tests to machine IP
+            switch (serverRole)
+            {
+                case "Standalone Deployment Controller":
+                    testList.Add(new ConnectionList { Name = "this server's IP, with the role of a " + serverRole, Hostname = machineIP, Ports = new List<int>() { ports[0], ports[1], ports[4] } });
+                    break;
+                case "Front-End":
+                    testList.Add(new ConnectionList { Name = "this server's IP, with the role of a " + serverRole, Hostname = machineIP, Ports = new List<int>() { ports[0], ports[1], ports[2], ports[3] } });
+                    break;
+                default: // Option for the "Deployment Controller with a Front-end" or if we cannot get the server role
+                    testList.Add(new ConnectionList { Name = "this server's IP, with the role of a " + serverRole, Hostname = machineIP, Ports = new List<int>() { ports[0], ports[1], ports[2], ports[3], ports[4] } });
+                    break;
+            }
+
+            // Set up connectivity tests to cache invalidation service
+            testList.Add(new ConnectionList { Name = "Cache invalidation hostname set in the Configuration Tool", Hostname = cacheServiceHostname, Ports = new List<int>() { ports[5] } });
+            if (IsIP(cacheConnectionResult))
+                testList.Add(new ConnectionList { Name = "Cache invalidation IP resolved from the hostname", Hostname = cacheConnectionResult, Ports = new List<int>() { ports[5] } });
+            
+            // Set up connectivity tests to Controller server
+            testList.Add(new ConnectionList { Name = "Controller server hostname set in the Configuration Tool", Hostname = compilerServiceHostname, Ports = new List<int>() { ports[0], ports[1], ports[2], ports[3], ports[4] } });
+            if (IsIP(compilerConnectionResult))
+                // Redudant test for badly configurated environment
+                testList.Add(new ConnectionList { Name = "Controller server IP resolved from the hostname", Hostname = compilerConnectionResult, Ports = new List<int>() { ports[0], ports[1], ports[2], ports[3], ports[4] } });
+
+            // Set up connectivity tests to all the other servers
+            if (serverList != null)
+            {
+                foreach (var server in serverList)
+                {
+                    testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { ports[0], ports[1] } }); // Only test HTTP and HTTPS
+                }
+            }
+
+            return testList;
         }
 
     }
