@@ -6,7 +6,6 @@ using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.Utils;
 
-
 namespace OSDiagTool.Platform
 {
     class PlatformDiagnostic
@@ -14,9 +13,6 @@ namespace OSDiagTool.Platform
         public static void WriteLog(string dbEngine, string reqFilePath, OSDiagToolConf.ConfModel.strConfModel configurations, 
             DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null)
         {
-            /* TODO:
-             *  Add certificate validation
-             */
 
             // Getting the information that we need from the database
             bool IsLifeTimeEnvironment = false;
@@ -63,8 +59,8 @@ namespace OSDiagTool.Platform
 
             string compilerServiceHostname = GetHostname(confFileParser, "CompilerServerHostname");
             string cacheServiceHostname = GetHostname(confFileParser, "ServiceHost");
-            string compilerConnectionResult = TryResolveIP(compilerServiceHostname, portArray[0]); 
-            string cacheConnectionResult = TryResolveIP(cacheServiceHostname, portArray[5]);
+            string compilerConnectionResult = ResolveIP(compilerServiceHostname, portArray[0]); 
+            string cacheConnectionResult = ResolveIP(cacheServiceHostname, portArray[5]);
             string serverRole = GetServerRole(osServices);
             List<ConnectionList> connectionTestList = GetConnectionList(portArray, databaseServerList, machineIP, serverRole, 
                 cacheServiceHostname, cacheConnectionResult, compilerServiceHostname, compilerConnectionResult);
@@ -91,14 +87,14 @@ namespace OSDiagTool.Platform
                 }
 
                 // Localhost must be accessible by HTTP on 127.0.0.1
-                if (Utils.NetworkUtils.OpenTcpStream(getLocalhostAddress, portArray[0]) == "Status code 200" ||
-                    Utils.NetworkUtils.OpenTcpStream(getLocalhostAddress, portArray[0]) == "Status code 302")
+                if (Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portArray[0]) == "200" ||
+                    Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portArray[0]) == "302")
                     writer.WriteLine(string.Format("{0}: [INFO] Localhost is returning the following response when connecting using port {1}: {2}.",
-                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream(getLocalhostAddress, portArray[0])));
+                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portArray[0])));
                 else
                 {
                     writer.WriteLine(string.Format("{0}: [ERROR] Localhost is returning the following response when connecting using port {1}: {2}.",
-                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenTcpStream(getLocalhostAddress, portArray[0])));
+                        DateTime.Now.ToString(), portArray[0], Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portArray[0])));
                     checkNetworkRequirements = true;
                 }
 
@@ -109,7 +105,7 @@ namespace OSDiagTool.Platform
                     "{0}{1}: [INFO] Detected the following Controller hostname: {2}.", Environment.NewLine, DateTime.Now.ToString(), compilerServiceHostname));
                 
                 // If compiler hostname is not an IP, then inform connection results
-                if (!IsIP(compilerServiceHostname))
+                if (!Utils.NetworkUtils.IsIP(compilerServiceHostname))
                     writer.WriteLine(string.Format("{1}: [INFO] Trying to connect to the Controller hostname to resolve the IP address..." +
                         "{0}{1}: [INFO] Controller hostname returned the following response: {2}.", Environment.NewLine, DateTime.Now.ToString(), compilerConnectionResult));
 
@@ -136,7 +132,7 @@ namespace OSDiagTool.Platform
                     checkOutSystemsServices = true;
                 }
                 else
-                    writer.WriteLine(string.Format("{0}: [INFO] Detected that the role of this is a server is a {1}.", DateTime.Now.ToString(), serverRole));
+                    writer.WriteLine(string.Format("{0}: [INFO] Detected that this server has the role of a {1}.", DateTime.Now.ToString(), serverRole));
 
                 // Inform if we can detect LifeTime
                 if (IsLifeTimeEnvironment)
@@ -149,7 +145,7 @@ namespace OSDiagTool.Platform
                     "{0}{1}: [INFO] Detected the following Cache invalidation service hostname: {2}.", Environment.NewLine, DateTime.Now.ToString(), cacheServiceHostname));
 
                 // If cache service hostname is not an IP, then inform connection results
-                if (!IsIP(cacheServiceHostname))
+                if (!Utils.NetworkUtils.IsIP(cacheServiceHostname))
                     writer.WriteLine(string.Format("{1}: [INFO] Trying to connect to the cache invalidation service hostname to resolve the IP address..." +
                         "{0}{1}: [INFO] Cache invalidation service hostname returned the following response: {2}.", Environment.NewLine, DateTime.Now.ToString(), cacheConnectionResult));
                 
@@ -164,7 +160,7 @@ namespace OSDiagTool.Platform
                     "{0}{1}: [INFO] Ports detected: {2}", Environment.NewLine, DateTime.Now.ToString(), String.Join(", ", portArray)));
                 writer.WriteLine(string.Format("{0}: [INFO] Performing connectivity tests between servers...", DateTime.Now.ToString()));
 
-                string response = null; 
+                string response = string.Empty; 
                 foreach (ConnectionList endpoint in connectionTestList)
                 {
                     writer.WriteLine(string.Format("{0}{1}: [INFO] Trying to connect to {2}...",
@@ -172,7 +168,13 @@ namespace OSDiagTool.Platform
 
                     foreach (int port in endpoint.Ports)
                     {
-                        response = Utils.NetworkUtils.OpenTcpStream(endpoint.Hostname, port);
+                        // Perform a web request for the HTTP and HTTPS ports
+                        if (port == portArray[0] || port == portArray[1])
+                            response = Utils.NetworkUtils.OpenWebRequest(endpoint.Hostname, port);
+                        // Validate the ports for the rest
+                        else
+                            response = Utils.NetworkUtils.ConnectToPort(endpoint.Hostname, port);
+                        
                         if (response == null)
                         {
                             writer.WriteLine(string.Format("{0}: [ERROR] Could not connect to {1}, with TCP port {2} - Check the 'ConsoleLog' file for details.",
@@ -230,7 +232,7 @@ namespace OSDiagTool.Platform
         // Getting hostname from server.conf
         private static string GetHostname(ConfigFileReader confFileParser, string confValue)
         {
-            String hostname = null;
+            String hostname = string.Empty;
             switch (confValue)
             {
                 case "CompilerServerHostname": // Compiler service
@@ -244,11 +246,11 @@ namespace OSDiagTool.Platform
         }
 
         // Converting the hostname to an IP address
-        private static string TryResolveIP(string hostname, int port)
+        private static string ResolveIP(string hostname, int port)
         {
             // If the hostname passed is in the DNS format, then try to get the IP address
             if (Uri.CheckHostName(hostname) == UriHostNameType.Dns)
-                return NetworkUtils.OpenTcpStream(hostname, port, true);
+                return NetworkUtils.ConnectToPort(hostname, port, true);
 
             // If the hostname is already an IP, then return it
             return hostname;
@@ -278,12 +280,6 @@ namespace OSDiagTool.Platform
             // Everything else means that the OS services are facing a problem
             else
                 return "Unknown role";
-        }
-
-        // Check if a hostname is an IP or not
-        private static bool IsIP(string hostname)
-        {
-            return (Uri.CheckHostName(hostname) == UriHostNameType.IPv4 || Uri.CheckHostName(hostname) == UriHostNameType.IPv6);
         }
 
         // Getting the ports set in Configuration Tool (from the server.hsconf file)
@@ -322,12 +318,12 @@ namespace OSDiagTool.Platform
 
             // Set up connectivity tests to cache invalidation service
             testList.Add(new ConnectionList { Name = "Cache invalidation hostname set in the Configuration Tool", Hostname = cacheServiceHostname, Ports = new List<int>() { ports[5] } });
-            if (IsIP(cacheConnectionResult))
+            if (Utils.NetworkUtils.IsIP(cacheConnectionResult))
                 testList.Add(new ConnectionList { Name = "Cache invalidation IP resolved from the hostname", Hostname = cacheConnectionResult, Ports = new List<int>() { ports[5] } });
             
             // Set up connectivity tests to Controller server
             testList.Add(new ConnectionList { Name = "Controller server hostname set in the Configuration Tool", Hostname = compilerServiceHostname, Ports = new List<int>() { ports[0], ports[1], ports[2], ports[3], ports[4] } });
-            if (IsIP(compilerConnectionResult))
+            if (Utils.NetworkUtils.IsIP(compilerConnectionResult))
                 // Redudant test for badly configurated environment
                 testList.Add(new ConnectionList { Name = "Controller server IP resolved from the hostname", Hostname = compilerConnectionResult, Ports = new List<int>() { ports[0], ports[1], ports[2], ports[3], ports[4] } });
 
@@ -339,6 +335,12 @@ namespace OSDiagTool.Platform
                     testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { ports[0], ports[1] } }); // Only test HTTP and HTTPS
                 }
             }
+
+            // Set up connectivity tests to MABS endpoint
+            testList.Add(new ConnectionList { Name = "Mobile Apps Build Service", Hostname = "nativebuilder.api.outsystems.com/v1/GetHealth", Ports = new List<int>() { ports[1] } }); // Only test HTTPS
+
+            // Set up connectivity tests to the Service Studio auto updater
+            testList.Add(new ConnectionList { Name = "Service Studio auto updater", Hostname = "api.outsystems.com/releaseshub/v1/latest?component=ServiceStudio&luv=11.0.0.200&version=0", Ports = new List<int>() { ports[1] } }); // Only test HTTPS
 
             return testList;
         }
