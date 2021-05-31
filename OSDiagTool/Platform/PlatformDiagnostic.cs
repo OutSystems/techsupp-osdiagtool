@@ -116,13 +116,7 @@ namespace OSDiagTool.Platform
                 foreach (var service in osServices)
                 {
                     // Check the status of OutSystems Services
-                    if (service.Value == "Running")
-                        writer.WriteLine(string.Format("{0}: [INFO] The status of the {1} is: {2}.", DateTime.Now.ToString(), service.Key, service.Value));
-                    else
-                    {
-                        writer.WriteLine(string.Format("{0}: [ERROR] The status of the {1} is: {2}.", DateTime.Now.ToString(), service.Key, service.Value));
-                        checkNetworkRequirements = true;
-                    }
+                    writer.WriteLine(string.Format("{0}: [INFO] The status of the {1} is: {2}.", DateTime.Now.ToString(), service.Key, service.Value));
                 }
 
                 // Inform the role of the server
@@ -332,7 +326,10 @@ namespace OSDiagTool.Platform
             {
                 foreach (var server in serverList)
                 {
-                    testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { ports[0], ports[1] } }); // Only test HTTP and HTTPS
+                    if (server.Value == compilerServiceHostname)
+                        testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { ports[0], ports[1], ports[2], ports[3], ports[4] } }); // If the IP is the same as the Controller server, test all ports
+                    else
+                        testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { ports[0], ports[1], ports[2], ports[3] } }); // For Front-Ends, exclude the Deployment Controller port
                 }
             }
 
@@ -344,6 +341,5 @@ namespace OSDiagTool.Platform
 
             return testList;
         }
-
     }
 }
