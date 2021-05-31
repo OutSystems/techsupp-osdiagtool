@@ -333,11 +333,17 @@ namespace OSDiagTool.Platform
                 }
             }
 
-            // Set up connectivity tests to MABS endpoint
+            // Set up connectivity test to MABS endpoint
             testList.Add(new ConnectionList { Name = "Mobile Apps Build Service", Hostname = "nativebuilder.api.outsystems.com/v1/GetHealth", Ports = new List<int>() { ports[1] } }); // Only test HTTPS
 
-            // Set up connectivity tests to the Service Studio auto updater
+            // Set up connectivity test to the Service Studio auto updater
             testList.Add(new ConnectionList { Name = "Service Studio auto updater", Hostname = "api.outsystems.com/releaseshub/v1/latest?component=ServiceStudio&luv=11.0.0.200&version=0", Ports = new List<int>() { ports[1] } }); // Only test HTTPS
+
+            // Set up connectivity test to Server.API
+            testList.Add(new ConnectionList { Name = "Server.API", Hostname = "localhost/server.api/v1/health", Ports = new List<int>() { ports[0] } }); // Only test HTTP
+
+            // Set up connectivity test to Server.Identity
+            testList.Add(new ConnectionList { Name = "Server.Identity", Hostname = "localhost/server.identity/v1/health", Ports = new List<int>() { ports[0] } }); // Only test HTTP
 
             return testList;
         }

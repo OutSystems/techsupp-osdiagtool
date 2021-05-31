@@ -7,6 +7,7 @@ using System.Net.Security;
 
 namespace OSDiagTool.Utils
 {
+    
     class NetworkUtils
     {
         /*
@@ -17,7 +18,7 @@ namespace OSDiagTool.Utils
             Ping pinger = new Ping();
             IPAddress addressToPing = Dns.GetHostAddresses(hostAddress)
                 .First(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-            PingReply reply = pinger.Send(addressToPing);
+            PingReply reply = pinger.Send(addressToPing, 10000); // 10 second timeout 
 
             return reply.Address.ToString();
         }
@@ -29,11 +30,13 @@ namespace OSDiagTool.Utils
         public static string OpenWebRequest(string address, int port)
         {
             HttpWebRequest request;
+
             if (port == 443)
                 request = (HttpWebRequest)WebRequest.Create("https://" + address);
             else
                 request = (HttpWebRequest)WebRequest.Create("http://" + address);
 
+            request.Timeout = 10000; // 10 second timeout
             request.Method = "GET";
 
             try
@@ -75,7 +78,10 @@ namespace OSDiagTool.Utils
 
             try
             {
-                tcpClient = new TcpClient(address, port);
+                tcpClient = new TcpClient(address, port)
+                {
+                    ReceiveTimeout = 10000 // 10 second timeout
+                };
                 // If we reached here, then we successfully connected to the port
 
                 // If requested, retrieve the remote IP
