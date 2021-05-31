@@ -91,7 +91,7 @@ namespace OSDiagTool.Utils
                     return remoteIpEndPoint.Address.ToString();
                 }
 
-                return "Connected";
+                return "OK";
             }
             catch (Exception e)
             {

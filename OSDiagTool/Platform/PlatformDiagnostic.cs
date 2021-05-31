@@ -136,7 +136,7 @@ namespace OSDiagTool.Platform
 
                 // Inform the cache service IP and hostname
                 writer.WriteLine(string.Format("{0}{1}: [INFO] Retrieving cache invalidation service hostname from the Configuration Tool..." +
-                    "{0}{1}: [INFO] Detected the following Cache invalidation service hostname: {2}.", Environment.NewLine, DateTime.Now.ToString(), cacheServiceHostname));
+                    "{0}{1}: [INFO] Detected the following cache invalidation service hostname: {2}.", Environment.NewLine, DateTime.Now.ToString(), cacheServiceHostname));
 
                 // If cache service hostname is not an IP, then inform connection results
                 if (!Utils.NetworkUtils.IsIP(cacheServiceHostname))
@@ -176,7 +176,7 @@ namespace OSDiagTool.Platform
                             checkNetworkRequirements = true;
                         }
                         else
-                            writer.WriteLine(string.Format("{0}: [INFO] Connected to {1} with and TCP port {2} - Response: {3}.",
+                            writer.WriteLine(string.Format("{0}: [INFO] Connected to {1} with TCP port {2} - Response: {3}.",
                                 DateTime.Now.ToString(), endpoint.Hostname, port, response));
                     }
                 }
