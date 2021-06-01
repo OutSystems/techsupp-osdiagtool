@@ -90,7 +90,8 @@ namespace OSDiagTool.Platform {
 
             if (dbEngine.Equals("sqlserver"))
             {
-                string _selectPlatSVCSObserver = "SELECT NAME, IP_ADDRESS FROM OSSYS_SERVER";
+                // Retrieve list of active servers
+                string _selectPlatSVCSObserver = "SELECT NAME, IP_ADDRESS FROM OSSYS_SERVER WHERE IS_ACTIVE = 1";
 
                 SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, SqlConnection)
                 {
@@ -109,7 +110,7 @@ namespace OSDiagTool.Platform {
             else if (dbEngine.Equals("oracle"))
             {
 
-                string _selectPlatSVCSObserver = "SELECT NAME, IP_ADDRESS FROM " + platformDBAdminUser + "." + "OSSYS_SERVER";
+                string _selectPlatSVCSObserver = "SELECT NAME, IP_ADDRESS FROM " + platformDBAdminUser + "." + "OSSYS_SERVER WHERE IS_ACTIVE = 1";
 
                 OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, orclConnection)
                 {
