@@ -48,6 +48,7 @@ namespace OSDiagTool.Platform
             bool checkNetworkRequirements = false;
             bool checkOutSystemsServices = false;
 
+            TimeZone localZone = TimeZone.CurrentTimeZone;
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
             // Getting list of ports from server.conf
             List<int> portArray = GetPortArray(confFileParser);
@@ -72,8 +73,11 @@ namespace OSDiagTool.Platform
 
                 // --- Server tests ---
 
+                // Inform server's timezone name
+                writer.WriteLine(string.Format("{0}: [INFO] Server's timezone: {1}", DateTime.Now.ToString(), localZone.StandardName));
+
                 // Inform the server IP
-                writer.WriteLine(string.Format("{1}: [INFO] Retrieving IP address from this server..." +
+                writer.WriteLine(string.Format("{0}{1}: [INFO] Retrieving IP address from this server..." +
                     "{0}{1}: [INFO] IP address detected in this server: {2}.", Environment.NewLine, DateTime.Now.ToString(), machineIP));
 
                 // Inform if localhost is resolving to 127.0.0.1
@@ -171,12 +175,12 @@ namespace OSDiagTool.Platform
                         
                         if (response == null)
                         {
-                            writer.WriteLine(string.Format("{0}: [ERROR] Could not connect to {1}, with TCP port {2} - Check the 'ConsoleLog' file for details.",
+                            writer.WriteLine(string.Format("{0}: [ERROR] Could not connect to {1} using TCP port {2} - Check the 'ConsoleLog' file for details.",
                                 DateTime.Now.ToString(), endpoint.Hostname, port));
                             checkNetworkRequirements = true;
                         }
                         else
-                            writer.WriteLine(string.Format("{0}: [INFO] Connected to {1} with TCP port {2} - Response: {3}.",
+                            writer.WriteLine(string.Format("{0}: [INFO] Connected to {1} using TCP port {2} - Response: {3}.",
                                 DateTime.Now.ToString(), endpoint.Hostname, port, response));
                     }
                 }
