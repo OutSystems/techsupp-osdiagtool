@@ -185,13 +185,6 @@ namespace OSDiagTool.Platform
                     }
                 }
 
-                // Validating Network interface status
-                writer.WriteLine(string.Format("{0}{1}: [INFO] Examining the network interface of the server...", Environment.NewLine, DateTime.Now.ToString()));
-                if (NetworkUtils.IsNetworkUp())
-                    writer.WriteLine(string.Format("{0}: [INFO] The server returned that there are network connections available.", DateTime.Now.ToString()));
-                else
-                    writer.WriteLine(string.Format("{0}: [WARNING] Could not find any network connections available.", DateTime.Now.ToString()));
-
                 // --- Write errors ---
 
                 // Warn the customer that he should review the Network Requirements of the Platform

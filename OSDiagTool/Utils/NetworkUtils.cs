@@ -137,15 +137,6 @@ namespace OSDiagTool.Utils
             return inUse;
         }
 
-        /*
-         * Checks if any network interface is marked as "up" and is not a loopback or tunnel interface.
-         * Keep in mind that this does not check for internet connections
-         */
-        public static bool IsNetworkUp()
-        {
-            return System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
-        }
-
         // Check if a hostname is an IP or not
         public static bool IsIP(string hostname)
         {
