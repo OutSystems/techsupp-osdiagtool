@@ -1,5 +1,6 @@
 ﻿using System.Xml.Linq;
 using System.IO;
+using System.Windows.Forms;
 
 namespace OSDiagTool.Platform.ConfigFiles
 {
@@ -35,17 +36,25 @@ namespace OSDiagTool.Platform.ConfigFiles
          */
         private void ReadFile(string osPlatformVersion)
         {
-            using (FileStream fs = File.OpenRead(_configFilePath))
+            try
             {
-                XElement root = XElement.Load(fs);
-                _dbPlatformDetails = ReadDbPlatformInfo(root);
-                if (!(osPlatformVersion.StartsWith("10."))) {
-                    _dbLoggingDetails = ReadDbLoggingInfo(root);
+                using (FileStream fs = File.OpenRead(_configFilePath))
+                {
+                    XElement root = XElement.Load(fs);
+                    _dbPlatformDetails = ReadDbPlatformInfo(root);
+                    if (!(osPlatformVersion.StartsWith("10.")))
+                    {
+                        _dbLoggingDetails = ReadDbLoggingInfo(root);
+                    }
+                    _dbSessionDetails = ReadDbSessionInfo(root);
+                    _serviceConfigurationDetails = ReadServiceConfigurationInfo(root);
+                    _serverConfigurationDetails = ReadServerConfigurationInfo(root);
+                    _cacheConfigurationDetails = ReadCacheConfigurationInfo(root);
                 }
-                _dbSessionDetails = ReadDbSessionInfo(root);
-                _serviceConfigurationDetails = ReadServiceConfigurationInfo(root);
-                _serverConfigurationDetails = ReadServerConfigurationInfo(root);
-                _cacheConfigurationDetails = ReadCacheConfigurationInfo(root);
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                Application.Run(new OSDiagToolForm.puf_popUpForm(OSDiagToolForm.puf_popUpForm._feedbackErrorType, "Server.hsconf file not found."));
             }
         }
 

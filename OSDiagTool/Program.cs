@@ -53,7 +53,6 @@ namespace OSDiagTool
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
-
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
@@ -63,28 +62,26 @@ namespace OSDiagTool
 
             if(osPlatformVersion == null) {
                 Application.Run(new OSDiagToolForm.puf_popUpForm(OSDiagToolForm.puf_popUpForm._feedbackErrorType, "OutSystems Platform Server not found. "));
-
             }
             else {
-
                 _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
                 _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
 
                 ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, osPlatformVersion);
                 ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
-
                 dbEngine = platformDBInfo.DBMS.ToLower();
 
                 var sqlConnString = new DBConnector.SQLConnStringModel();
                 var orclConnString = new DBConnector.OracleConnStringModel();
 
-                if (dbEngine.Equals("sqlserver")) {
-
+                if (dbEngine.Equals("sqlserver"))
+                {
                     sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                     sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
 
-                } else if (dbEngine.Equals("oracle")) {
-
+                }
+                else if (dbEngine.Equals("oracle"))
+                {
                     orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                     orclConnString.port = platformDBInfo.GetProperty("Port").Value;
                     orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
@@ -96,30 +93,28 @@ namespace OSDiagTool
 
                 OSDiagToolInitialization();
 
-                if (!args.Length.Equals(0)) {
-
-                    if (args[0].ToLower().Equals("runcmdline")) {
-
-                        if (args.Length.Equals(3)) { // One rune: runcmdline + saUser + saPwd
+                if (!args.Length.Equals(0))
+                {
+                    if (args[0].ToLower().Equals("runcmdline"))
+                    {
+                        if (args.Length.Equals(3))
+                        { // One rune: runcmdline + saUser + saPwd
 
                             OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString, args[1].ToString(), args[2].ToString());
 
-                        } else {
-
-                            OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString);
-
                         }
-
+                        else
+                        {
+                            OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString);
+                        }
                     }
-
-                } else {
-
+                }
+                else
+                {
                     Application.EnableVisualStyles();
                     Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
-
-                }              
+                }
             }
-
         }
 
         /* REFACTOR */
