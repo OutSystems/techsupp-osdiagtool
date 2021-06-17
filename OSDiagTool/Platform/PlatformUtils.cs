@@ -130,15 +130,6 @@ namespace OSDiagTool.Platform {
             return lst;
         }
 
-        public static string GetPlatformDBAdminUser() {
-
-            ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
-            
-            return platformDBInfo.GetProperty("AdminUser").Value;
-
-        }
-
         /*
          * Read configuration section from the server.hsconf file
          */

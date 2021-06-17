@@ -239,7 +239,8 @@ namespace OSDiagTool
                 var connector = new DBConnector.OracleDBConnector();
                 OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
 
-                string platformDBAdminUser = Platform.PlatformUtils.GetPlatformDBAdminUser();
+                ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
+                string platformDBAdminUser = Platform.PlatformUtils.GetConfigurationValue("AdminUser", confFileParser.DBPlatformInfo); ;
 
                 using (connection) {
 

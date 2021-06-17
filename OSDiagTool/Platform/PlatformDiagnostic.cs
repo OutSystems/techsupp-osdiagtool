@@ -17,6 +17,7 @@ namespace OSDiagTool.Platform
             // Getting the information that we need from the database
             bool IsLifeTimeEnvironment = false;
             Dictionary<string, string> databaseServerList = null;
+            ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
 
             if (dbEngine.Equals("sqlserver"))
             {
@@ -34,7 +35,7 @@ namespace OSDiagTool.Platform
             {
                 var connector = new DBConnector.OracleDBConnector();
                 OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
-                string platformDBAdminUser = Platform.PlatformUtils.GetPlatformDBAdminUser();
+                string platformDBAdminUser = Platform.PlatformUtils.GetConfigurationValue("AdminUser", confFileParser.DBPlatformInfo);
 
                 using (connection)
                 {
@@ -51,7 +52,6 @@ namespace OSDiagTool.Platform
             List<int> stepErrors = null;
 
             TimeZone localZone = TimeZone.CurrentTimeZone;
-            ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
             // Getting list of ports from server.conf
             List<int> portList = GetPortList(confFileParser);
             Dictionary<string, string> osServices = GetOsServices();
