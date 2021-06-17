@@ -143,6 +143,7 @@
     <Compile Include="OSDiagToolForm\PopUpForm.Designer.cs">
       <DependentUpon>PopUpForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Platform\ConnectionList.cs" />
     <Compile Include="Platform\PlatformDiagnostic.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileInfo.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileProperty.cs" />
@@ -205,7 +206,9 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -278,7 +278,8 @@
             // 
             this.tb_osDiagConf.Controls.Add(this.tb_osDiagGenConf);
             this.tb_osDiagConf.Controls.Add(this.tb_databaseConf);
-            this.tb_osDiagConf.Controls.Add(this.tp_iisMonit);
+            // Remove the comment below after the IIS monitorization tool is implemented
+            //this.tb_osDiagConf.Controls.Add(this.tp_iisMonit);
             this.tb_osDiagConf.Location = new System.Drawing.Point(12, 36);
             this.tb_osDiagConf.Name = "tb_osDiagConf";
             this.tb_osDiagConf.SelectedIndex = 0;

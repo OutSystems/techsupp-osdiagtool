@@ -77,7 +77,7 @@ namespace OSDiagTool.Utils {
 
             File.AppendAllText(filePath, message + Environment.NewLine);
 
-        }
+        }        
 
         // Retrieves the current status of a windows service
         public static string ServiceStatus(string serviceName) {

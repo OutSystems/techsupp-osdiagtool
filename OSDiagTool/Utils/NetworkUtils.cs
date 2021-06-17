@@ -2,11 +2,12 @@
 using System.Net.NetworkInformation;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System;
+using System.Net.Security;
 
 namespace OSDiagTool.Utils
 {
+    
     class NetworkUtils
     {
         /*
@@ -17,64 +18,82 @@ namespace OSDiagTool.Utils
             Ping pinger = new Ping();
             IPAddress addressToPing = Dns.GetHostAddresses(hostAddress)
                 .First(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-            PingReply reply = pinger.Send(addressToPing);
+            PingReply reply = pinger.Send(addressToPing, 10000); // 10 second timeout 
 
             return reply.Address.ToString();
         }
 
         /*
-         * Opens a TCP stream to an address and a port
-         * Returns a IPv4 address, the status of a port or a status code of a response from the stream
+         * Opens a HTTP or HTTPS web request to an address and a port
+         * Returns the status code
          */
-        public static string OpenTcpStream (string address, int port, bool convertToIP = false)
+        public static string OpenWebRequest(string address, int port)
+        {
+            HttpWebRequest request;
+
+            if (port == 443)
+                request = (HttpWebRequest)WebRequest.Create("https://" + address);
+            else
+                request = (HttpWebRequest)WebRequest.Create("http://" + address);
+
+            request.Timeout = 10000; // 10 second timeout
+            request.Method = "GET";
+
+            try
+            {
+                // Ignore the certificate trust validation - we just need to know the response
+                ServicePointManager.ServerCertificateValidationCallback = new
+                RemoteCertificateValidationCallback
+                (
+                   delegate { return true; }
+                );
+
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    string result = ((int)response.StatusCode).ToString();
+                    response.Close();
+
+                    return result;
+                }
+            }
+            // For status codes >= 400
+            catch (WebException we)
+            {
+                return ((int)((HttpWebResponse)we.Response).StatusCode).ToString();
+            }
+            catch (Exception e)
+            {
+                FileLogger.LogError("Web request failed with the error: ", e.Message + e.StackTrace);
+                return null;
+            }
+        }
+
+        /*
+         * Opens a TCP request request to an address and a port
+         * Returns if we were able to connect to the port or if it's in use 
+         */
+        public static string ConnectToPort(string address, int port, bool retrieveIP = false)
         {
             TcpClient tcpClient = null;
 
             try
-            {  
-                tcpClient = new TcpClient(address, port);
-                // If we reached here, then we connected to the port
+            {
+                tcpClient = new TcpClient(address, port)
+                {
+                    ReceiveTimeout = 10000 // 10 second timeout
+                };
+                // If we reached here, then we successfully connected to the port
 
-                // If requested, send the remote IP
-                if (convertToIP)
+                // If requested, retrieve the remote IP
+                if (retrieveIP)
                 {
                     IPEndPoint remoteIpEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
                     return remoteIpEndPoint.Address.ToString();
                 }
 
-                // We are not waiting for a status code response for ports like 12001 or 5672, for example
-                if (port != 80 && port != 443) 
-                    return "Port listening";
-                else
-                {
-                    // If we reached here, we want to build a request and get the status code of the response
-                    // Setting the HTTP protocol
-                    string httpProtocol = "HTTP/1.1 ";
-
-                    // Let's try sending the bare minimum to compose a request
-                    var request = Encoding.ASCII.GetBytes("GET / " + httpProtocol + "\r\nHost: " + address + ":" + port + "\r\nConnection: Close\r\n\r\n");
-
-                    NetworkStream stream = tcpClient.GetStream();
-                    // Wait 1 second for the response
-                    stream.ReadTimeout = 1000;
-                    stream.Write(request, 0, request.Length);
-                    stream.Flush();
-
-                    int bytesRead = stream.Read(request, 0, request.Length);
-                    // Returning the response string and getting the status code
-                    string response = Encoding.ASCII.GetString(request, 0, bytesRead);
-
-                    // The status code is after the HTTP protocol
-                    string statusCode = response.Substring(response.IndexOf(httpProtocol) + httpProtocol.Length, 3);
-
-                    // Validating the status code
-                    if (int.TryParse(statusCode, out _))
-                        return "Status code " + statusCode;
-                    else
-                        return "Could not retrieve status code - got the string " + statusCode + " instead";
-                }
+                return "OK";
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
                 // Since we could not connect, let's check if the port is in use
                 if (IsPortInUse(port))
@@ -118,13 +137,10 @@ namespace OSDiagTool.Utils
             return inUse;
         }
 
-        /*
-         * Checks if any network interface is marked as "up" and is not a loopback or tunnel interface.
-         * Keep in mind that this does not check for internet connections
-         */
-        public static bool IsNetworkUp()
+        // Check if a hostname is an IP or not
+        public static bool IsIP(string hostname)
         {
-            return System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
+            return (Uri.CheckHostName(hostname) == UriHostNameType.IPv4 || Uri.CheckHostName(hostname) == UriHostNameType.IPv6);
         }
     }
 }
