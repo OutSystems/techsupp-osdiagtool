@@ -3,10 +3,8 @@ using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.Platform.ConfigFiles;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OSDiagTool.Platform {
     class PlatformUtils {
@@ -22,7 +20,7 @@ namespace OSDiagTool.Platform {
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
                 //FileLogger.TraceLog("Platform version: " + osPlatformVersion);
 
-            } catch (Exception e) {
+            } catch (Exception) {
                 //FileLogger.LogError(" * Unable to find OutSystems Platform Server Installation... * ", e.Message + e.StackTrace);
                 return null;
             }
@@ -41,7 +39,7 @@ namespace OSDiagTool.Platform {
 
                 return osInstallationFolder;
 
-            } catch (Exception e) {
+            } catch (Exception) {
                 //FileLogger.LogError(" * Unable to find OutSystems Platform Version... * ", e.Message + e.StackTrace);
                 return null;
             }
@@ -85,13 +83,65 @@ namespace OSDiagTool.Platform {
 
         }
 
-        public static string GetPlatformDBAdminUser() {
+        public static Dictionary<string, string> GetServerList(string dbEngine, int queryTimeout, SqlConnection SqlConnection = null, OracleConnection orclConnection = null, string platformDBAdminUser = null)
+        {
 
-            ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            Dictionary<string, string> lst = new Dictionary<string, string>();
 
-            return platformDBInfo.GetProperty("AdminUser").Value;
+            if (dbEngine.Equals("sqlserver"))
+            {
+                // Retrieve list of active servers
+                string _selectPlatSVCSObserver = "SELECT NAME, IP_ADDRESS FROM OSSYS_SERVER WHERE IS_ACTIVE = 1";
 
+                SqlCommand cmd = new SqlCommand(_selectPlatSVCSObserver, SqlConnection)
+                {
+                    CommandTimeout = queryTimeout
+                };
+
+                using (IDataReader dataReader = cmd.ExecuteReader())
+                {
+                    //Loop through results
+                    while (dataReader.Read())
+                    {
+                        lst.Add(Convert.ToString(dataReader["NAME"]), Convert.ToString(dataReader["IP_ADDRESS"]));
+                    }
+                }
+            }
+            else if (dbEngine.Equals("oracle"))
+            {
+
+                string _selectPlatSVCSObserver = "SELECT NAME, IP_ADDRESS FROM " + platformDBAdminUser + "." + "OSSYS_SERVER WHERE IS_ACTIVE = 1";
+
+                OracleCommand cmd = new OracleCommand(_selectPlatSVCSObserver, orclConnection)
+                {
+                    CommandTimeout = queryTimeout
+                };
+
+                using (IDataReader dataReader = cmd.ExecuteReader())
+                {
+                    //Loop through results
+                    while (dataReader.Read())
+                    {
+                        lst.Add(Convert.ToString(dataReader["NAME"]), Convert.ToString(dataReader["IP_ADDRESS"]));
+                    }
+                }
+            }
+
+            return lst;
+        }
+
+        /*
+         * Read configuration section from the server.hsconf file
+         */
+        public static string GetConfigurationValue(string element, ConfigFileInfo platformInfo)
+        {
+            // We need to check if the configuration exists, if not, return null
+            try {
+                return platformInfo.GetProperty(element).Value;
+            } catch (Exception e) {
+                FileLogger.LogError("Failed to retrieve platform configuration value " + element + " : ", e.Message + e.StackTrace);
+                return null;
+            }
         }
     }
 }

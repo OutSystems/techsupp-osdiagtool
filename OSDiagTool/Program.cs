@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Data.SqlClient;
+using System.Windows.Forms;
+using System.Diagnostics;
 using Microsoft.Win32;
-using OSDiagTool.Utils;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
-using System.Data.SqlClient;
-using System.Windows.Forms;
-using OSDiagTool.OSDiagToolForm;
 
 namespace OSDiagTool
 {
@@ -30,6 +28,8 @@ namespace OSDiagTool
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
+        private static string _osPlatformDiagnostic = Path.Combine(_tempFolderPath, "PlatformDiagnostic");
+        private static string _targetDiagnosticFile = Path.Combine(Directory.GetCurrentDirectory(), "diagnostic_" + DateTimeToTimestamp(DateTime.Now) + ".log");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
 
@@ -41,7 +41,6 @@ namespace OSDiagTool
         private static string _iisRegistryPath = @"SOFTWARE\Microsoft\InetStp";
         private static string _rabbitMQRegistryPath = @"SOFTWARE\Ericsson\Erlang\ErlSrv\1.1\RabbitMQ";
 
-
         public static string privateKeyFilepath;
         public static string platformConfigurationFilepath;
         public static string osPlatformVersion;
@@ -49,56 +48,73 @@ namespace OSDiagTool
         public static string _endFeedback;
         public static bool separateLogCatalog;
 
-
-
         static void Main(string[] args) {
 
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
-
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
                 osPlatformVersion = (string)OSPlatformInstaller.GetValue("Server");
-            } catch (Exception e) {
+            } catch (Exception) {
                 osPlatformVersion = null;
             }    
 
             if(osPlatformVersion == null) {
-
                 Application.Run(new OSDiagToolForm.puf_popUpForm(OSDiagToolForm.puf_popUpForm._feedbackErrorType, "OutSystems Platform Server not found. "));
-
             }
             else {
-
                 _osInstallationFolder = Platform.PlatformUtils.GetPlatformInstallationPath(_osServerRegistry);
                 _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
 
                 ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, osPlatformVersion);
-                ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
-
+                ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
                 dbEngine = platformDBInfo.DBMS.ToLower();
 
                 var sqlConnString = new DBConnector.SQLConnStringModel();
                 var orclConnString = new DBConnector.OracleConnStringModel();
 
-                if (dbEngine.Equals("sqlserver")) {
-
+                if (dbEngine.Equals("sqlserver"))
+                {
                     sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                     sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
 
-                } else if (dbEngine.Equals("oracle")) {
-
+                }
+                else if (dbEngine.Equals("oracle"))
+                {
                     orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                     orclConnString.port = platformDBInfo.GetProperty("Port").Value;
                     orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
                 }
 
-                Application.EnableVisualStyles();
-                Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
+                // Checking if run is via CmdLine
+                // args[0] RunCmdLine to run on CmdLine
+                // args[1] saUser; args[2] sapwd;
 
+                OSDiagToolInitialization();
+
+                if (!args.Length.Equals(0))
+                {
+                    if (args[0].ToLower().Equals("runcmdline"))
+                    {
+                        if (args.Length.Equals(3))
+                        { // One rune: runcmdline + saUser + saPwd
+
+                            OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString, args[1].ToString(), args[2].ToString());
+
+                        }
+                        else
+                        {
+                            OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString);
+                        }
+                    }
+                }
+                else
+                {
+                    Application.EnableVisualStyles();
+                    Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
+                }
             }
-
         }
 
         /* REFACTOR */
@@ -223,7 +239,8 @@ namespace OSDiagTool
                 var connector = new DBConnector.OracleDBConnector();
                 OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
 
-                string platformDBAdminUser = Platform.PlatformUtils.GetPlatformDBAdminUser();
+                ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
+                string platformDBAdminUser = Platform.PlatformUtils.GetConfigurationValue("AdminUser", confFileParser.DBPlatformInfo); ;
 
                 using (connection) {
 
@@ -260,9 +277,6 @@ namespace OSDiagTool
             } else if (dbEngine.Equals("oracle")) {
                 Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
             }
-
-
-
         }
 
         public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps) {
@@ -372,13 +386,40 @@ namespace OSDiagTool
             }
 
 
+        }
+
+        /* 
+         * Diagnose the OutSystems Platform
+         */
+        public static void PlatformDiagnosticProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, 
+            DBConnector.OracleConnStringModel oracleConnString = null)
+        {
+            Directory.CreateDirectory(_osPlatformDiagnostic);
+            try
+            {
+                FileLogger.TraceLog("Diagnosing the OutSystems Platform...");
+
+                if (dbEngine.Equals("sqlserver"))
+                {
+                    Platform.PlatformDiagnostic.WriteLog(dbEngine, _osPlatformDiagnostic, configurations, sqlConnString, null);
+
+                }
+                else if (dbEngine.Equals("oracle"))
+                {
+                    Platform.PlatformDiagnostic.WriteLog(dbEngine, _osPlatformDiagnostic, configurations,null, oracleConnString);
+                }
             }
-            
+            catch (Exception e)
+            {
+                FileLogger.LogError("Failed to diagnose the OutSystems Platform: ", e.Message + e.StackTrace);
+            }
+        }
 
         public static void CollectMemoryDumps(bool iisMemDumps, bool osMemDumps)
         {
-
             List<string> processList = new List<string>();
+            bool parentPrcNeedsResume = false;
+            int parentProcessId = 0;
 
             if (iisMemDumps && osMemDumps) {
                 processList.AddRange(new List<string>() { "w3wp", "deployment_controller", "deployment_service", "scheduler", "log_service" });
@@ -404,6 +445,7 @@ namespace OSDiagTool
                 { "w3wp", "w3wp.exe" }
             };
 
+            // TODO: suspend w3wp parent svchost.exe to prevent recycle
             try {
 
                 foreach (string processTag in processList) {
@@ -416,16 +458,32 @@ namespace OSDiagTool
                         string pidSuf = pids.Count > 1 ? "_" + pid : "";
                         string filename = "memdump_" + processTag + pidSuf + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".dmp";
 
+                        if(processName.Equals("w3wp.exe")) { // suspend parent svchost to prevent recycle
+
+                            parentProcessId = WinPerfCounters.GetParentProcess(pid);
+                            var svchostProcess = Process.GetProcessById(parentProcessId);
+                            // TODO: implement suspend
+
+                            Utils.WinUtils.SuspendProcess(parentProcessId);
+                            parentPrcNeedsResume = true;
+
+                        }
+
                         FileLogger.TraceLog(" - PID " + pid + " - ");
                         command = new CmdLineCommand("procdump64.exe -ma " + pid + " /accepteula " + "\"" + Path.Combine(memoryDumpsPath, filename) + "\"");
                         command.Execute();
+
+                        if (parentPrcNeedsResume) Utils.WinUtils.ResumeProcess(parentProcessId);
+
                     }
 
                 }
             } catch(Exception e) {
                 FileLogger.LogError("Failed to get memory dump: ", e.Message + e.StackTrace);
-            }
 
+            } finally {
+                if (parentPrcNeedsResume) Utils.WinUtils.ResumeProcess(parentProcessId);
+            }
             
         }
 

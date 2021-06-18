@@ -5,7 +5,6 @@ using System.Text;
 using System.Security.Cryptography;
 using System.IO;
 using System.Xml.Linq;
-using System.Text;
 
 namespace OSDiagTool.Utils
 {

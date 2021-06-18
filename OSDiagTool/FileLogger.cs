@@ -12,13 +12,13 @@ namespace OSDiagTool
     public class FileLogger
     {
         private static string _tempFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "collect_data");
-        private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
+        private static string _consoleLog = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
 
 
         public static void LogError(string customMessage, string errorMessage, bool writeToConsole = true, bool writeDateTime = true)
         {
             if (writeToConsole) { Console.WriteLine("[ERROR] " + customMessage + ": " + errorMessage);  };
-            File.AppendAllText(_errorDumpFile, writeDateTime ? "[" + Thread.CurrentThread.ManagedThreadId + "]" + DateTime.Now + "\t" + "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine : 
+            File.AppendAllText(_consoleLog, writeDateTime ?  DateTime.Now + "\t" + "[ERROR] \t" + customMessage + " [" + Thread.CurrentThread.ManagedThreadId + "]" + "\t" + errorMessage + Environment.NewLine : 
                 "[" + Thread.CurrentThread.ManagedThreadId + "]" + "[ERROR] \t" + customMessage + "\t" + errorMessage + Environment.NewLine);
 
         }
@@ -28,12 +28,12 @@ namespace OSDiagTool
             if (isTaskFinished == false)
             {
                 Console.Write(traceMessage);
-                File.AppendAllText(_errorDumpFile, writeDateTime ? "[" + Thread.CurrentThread.ManagedThreadId + "]" + Environment.NewLine + DateTime.Now + "\t" + traceMessage : "[" + Thread.CurrentThread.ManagedThreadId + "]" + traceMessage);
+                File.AppendAllText(_consoleLog, writeDateTime ? Environment.NewLine + DateTime.Now + " [" + Thread.CurrentThread.ManagedThreadId + "]" + "\t" + traceMessage  : Environment.NewLine + "[" + Thread.CurrentThread.ManagedThreadId + "]" + traceMessage );
             }
             else if (isTaskFinished == true)
             {
                 Console.WriteLine(traceMessage);
-                File.AppendAllText(_errorDumpFile, traceMessage);
+                File.AppendAllText(_consoleLog, traceMessage);
             }
 
         }
