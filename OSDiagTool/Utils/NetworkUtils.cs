@@ -59,7 +59,13 @@ namespace OSDiagTool.Utils
             // For status codes >= 400
             catch (WebException we)
             {
-                return ((int)((HttpWebResponse)we.Response).StatusCode).ToString();
+                // Let's consider that the response can be null
+                if (we.Response != null)
+                    return ((int)((HttpWebResponse)we.Response).StatusCode).ToString();
+                else
+                    FileLogger.LogError("Web request returned a web exception with the following message: ", we.Message + we.StackTrace);
+                return null;
+
             }
             catch (Exception e)
             {
