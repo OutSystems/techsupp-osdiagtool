@@ -49,7 +49,7 @@ namespace OSDiagTool.Platform
             bool checkNetworkRequirements = false;
             bool checkOutSystemsServices = false;
             int step = 1;
-            List<int> stepErrors = null;
+            List<int> stepErrors = new List<int>();
 
             TimeZone localZone = TimeZone.CurrentTimeZone;
             // Getting list of ports from server.conf
