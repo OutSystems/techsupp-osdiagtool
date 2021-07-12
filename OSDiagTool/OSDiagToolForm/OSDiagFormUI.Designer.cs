@@ -773,7 +773,7 @@
             this.cb_osDiagnotic.Name = "cb_osDiagnotic";
             this.cb_osDiagnotic.Size = new System.Drawing.Size(91, 17);
             this.cb_osDiagnotic.TabIndex = 29;
-            this.cb_osDiagnotic.Text = "Diagnostic";
+            this.cb_osDiagnotic.Text = "Network Diagnostic";
             this.cb_osDiagnotic.UseVisualStyleBackColor = true;
             // 
             // OsDiagForm
