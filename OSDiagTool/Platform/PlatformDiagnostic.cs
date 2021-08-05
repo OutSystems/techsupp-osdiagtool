@@ -49,7 +49,7 @@ namespace OSDiagTool.Platform
             bool checkNetworkRequirements = false;
             bool checkOutSystemsServices = false;
             int step = 1;
-            List<int> stepErrors = new List<int>();
+            List<int> stepWarnings = new List<int>();
 
             TimeZone localZone = TimeZone.CurrentTimeZone;
             // Getting list of ports from server.conf
@@ -89,9 +89,9 @@ namespace OSDiagTool.Platform
                     writer.WriteLine(string.Format("{0}: [{1}] Localhost resolves to {2}.", DateTime.Now.ToString(), step, getLocalhostAddress));
                 else
                 {
-                    writer.WriteLine(string.Format("{0}: [{1}][ERROR] Localhost is resolving to {2} instead of 127.0.0.1.", DateTime.Now.ToString(), step, getLocalhostAddress));
+                    writer.WriteLine(string.Format("{0}: [{1}][WARNING] Localhost is resolving to {2} instead of 127.0.0.1.", DateTime.Now.ToString(), step, getLocalhostAddress));
                     checkNetworkRequirements = true;
-                    stepErrors.Add(step);
+                    stepWarnings.Add(step);
                 }
 
                 // Localhost must be accessible by HTTP on 127.0.0.1
@@ -101,10 +101,10 @@ namespace OSDiagTool.Platform
                         DateTime.Now.ToString(), step, portList[0], Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portList[0])));
                 else
                 {
-                    writer.WriteLine(string.Format("{0}: [{1}][ERROR] Localhost is returning the following response when connecting using port {2}: {3}.",
+                    writer.WriteLine(string.Format("{0}: [{1}][WARNING] Localhost is returning the following response when connecting using port {2}: {3}.",
                         DateTime.Now.ToString(), step, portList[0], Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portList[0])));
                     checkNetworkRequirements = true;
-                    stepErrors.Add(step);
+                    stepWarnings.Add(step);
                 }
 
                 // --- Controller tests ---
@@ -132,10 +132,10 @@ namespace OSDiagTool.Platform
                 // Inform the role of the server
                 if (serverRole == "Unknown role")
                 {
-                    writer.WriteLine(string.Format("{0}: [{1}][ERROR] Could not detect the server role - the OutSystems services seems to be in an inconsistent state.", 
+                    writer.WriteLine(string.Format("{0}: [{1}][WARNING] Could not detect the server role - the OutSystems services might be in an inconsistent state.", 
                         DateTime.Now.ToString(), step));
                     checkOutSystemsServices = true;
-                    stepErrors.Add(step);
+                    stepWarnings.Add(step);
                 }
                 else
                     writer.WriteLine(string.Format("{0}: [{1}] Detected that this server has the role of a {2}.", DateTime.Now.ToString(), step, serverRole));
@@ -192,10 +192,10 @@ namespace OSDiagTool.Platform
                         
                         if (response == null)
                         {
-                            writer.WriteLine(string.Format("{0}: [{1}][ERROR] Could not connect to {2} using TCP port {3} - Check the 'ConsoleLog' file for details.",
+                            writer.WriteLine(string.Format("{0}: [{1}][WARNING] Could not stabilish a connection to {2} using TCP port {3} - Check the 'ConsoleLog' file for details.",
                                 DateTime.Now.ToString(), step, connectionTestList[index].Hostname, port));
                             checkNetworkRequirements = true;
-                            stepErrors.Add(step);
+                            stepWarnings.Add(step);
                         }
                         else
                             writer.WriteLine(string.Format("{0}: [{1}] Connected to {2} using TCP port {3} - Response: {4}.",
@@ -203,20 +203,20 @@ namespace OSDiagTool.Platform
                     }
                 }
 
-                // --- Write errors ---
+                // --- Write warning log ---
 
-                // Inform the steps that faced errors
-                if (stepErrors != null)
-                    writer.WriteLine(string.Format("{0}{1}: [ERROR] Please review the following steps: {2}",
-                        Environment.NewLine, DateTime.Now.ToString(), String.Join(", ", stepErrors)));
+                // Inform the steps that faced problems
+                if (stepWarnings.Any())
+                    writer.WriteLine(string.Format("{0}{1}: [WARNING] Please review the following steps: {2}",
+                        Environment.NewLine, DateTime.Now.ToString(), String.Join(", ", stepWarnings)));
 
-                // Warn the customer that he should review the Network Requirements of the Platform
+                // Warn that you should review the Network Requirements of the Platform
                 if (checkNetworkRequirements)
-                    writer.WriteLine("{0}: [ERROR] Please review the OutSystems Network Requirements:" +
+                    writer.WriteLine("{0}: [WARNING] Please review the OutSystems Network Requirements:" +
                         "{0}https://success.outsystems.com/Documentation/11/Setting_Up_OutSystems/OutSystems_network_requirements", Environment.NewLine);
 
                 if (checkOutSystemsServices)
-                    writer.WriteLine("{0}: [ERROR] Please review the documentation below in order to troubleshoot the OutSystems Services:" +
+                    writer.WriteLine("{0}: [WARNING] Please review the documentation below in order to troubleshoot the OutSystems Services:" +
                         "{0}https://success.outsystems.com/Support/Enterprise_Customers/Troubleshooting/Troubleshooting_the_OutSystems_Platform_Server", Environment.NewLine);
                 
                 writer.WriteLine(string.Format("{0}========== Log ended at {1} ==========", Environment.NewLine, DateTime.Now.ToString()));
