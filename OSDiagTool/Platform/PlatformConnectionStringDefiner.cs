@@ -16,8 +16,8 @@ namespace OSDiagTool.Platform {
         public PlatformConnectionStringDefiner GetConnectionString(string dbEngine, bool isLogDatabase, bool isSaCredentials, PlatformConnectionStringDefiner ConnStringDefiner, string saUser = null, string saPwd = null) {
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
-            ConfigFileDBInfo loggingDBInfo = confFileParser.DBLoggingInfo;
+            ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            ConfigFileInfo loggingDBInfo = confFileParser.DBLoggingInfo;
 
             if (dbEngine.Equals("sqlserver")) {
 
@@ -36,7 +36,7 @@ namespace OSDiagTool.Platform {
 
         }
 
-        public DBConnector.SQLConnStringModel SetPlatformSQLConnString(bool isLogDatabase, bool isSaCredentials, ConfigFileDBInfo platformDBInfo = null, ConfigFileDBInfo loggingDBInfo = null, string saUser = null, string saPwd = null) {
+        public DBConnector.SQLConnStringModel SetPlatformSQLConnString(bool isLogDatabase, bool isSaCredentials, ConfigFileInfo platformDBInfo = null, ConfigFileInfo loggingDBInfo = null, string saUser = null, string saPwd = null) {
 
             var sqlConnString = new DBConnector.SQLConnStringModel();
 
@@ -74,7 +74,7 @@ namespace OSDiagTool.Platform {
 
         }
 
-        public DBConnector.OracleConnStringModel SetPlatformOracleConnString(bool isLogDatabase, bool isSaCredentials, ConfigFileDBInfo platformDBInfo = null, ConfigFileDBInfo loggingDBInfo = null, string saUser = null, string saPwd = null) {
+        public DBConnector.OracleConnStringModel SetPlatformOracleConnString(bool isLogDatabase, bool isSaCredentials, ConfigFileInfo platformDBInfo = null, ConfigFileInfo loggingDBInfo = null, string saUser = null, string saPwd = null) {
 
             var orclConnString = new DBConnector.OracleConnStringModel();
 
@@ -91,7 +91,7 @@ namespace OSDiagTool.Platform {
 
             } else if (isLogDatabase) { // Uses Runtime Log user and Log Catalog
 
-                //ConfigFileDBInfo loggingDBInfo = confFileParser.DBLoggingInfo;
+                //ConfigFileInfo loggingDBInfo = confFileParser.DBLoggingInfo;
 
                 orclConnString.host = loggingDBInfo.GetProperty("Host").Value;
                 orclConnString.port = loggingDBInfo.GetProperty("Port").Value;

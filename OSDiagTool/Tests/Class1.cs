@@ -14,22 +14,26 @@ using System.Data.SqlClient;
 using OSDiagTool.Database.DatabaseQueries;
 using OSDiagTool;
 
+
 namespace OSDiagTool.Tests
 {
     class Class1
     {
         public static string PlatformDatabaseConfigurationElement = "PlatformDatabaseConfiguration";
         public static string _oSDiagToolConfPath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\OSDiagTool.exe.config";
-        private static string platformConfigurationFilepath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug\server.hsconf";
-        private static string _tempPath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug";
+        //private static string platformConfigurationFilepath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug\server.hsconf";
+        //private static string _tempPath = @"C:\Users\fcb\Desktop\GitProj\techsupp-osdiagtool\OSDiagTool\bin\Debug";
 
 
         static void Main(string[] args)
         {
 
+            Program.CollectMemoryDumps(true, false);
 
 
-            Program.CollectMemoryDumps(true, true);
+            //float test = WinPerfCounters.GetIISQueue();
+
+            //Program.CollectMemoryDumps(true, true);
 
             /*string dbEngine = "oracle";
             int queryTimeout = 30;
@@ -47,22 +51,6 @@ namespace OSDiagTool.Tests
 
 
             Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _tempPath, null, orclConnString);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -89,7 +77,7 @@ namespace OSDiagTool.Tests
             //DBReader.SQLReader(connString, "SELECT TOP 5 * FROM OSSYS_ESPACE");
 
             //ConfigFileReader confFileParser = new ConfigFileReader(platformConfigurationFilepath, "test");
-            //ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            //ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
 
             //string dbEngine = platformDBInfo.DBMS;
 
@@ -160,7 +148,7 @@ namespace OSDiagTool.Tests
         {
             //IDictionary<string,string> HsConfPropertiesVal;
             ConfigFileReader confFileParser = new ConfigFileReader("<ServerHsConfLocation>", "test");
-            ConfigFileDBInfo platformDBInfo = confFileParser.DBPlatformInfo;
+            ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
             string _propValue;
 
             IDictionary<string, string> HsConfPropertiesVal = new Dictionary<string, string>();
