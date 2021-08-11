@@ -342,25 +342,25 @@ namespace OSDiagTool.Platform
                 foreach (var server in serverList)
                 {
                     // Test only if it's not the server IP
-                    if (server.Value == compilerServiceHostname && server.Value != machineIP && !IsLifeTimeEnvironment)
-                        testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { 
-                            ports[0], ports[1], ports[2], ports[3], ports[4] 
-                        } }); // For Controller, include all ports
-                    
-                    else if (server.Value != machineIP && !IsLifeTimeEnvironment)
-                        testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { 
-                            ports[0], ports[1], ports[2], ports[3] 
-                        } }); // For Front-Ends, exclude the Deployment Controller port
-
-                    else if (server.Value != machineIP && IsLifeTimeEnvironment)
+                    if (server.Value == compilerServiceHostname && server.Value != machineIP)
                         testList.Add(new ConnectionList
                         {
                             Name = server.Key,
                             Hostname = server.Value,
                             Ports = new List<int>() {
-                            ports[1], ports[2], ports[3]
+                            ports[0], ports[1], ports[2], ports[3], ports[4]
                         }
-                        }); // For Front-Ends, exclude the Deployment Controller port and HTTP port if we are testing from a LifeTime environment
+                        }); // For Controller, include all ports
+
+                    else if (server.Value != machineIP)
+                        testList.Add(new ConnectionList
+                        {
+                            Name = server.Key,
+                            Hostname = server.Value,
+                            Ports = new List<int>() {
+                            ports[0], ports[1], ports[2], ports[3]
+                        }
+                        }); // For Front-Ends, exclude the Deployment Controller port
                 }
             }
 
