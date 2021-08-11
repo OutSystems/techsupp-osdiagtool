@@ -50,7 +50,6 @@ namespace OSDiagTool.Platform
             bool checkNetworkRequirements = false;
             bool checkOutSystemsServices = false;
             int step = 1;
-            List<int> stepWarnings = new List<int>();
 
             TimeZone localZone = TimeZone.CurrentTimeZone;
             // Getting list of ports from server.conf
@@ -67,7 +66,7 @@ namespace OSDiagTool.Platform
             string cacheConnectionResult = ResolveIP(cacheServiceHostname, portList[5]);
             string serverRole = GetServerRole(osServices);
             List<ConnectionList> connectionTestList = GetConnectionList(portList, databaseServerList, machineIP, serverRole, 
-                cacheServiceHostname, compilerServiceHostname);
+                cacheServiceHostname, compilerServiceHostname, IsLifeTimeEnvironment);
 
             // Write the results to log file
             using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(reqFilePath, "IP_" + machineIP + "_Network_Requirements.log"))))
@@ -90,23 +89,22 @@ namespace OSDiagTool.Platform
                     writer.WriteLine(string.Format("{0}: [{1}] Localhost resolves to {2}.", DateTime.Now.ToString(), step, getLocalhostAddress));
                 else
                 {
-                    writer.WriteLine(string.Format("{0}: [{1}][WARNING] Localhost is resolving to {2} instead of 127.0.0.1.", DateTime.Now.ToString(), step, getLocalhostAddress));
+                    writer.WriteLine(string.Format("{0}: [{1}] [WARNING] Localhost is resolving to {2} instead of 127.0.0.1.", DateTime.Now.ToString(), step, getLocalhostAddress));
                     checkNetworkRequirements = true;
-                    stepWarnings.Add(step);
                 }
 
                 // Localhost must be accessible by HTTP on 127.0.0.1
-                if (Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portList[0]) == "200" ||
-                    Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portList[0]) == "302")
-                    writer.WriteLine(string.Format("{0}: [{1}] Localhost returned the following response when connecting using port {2}: {3}.",
-                        DateTime.Now.ToString(), step, portList[0], Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portList[0])));
-                else
+                string responseLocalhost = Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portList[0]);
+                // Log 4XX and 5XX responses
+                if (responseLocalhost.StartsWith("4") || responseLocalhost.StartsWith("5"))
                 {
-                    writer.WriteLine(string.Format("{0}: [{1}][WARNING] Localhost is returning the following response when connecting using port {2}: {3}.",
-                        DateTime.Now.ToString(), step, portList[0], Utils.NetworkUtils.OpenWebRequest(getLocalhostAddress, portList[0])));
+                    writer.WriteLine(string.Format("{0}: [{1}] [WARNING] Localhost is returning the following response when connecting using port {2}: {3}.",
+                        DateTime.Now.ToString(), step, portList[0], responseLocalhost));
                     checkNetworkRequirements = true;
-                    stepWarnings.Add(step);
                 }
+                else
+                    writer.WriteLine(string.Format("{0}: [{1}] Localhost returned the following response when connecting using port {2}: {3}.",
+                        DateTime.Now.ToString(), step, portList[0], responseLocalhost));
 
                 // --- Controller tests ---
                 step++;
@@ -133,10 +131,9 @@ namespace OSDiagTool.Platform
                 // Inform the role of the server
                 if (serverRole == "Unknown role")
                 {
-                    writer.WriteLine(string.Format("{0}: [{1}][WARNING] Could not detect the server role - the OutSystems services might be in an inconsistent state.", 
+                    writer.WriteLine(string.Format("{0}: [{1}] [WARNING] Could not detect the server role - the OutSystems services might be in an inconsistent state.", 
                         DateTime.Now.ToString(), step));
                     checkOutSystemsServices = true;
-                    stepWarnings.Add(step);
                 }
                 else
                     writer.WriteLine(string.Format("{0}: [{1}] Detected that this server has the role of a {2}.", DateTime.Now.ToString(), step, serverRole));
@@ -174,6 +171,7 @@ namespace OSDiagTool.Platform
                 string response = string.Empty; 
                 for (int index = 0; index < connectionTestList.Count; index++)
                 {
+                    step++;
                     // Inform if there is something left to test from OSSYS_SERVER
                     if (index == 1 && connectionTestList[index].Name != "cache invalidation hostname set in the Configuration Tool")
                         writer.WriteLine(string.Format("{0}{1}: [{2}] Accessing the OSSYS_SERVER table...",
@@ -190,13 +188,19 @@ namespace OSDiagTool.Platform
                         // Validate the ports for the rest
                         else
                             response = Utils.NetworkUtils.ConnectToPort(connectionTestList[index].Hostname, port);
-                        
+
                         if (response == null)
                         {
-                            writer.WriteLine(string.Format("{0}: [{1}][WARNING] Could not stabilish a connection to {2} using TCP port {3} - Check the 'ConsoleLog' file for details.",
+                            writer.WriteLine(string.Format("{0}: [{1}] [WARNING] Could not stabilish a connection to {2} using TCP port {3} - Check the 'ConsoleLog' file for details.",
                                 DateTime.Now.ToString(), step, connectionTestList[index].Hostname, port));
                             checkNetworkRequirements = true;
-                            stepWarnings.Add(step);
+                        }
+                        // Log 4XX and 5XX responses
+                        else if (response.StartsWith("4") || response.StartsWith("5"))
+                        {
+                            writer.WriteLine(string.Format("{0}: [{1}] [WARNING] Connected to {2} using TCP port {3}, however, the response was {4}.",
+                                DateTime.Now.ToString(), step, connectionTestList[index].Hostname, port, response));
+                            checkNetworkRequirements = true;
                         }
                         else
                             writer.WriteLine(string.Format("{0}: [{1}] Connected to {2} using TCP port {3} - Response: {4}.",
@@ -206,19 +210,14 @@ namespace OSDiagTool.Platform
 
                 // --- Write warning log ---
 
-                // Inform the steps that faced problems
-                if (stepWarnings.Any())
-                    writer.WriteLine(string.Format("{0}{1}: [WARNING] Please review the following steps: {2}",
-                        Environment.NewLine, DateTime.Now.ToString(), String.Join(", ", stepWarnings)));
-
                 // Warn that you should review the Network Requirements of the Platform
                 if (checkNetworkRequirements)
-                    writer.WriteLine("{0}: [WARNING] Please review the OutSystems Network Requirements:" +
-                        "{0}https://success.outsystems.com/Documentation/11/Setting_Up_OutSystems/OutSystems_network_requirements", Environment.NewLine);
+                    writer.WriteLine("{0}{1}: [WARNING] Please review the OutSystems Network Requirements:" +
+                        "{0}https://success.outsystems.com/Documentation/11/Setting_Up_OutSystems/OutSystems_network_requirements", Environment.NewLine, DateTime.Now.ToString());
 
                 if (checkOutSystemsServices)
-                    writer.WriteLine("{0}: [WARNING] Please review the documentation below in order to troubleshoot the OutSystems Services:" +
-                        "{0}https://success.outsystems.com/Support/Enterprise_Customers/Troubleshooting/Troubleshooting_the_OutSystems_Platform_Server", Environment.NewLine);
+                    writer.WriteLine("{0}{1}: [WARNING] Please review the documentation below in order to troubleshoot the OutSystems Services:" +
+                        "{0}https://success.outsystems.com/Support/Enterprise_Customers/Troubleshooting/Troubleshooting_the_OutSystems_Platform_Server", Environment.NewLine, DateTime.Now.ToString());
                 
                 writer.WriteLine(string.Format("{0}========== Log ended at {1} ==========", Environment.NewLine, DateTime.Now.ToString()));
             }
@@ -313,7 +312,7 @@ namespace OSDiagTool.Platform
 
         // Get the list used to test the connections between servers
         private static List<ConnectionList> GetConnectionList(List<int> ports, Dictionary<string, string> serverList, string machineIP, string serverRole, 
-            string cacheServiceHostname, string compilerServiceHostname)
+        string cacheServiceHostname, string compilerServiceHostname, bool IsLifeTimeEnvironment)
         {
             List<ConnectionList> testList = new List<ConnectionList>();
 
@@ -344,14 +343,24 @@ namespace OSDiagTool.Platform
                 {
                     // Test only if it's not the server IP
                     if (server.Value == compilerServiceHostname && server.Value != machineIP)
-                        testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { 
-                            ports[0], ports[1], ports[2], ports[3], ports[4] 
-                        } }); // For Controller, include all ports
-                    
+                        testList.Add(new ConnectionList
+                        {
+                            Name = server.Key,
+                            Hostname = server.Value,
+                            Ports = new List<int>() {
+                            ports[0], ports[1], ports[2], ports[3], ports[4]
+                        }
+                        }); // For Controller, include all ports
+
                     else if (server.Value != machineIP)
-                        testList.Add(new ConnectionList { Name = server.Key, Hostname = server.Value, Ports = new List<int>() { 
-                            ports[0], ports[1], ports[2], ports[3] 
-                        } }); // For Front-Ends, exclude the Deployment Controller port
+                        testList.Add(new ConnectionList
+                        {
+                            Name = server.Key,
+                            Hostname = server.Value,
+                            Ports = new List<int>() {
+                            ports[0], ports[1], ports[2], ports[3]
+                        }
+                        }); // For Front-Ends, exclude the Deployment Controller port
                 }
             }
 
