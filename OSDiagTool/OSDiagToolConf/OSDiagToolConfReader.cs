@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 using System.Xml.Linq;
 using System.Text.RegularExpressions;
+using System.Reflection;
 
 namespace OSDiagTool.OSDiagToolConf {
     class OSDiagToolConfReader {
 
         private static string _osDGTConfFile = "OSDGTool.exe.config";
-        private static string _osDiagToolConfigPath = Path.Combine(Directory.GetCurrentDirectory(), _osDGTConfFile);
+        //private static string _osDiagToolConfigPath = Path.Combine(Directory.GetCurrentDirectory(), _osDGTConfFile);
+        private static string _osDiagToolConfigPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), _osDGTConfFile);
 
         // XML Elements
         // Root

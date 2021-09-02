@@ -9,14 +9,15 @@ using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
+using System.Reflection;
 
 namespace OSDiagTool
 {
     class Program
     {
         private static string _windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-        private static string _tempFolderPath = Path.Combine(Directory.GetCurrentDirectory(),"collect_data"); 
-        private static string _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip");
+        private static string _tempFolderPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "collect_data"); 
+        private static string _targetZipFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip");
         private static string _osInstallationFolder = @"C:\Program Files\OutSystems\Platform Server";
         private static string _iisApplicationHostPath = Path.Combine(_windir, @"system32\inetsrv\config\applicationHost.config");
         private static string _iisWebConfigPath = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), @"inetpub\wwwroot\web.config");
@@ -29,7 +30,7 @@ namespace OSDiagTool
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
         private static string _osPlatformDiagnostic = Path.Combine(_tempFolderPath, "PlatformDiagnostic");
-        private static string _targetDiagnosticFile = Path.Combine(Directory.GetCurrentDirectory(), "diagnostic_" + DateTimeToTimestamp(DateTime.Now) + ".log");
+        private static string _targetDiagnosticFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "diagnostic_" + DateTimeToTimestamp(DateTime.Now) + ".log");
         private static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
 
@@ -296,8 +297,9 @@ namespace OSDiagTool
         public static void GenerateZipFile() {
 
             FileLogger.TraceLog("Creating zip file... ");
+            EventLog.WriteEntry("OSDiagTool", "Saving files to " + _targetZipFile);
             FileSystemHelper fsHelper = new FileSystemHelper();
-            _targetZipFile = Path.Combine(Directory.GetCurrentDirectory(), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip"); // need to assign again in case the user runs the tool a second time
+            _targetZipFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip"); // need to assign again in case the user runs the tool a second time
             fsHelper.CreateZipFromDirectory(_tempFolderPath, _targetZipFile, true);
 
             // Delete temp folder

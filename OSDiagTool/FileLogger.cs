@@ -1,17 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using System.Runtime;
 using System.Threading;
+using System.Reflection;
 
 namespace OSDiagTool
 {
     public class FileLogger
     {
-        private static string _tempFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "collect_data");
+        private static string _tempFolderPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "collect_data");
         private static string _consoleLog = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
 
 
