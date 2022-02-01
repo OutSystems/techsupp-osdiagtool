@@ -15,6 +15,8 @@ namespace OSDiagTool.Platform.ConfigFiles
         
         public static string IsEncryptedAttributeName = "encrypted";
         public static string ProviderKeyAttributeName = "ProviderKey";
+
+        public static bool dbLoggingAvailable = true;
         
         private ConfigFileInfo _dbPlatformDetails;
         private ConfigFileInfo _dbLoggingDetails;
@@ -73,7 +75,14 @@ namespace OSDiagTool.Platform.ConfigFiles
 
         private ConfigFileInfo ReadDbLoggingInfo(XElement root)
         {
-            return ReadSection(LoggingDatabaseConfigurationElement, root);
+            try
+            {
+                return ReadSection(LoggingDatabaseConfigurationElement, root);
+            } catch
+            {
+                dbLoggingAvailable = false;
+            }
+            return DBLoggingInfo;
         }
 
         private ConfigFileInfo ReadDbSessionInfo(XElement root)
