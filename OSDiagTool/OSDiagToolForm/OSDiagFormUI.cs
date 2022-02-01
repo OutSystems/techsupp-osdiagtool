@@ -64,7 +64,16 @@ namespace OSDiagTool.OSDiagToolForm {
             this.cb_iisAccessLogs.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_serverLogs][OSDiagToolConfReader._l3_iisLogs];
             this.nud_iisLogsNrDays.Value = configurations.IISLogsNrDays; // Number of days of IIS logs
 
-            this.cb_platformLogs.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_platform][OSDiagToolConfReader._l3_platformLogs];
+            // Some server.hsconf don't have the DB Logging info. In that scenario, retrieving logs is not possible
+            if (Platform.ConfigFiles.ConfigFileReader.dbLoggingAvailable.Equals(true))
+            {
+                this.cb_platformLogs.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_platform][OSDiagToolConfReader._l3_platformLogs];
+            } else
+            {
+                this.cb_platformLogs.Checked = false;
+                this.cb_platformLogs.Enabled = false;
+            }
+            
             this.nud_topLogs.Value = configurations.osLogTopRecords;
             this.cb_platformAndServerFiles.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_platform][OSDiagToolConfReader._l3_platformAndServerConfigFiles];
 
