@@ -31,7 +31,9 @@ namespace OSDiagTool.Database.DatabaseQueries {
                     { "sessionsSp_Who2_Blocked", sqlDBQueries.sessionsSp_Who2_Blocked },
                     { "statCachedPlan", string.Format(sqlDBQueries.statCachedPlans, top_statCachedPlan) },
                     { "costlyCPUQueries", string.Format(sqlDBQueries.costlyCPUQueries, top_topCPU) },
-                    { "dbccInputBuffer", sqlDBQueries.dbccInputBuffer } 
+                    { "dbccInputBuffer", sqlDBQueries.dbccInputBuffer },
+                    { "sessionsLocksTree", sqlDBQueries.sessionsLocksTree },
+                    { "locksAssociatedResources", sqlDBQueries.locksAssociatedResources }
                 };
 
                 var connector = new DBConnector.SLQDBConnector();
