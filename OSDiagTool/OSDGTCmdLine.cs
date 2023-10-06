@@ -13,7 +13,7 @@ namespace OSDiagTool {
     class OSDGTCmdLine {
         // Cmd Line run does not export Platform Logs neither Metamodel
 
-        private static string osDiagToolEventSource = "OSDiagTool";
+        public static string osDiagToolEventSource = "OSDiagTool";
 
         
 

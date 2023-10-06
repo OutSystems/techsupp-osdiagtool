@@ -48,11 +48,17 @@ namespace OSDiagTool
         public static string dbEngine;
         public static string _endFeedback;
         public static bool separateLogCatalog;
+        public static bool useMultiThread;
 
         static void Main(string[] args) {
 
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
+            // Override Multithread config from OSDiagToolConfReader
+            if(WinPerfCounters.GetCPUUsage() > 2.0)
+            {
+                Program.useMultiThread = false;
+            }
 
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);
@@ -386,8 +392,6 @@ namespace OSDiagTool
             } catch (Exception e) {
                 FileLogger.LogError("Failed to get thread dump: ", e.Message + e.StackTrace);
             }
-
-
         }
 
         /* 
@@ -447,7 +451,6 @@ namespace OSDiagTool
                 { "w3wp", "w3wp.exe" }
             };
 
-            // TODO: suspend w3wp parent svchost.exe to prevent recycle
             try {
 
                 foreach (string processTag in processList) {

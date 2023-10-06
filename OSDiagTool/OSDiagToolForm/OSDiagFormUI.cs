@@ -226,7 +226,7 @@ namespace OSDiagTool.OSDiagToolForm {
             // Initialization
             Program.OSDiagToolInitialization();
 
-            bool useMultiThread = true;
+            bool useMultiThread = Program.useMultiThread;
             List<Thread> threads = new List<Thread>(); // list required to join (wait for completion)
 
 

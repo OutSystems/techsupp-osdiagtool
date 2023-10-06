@@ -12,6 +12,13 @@ namespace OSDiagTool {
         private static string _aspNetCategory = "ASP.NET";
         private static string _iisQueueCounter = "Requests Queued";
 
+        public static float GetCPUUsage() {
+
+            PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            return cpuCounter.NextValue();
+
+        }
+
         public static float GetIISQueue() {
 
             float iisQueue = 0;
