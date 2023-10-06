@@ -226,23 +226,40 @@ namespace OSDiagTool.OSDiagToolForm {
             // Initialization
             Program.OSDiagToolInitialization();
 
+            bool useMultiThread = true;
+            List<Thread> threads = new List<Thread>(); // list required to join (wait for completion)
+
 
             // Get Platform and Server files
             if (!backgroundWorker1.CancellationPending) {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformAndServerFiles, out bool getPSandServerConfFiles) && getPSandServerConfFiles == true) {
 
                     backgroundWorker1.ReportProgress(8, configurationsHelper.popup);
-                    Program.GetPlatformAndServerFiles();
+                    if (useMultiThread) {
+                        Thread threadGetPlatformAndServerFiles = new Thread(() => Program.GetPlatformAndServerFiles());
+                        threads.Add(threadGetPlatformAndServerFiles);
+                        threadGetPlatformAndServerFiles.Start();
+
+                    } else { 
+                        Program.GetPlatformAndServerFiles();
+                    }
+                    
                 }
             }
-                
 
             // Export Event Viewer and Server logs
             if (!backgroundWorker1.CancellationPending) {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slEvt, out bool getEvt) && getEvt == true) {
 
                     backgroundWorker1.ReportProgress(5, configurationsHelper.popup);
-                    Program.ExportEventViewerAndServerLogs();
+                    if (useMultiThread) {
+                        Thread threadExportEventViewerAndServerLogs = new Thread(() => Program.ExportEventViewerAndServerLogs());
+                        threads.Add(threadExportEventViewerAndServerLogs);
+                        threadExportEventViewerAndServerLogs.Start();
+                    }
+                    else { 
+                        Program.ExportEventViewerAndServerLogs(); 
+                    }
                 }
             }
 
@@ -251,71 +268,145 @@ namespace OSDiagTool.OSDiagToolForm {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slIisLogs, out bool getIisLogs) && getIisLogs == true) {
 
                     backgroundWorker1.ReportProgress(6, configurationsHelper.popup);
-                    Program.CopyIISAccessLogs(configurationsHelper.FormConfigurations.iisLogsNrDays);
+                    if (useMultiThread)
+                    {
+                        Thread threadCopyIISAccessLogs = new Thread(() => Program.CopyIISAccessLogs(configurationsHelper.FormConfigurations.iisLogsNrDays));
+                        threads.Add(threadCopyIISAccessLogs);
+                        threadCopyIISAccessLogs.Start();
+                    }
+                    else
+                    {
+                        Program.CopyIISAccessLogs(configurationsHelper.FormConfigurations.iisLogsNrDays);
+                    }
                 }
             }
-                
+
             // Database Troubleshoot
             if (!backgroundWorker1.CancellationPending) {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diDbTroubleshoot, out bool _doDbTroubleshoot) && _doDbTroubleshoot == true) {
 
                     backgroundWorker1.ReportProgress(10, configurationsHelper.popup);
-                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
-                    Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, true, ConnectionStringDefiner, configurationsHelper.FormConfigurations.saUser, configurationsHelper.FormConfigurations.saPwd);
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner_dt = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper_dt = ConnectionStringDefiner_dt.GetConnectionString(Program.dbEngine, false, true, ConnectionStringDefiner_dt, configurationsHelper.FormConfigurations.saUser, configurationsHelper.FormConfigurations.saPwd);
 
-                    if (Program.dbEngine.Equals("sqlserver")) {
-                        Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper.SQLConnString);
-
-                    } else if (Program.dbEngine.Equals("oracle")) {
-                        Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper.OracleConnString);
-
+                    if (useMultiThread)
+                    {
+                        if (Program.dbEngine.Equals("sqlserver"))
+                        {
+                            Thread threadSQLDatabaseTroubleshootProgram = new Thread(() => Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_dt.SQLConnString));
+                            threads.Add(threadSQLDatabaseTroubleshootProgram);
+                            threadSQLDatabaseTroubleshootProgram.Start();
+                        }
+                        else if (Program.dbEngine.Equals("oracle"))
+                        {
+                            Thread threadORCLDatabaseTroubleshootProgram = new Thread(() => Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_dt.OracleConnString));
+                            threads.Add(threadORCLDatabaseTroubleshootProgram);
+                            threadORCLDatabaseTroubleshootProgram.Start();
+                        }
+                    }
+                    else
+                    {
+                        if (Program.dbEngine.Equals("sqlserver"))
+                        {
+                            Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_dt.SQLConnString);
+                        }
+                        else if (Program.dbEngine.Equals("oracle"))
+                        {
+                            Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_dt.OracleConnString);
+                        }
                     }
                 }
             }
-                
+
             // Export Platform Metamodel
             if (!backgroundWorker1.CancellationPending) {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._diMetamodel, out bool _getPlatformMetamodel) && _getPlatformMetamodel == true) {
 
                     backgroundWorker1.ReportProgress(9, configurationsHelper.popup);
-                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
-                    Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner);
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner_pm = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper_pm = ConnectionStringDefiner_pm.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner_pm);
 
-                    if (Program.dbEngine.Equals("sqlserver")) {
-                        Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper.SQLConnString, null);
-
-                    } else if (Program.dbEngine.Equals("oracle")) {
-                        Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper.OracleConnString);
-
+                    if (useMultiThread)
+                    {
+                        if (Program.dbEngine.Equals("sqlserver"))
+                        {
+                            Thread threadSQLExportPlatformMetamodel = new Thread(() => Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pm.SQLConnString, null));
+                            threads.Add(threadSQLExportPlatformMetamodel);
+                            threadSQLExportPlatformMetamodel.Start();
+                        }
+                        else if (Program.dbEngine.Equals("oracle"))
+                        {
+                            Thread threadORCLExportPlatformMetamodel = new Thread(() => Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pm.SQLConnString, null));
+                            threads.Add(threadORCLExportPlatformMetamodel);
+                            threadORCLExportPlatformMetamodel.Start();
+                        }
+                    }
+                    else
+                    {
+                        if (Program.dbEngine.Equals("sqlserver"))
+                        {
+                            Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pm.SQLConnString, null);
+                        }
+                        else if (Program.dbEngine.Equals("oracle"))
+                        {
+                            Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper_pm.OracleConnString);
+                        }
                     }
                 }
             }
-                
+
             // Export Platform Logs
             if (!backgroundWorker1.CancellationPending) {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformLogs, out bool _getPlatformLogs) && _getPlatformLogs == true) {
 
                     backgroundWorker1.ReportProgress(7, configurationsHelper.popup);
-                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
-                    Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, Program.separateLogCatalog, false, ConnectionStringDefiner);
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner_pl = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper_pl = ConnectionStringDefiner_pl.GetConnectionString(Program.dbEngine, Program.separateLogCatalog, false, ConnectionStringDefiner_pl);
 
-                    if (Program.dbEngine.Equals("sqlserver")) {
-                        Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper.SQLConnString, null);
-
-                    } else if (Program.dbEngine.Equals("oracle")) {
-                        Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper.OracleConnString, ConnStringHelper.AdminSchema);
-
+                    if (useMultiThread)
+                    {
+                        if (Program.dbEngine.Equals("sqlserver"))
+                        {
+                            Thread threadSQLExportServiceCenterLogs = new Thread(() => Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pl.SQLConnString, null));
+                            threads.Add(threadSQLExportServiceCenterLogs);
+                            threadSQLExportServiceCenterLogs.Start();
+                        }
+                        else if (Program.dbEngine.Equals("oracle"))
+                        {
+                            Thread threadORCLExportServiceCenterLogs = new Thread(() => Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper_pl.OracleConnString, ConnStringHelper_pl.AdminSchema));
+                            threads.Add(threadORCLExportServiceCenterLogs);
+                            threadORCLExportServiceCenterLogs.Start();
+                        }
+                    }
+                    else
+                    {
+                        if (Program.dbEngine.Equals("sqlserver"))
+                        {
+                            Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pl.SQLConnString, null);
+                        }
+                        else if (Program.dbEngine.Equals("oracle"))
+                        {
+                            Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper_pl.OracleConnString, ConnStringHelper_pl.AdminSchema);
+                        }
                     }
                 }
             }
-                
+
             // IIS Thread dumps
             if (!backgroundWorker1.CancellationPending) {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdIis, out bool getIisThreadDumps) && getIisThreadDumps == true) {
 
                     backgroundWorker1.ReportProgress(1, configurationsHelper.popup);
-                    Program.CollectThreadDumpsProgram(getIisThreadDumps, false);
 
+                    if (useMultiThread)
+                    {
+                        Thread threadCollectIISThreadDumpsProgram = new Thread(() => Program.CollectThreadDumpsProgram(getIisThreadDumps, false));
+                        threads.Add(threadCollectIISThreadDumpsProgram);
+                        threadCollectIISThreadDumpsProgram.Start();
+                    } else
+                    {
+                        Program.CollectThreadDumpsProgram(getIisThreadDumps, false);
+                    }
                 }
             }
                 
@@ -324,8 +415,16 @@ namespace OSDiagTool.OSDiagToolForm {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdOsServices, out bool _getOsThreadDumps) && _getOsThreadDumps == true) {
 
                     backgroundWorker1.ReportProgress(2, configurationsHelper.popup);
-                    Program.CollectThreadDumpsProgram(false, _getOsThreadDumps);
 
+                    if (useMultiThread)
+                    {
+                        Thread CollectOSThreadDumpsProgram = new Thread(() => Program.CollectThreadDumpsProgram(false, _getOsThreadDumps));
+                        threads.Add(CollectOSThreadDumpsProgram);
+                        CollectOSThreadDumpsProgram.Start();
+                    } else
+                    {
+                        Program.CollectThreadDumpsProgram(false, _getOsThreadDumps);
+                    }
                 }
             }
                 
@@ -334,8 +433,16 @@ namespace OSDiagTool.OSDiagToolForm {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdIis, out bool getIisMemDumps) && getIisMemDumps == true) {
 
                     backgroundWorker1.ReportProgress(3, configurationsHelper.popup);
-                    Program.CollectMemoryDumpsProgram(getIisMemDumps, false);
 
+                    if (useMultiThread)
+                    {
+                        Thread CollectIISMemoryDumpsProgram = new Thread(() => Program.CollectMemoryDumpsProgram(getIisMemDumps, false));
+                        threads.Add(CollectIISMemoryDumpsProgram);
+                        CollectIISMemoryDumpsProgram.Start();
+                    } else
+                    {
+                        Program.CollectMemoryDumpsProgram(getIisMemDumps, false);
+                    }
                 }
             }
                 
@@ -344,8 +451,16 @@ namespace OSDiagTool.OSDiagToolForm {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._mdOsServices, out bool getOsMemDumps) && getOsMemDumps == true) {
 
                     backgroundWorker1.ReportProgress(4, configurationsHelper.popup);
-                    Program.CollectMemoryDumpsProgram(false, getOsMemDumps);
 
+                    if (useMultiThread)
+                    {
+                        Thread CollectOSMemoryDumpsProgram = new Thread(() => Program.CollectMemoryDumpsProgram(false, getOsMemDumps));
+                        threads.Add(CollectOSMemoryDumpsProgram);
+                        CollectOSMemoryDumpsProgram.Start();
+                    } else
+                    {
+                        Program.CollectMemoryDumpsProgram(false, getOsMemDumps);
+                    }
                 }
             }
 
@@ -357,20 +472,42 @@ namespace OSDiagTool.OSDiagToolForm {
                     backgroundWorker1.ReportProgress(11, configurationsHelper.popup);
 
                     // Connecting to the database, by using the credentials located in the server.hsconf
-                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
-                    Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner);
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner_pd = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper_pd = ConnectionStringDefiner_pd.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner_pd);
 
-                    if (Program.dbEngine.Equals("sqlserver"))
+                    if (useMultiThread)
                     {
-                        Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper.SQLConnString, null);
-                    }
-                    else if (Program.dbEngine.Equals("oracle"))
+                        if (Program.dbEngine.Equals("sqlserver"))
+                        {
+                            Thread threadSQLPlatformDiagnosticProgram = new Thread(() => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_pd.SQLConnString, null));
+                            threads.Add(threadSQLPlatformDiagnosticProgram);
+                            threadSQLPlatformDiagnosticProgram.Start();
+                        }
+                        else if (Program.dbEngine.Equals("oracle"))
+                        {
+                            Thread threadORCLPlatformDiagnosticProgram = new Thread(() => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_pd.OracleConnString));
+                            threads.Add(threadORCLPlatformDiagnosticProgram);
+                            threadORCLPlatformDiagnosticProgram.Start();
+                        }
+                    } else
                     {
-                        Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper.OracleConnString);
+                        if (Program.dbEngine.Equals("sqlserver"))
+                        {
+                            Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_pd.SQLConnString, null);
+                        }
+                        else if (Program.dbEngine.Equals("oracle"))
+                        {
+                            Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_pd.OracleConnString);
+                        }
                     }
                 }
             }
 
+            //  Wait for threads to complete before compression
+            foreach (Thread thread in threads)
+            {
+                thread.Join();
+            }
 
             backgroundWorker1.ReportProgress(12, configurationsHelper.popup);
             Program.GenerateZipFile();
