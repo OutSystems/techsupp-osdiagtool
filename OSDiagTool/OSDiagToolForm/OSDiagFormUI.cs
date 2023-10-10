@@ -32,6 +32,7 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _diDbTroubleshoot = "Database Troubleshoot";
         public static string _plPlatformLogs = "Platform Logs";
         public static string _plPlatformAndServerFiles = "Platform and Server Configuration files";
+        public static int serverProcessorCount = Environment.ProcessorCount;
         // new check box items must be added to dictHelper dictionary
 
         public SortedDictionary<int, string> FeedbackSteps = new SortedDictionary<int, string> {
@@ -227,7 +228,12 @@ namespace OSDiagTool.OSDiagToolForm {
             Program.OSDiagToolInitialization();
 
             bool useMultiThread = Program.useMultiThread;
-            List<Thread> threads = new List<Thread>(); // list required to join (wait for completion)
+
+            // Multi thread refactor
+            int numberOfTasks = 1;
+            CountdownEvent countdown = new CountdownEvent(numberOfTasks);
+            ThreadPool.SetMaxThreads(serverProcessorCount, serverProcessorCount); // cannot set the maximum number of worker threads or I/O completion threads to a number smaller than the number of processors on the computer
+            FileLogger.TraceLog("Server Processor count: " + serverProcessorCount);
 
 
             // Get Platform and Server files
@@ -236,9 +242,9 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     backgroundWorker1.ReportProgress(8, configurationsHelper.popup);
                     if (useMultiThread) {
-                        Thread threadGetPlatformAndServerFiles = new Thread(() => Program.GetPlatformAndServerFiles());
-                        threads.Add(threadGetPlatformAndServerFiles);
-                        threadGetPlatformAndServerFiles.Start();
+                        numberOfTasks++;
+                        countdown.AddCount();
+                        ThreadPool.QueueUserWorkItem(work => Program.GetPlatformAndServerFiles(countdown));
 
                     } else { 
                         Program.GetPlatformAndServerFiles();
@@ -253,9 +259,9 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     backgroundWorker1.ReportProgress(5, configurationsHelper.popup);
                     if (useMultiThread) {
-                        Thread threadExportEventViewerAndServerLogs = new Thread(() => Program.ExportEventViewerAndServerLogs());
-                        threads.Add(threadExportEventViewerAndServerLogs);
-                        threadExportEventViewerAndServerLogs.Start();
+                        countdown.AddCount();
+                        ThreadPool.QueueUserWorkItem(work => Program.ExportEventViewerAndServerLogs(countdown));
+                        numberOfTasks++;
                     }
                     else { 
                         Program.ExportEventViewerAndServerLogs(); 
@@ -270,9 +276,9 @@ namespace OSDiagTool.OSDiagToolForm {
                     backgroundWorker1.ReportProgress(6, configurationsHelper.popup);
                     if (useMultiThread)
                     {
-                        Thread threadCopyIISAccessLogs = new Thread(() => Program.CopyIISAccessLogs(configurationsHelper.FormConfigurations.iisLogsNrDays));
-                        threads.Add(threadCopyIISAccessLogs);
-                        threadCopyIISAccessLogs.Start();
+                        countdown.AddCount();
+                        ThreadPool.QueueUserWorkItem(work => Program.CopyIISAccessLogs(configurationsHelper.FormConfigurations.iisLogsNrDays, countdown));
+                        numberOfTasks++;
                     }
                     else
                     {
@@ -291,17 +297,16 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (useMultiThread)
                     {
+                        countdown.AddCount();
+                        numberOfTasks++;
+
                         if (Program.dbEngine.Equals("sqlserver"))
                         {
-                            Thread threadSQLDatabaseTroubleshootProgram = new Thread(() => Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_dt.SQLConnString));
-                            threads.Add(threadSQLDatabaseTroubleshootProgram);
-                            threadSQLDatabaseTroubleshootProgram.Start();
+                            ThreadPool.QueueUserWorkItem(work => Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_dt.SQLConnString, null, countdown));
                         }
                         else if (Program.dbEngine.Equals("oracle"))
                         {
-                            Thread threadORCLDatabaseTroubleshootProgram = new Thread(() => Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_dt.OracleConnString));
-                            threads.Add(threadORCLDatabaseTroubleshootProgram);
-                            threadORCLDatabaseTroubleshootProgram.Start();
+                            ThreadPool.QueueUserWorkItem(work => Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_dt.OracleConnString, countdown));
                         }
                     }
                     else
@@ -328,17 +333,16 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (useMultiThread)
                     {
+                        countdown.AddCount();
+                        numberOfTasks++;
+
                         if (Program.dbEngine.Equals("sqlserver"))
                         {
-                            Thread threadSQLExportPlatformMetamodel = new Thread(() => Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pm.SQLConnString, null));
-                            threads.Add(threadSQLExportPlatformMetamodel);
-                            threadSQLExportPlatformMetamodel.Start();
+                            ThreadPool.QueueUserWorkItem(work => Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pm.SQLConnString, null, countdown));
                         }
                         else if (Program.dbEngine.Equals("oracle"))
                         {
-                            Thread threadORCLExportPlatformMetamodel = new Thread(() => Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pm.SQLConnString, null));
-                            threads.Add(threadORCLExportPlatformMetamodel);
-                            threadORCLExportPlatformMetamodel.Start();
+                            ThreadPool.QueueUserWorkItem(work => Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper_pm.OracleConnString, countdown));
                         }
                     }
                     else
@@ -365,17 +369,16 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (useMultiThread)
                     {
+                        countdown.AddCount();
+                        numberOfTasks++;
+
                         if (Program.dbEngine.Equals("sqlserver"))
                         {
-                            Thread threadSQLExportServiceCenterLogs = new Thread(() => Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pl.SQLConnString, null));
-                            threads.Add(threadSQLExportServiceCenterLogs);
-                            threadSQLExportServiceCenterLogs.Start();
+                            ThreadPool.QueueUserWorkItem(work => Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pl.SQLConnString, null, null, countdown));
                         }
                         else if (Program.dbEngine.Equals("oracle"))
                         {
-                            Thread threadORCLExportServiceCenterLogs = new Thread(() => Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper_pl.OracleConnString, ConnStringHelper_pl.AdminSchema));
-                            threads.Add(threadORCLExportServiceCenterLogs);
-                            threadORCLExportServiceCenterLogs.Start();
+                            ThreadPool.QueueUserWorkItem(work => Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper_pl.OracleConnString, ConnStringHelper_pl.AdminSchema, countdown));
                         }
                     }
                     else
@@ -400,9 +403,9 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (useMultiThread)
                     {
-                        Thread threadCollectIISThreadDumpsProgram = new Thread(() => Program.CollectThreadDumpsProgram(getIisThreadDumps, false));
-                        threads.Add(threadCollectIISThreadDumpsProgram);
-                        threadCollectIISThreadDumpsProgram.Start();
+                        countdown.AddCount();
+                        ThreadPool.QueueUserWorkItem(work => Program.CollectThreadDumpsProgram(getIisThreadDumps, false, countdown));
+                        numberOfTasks++;
                     } else
                     {
                         Program.CollectThreadDumpsProgram(getIisThreadDumps, false);
@@ -418,9 +421,9 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (useMultiThread)
                     {
-                        Thread CollectOSThreadDumpsProgram = new Thread(() => Program.CollectThreadDumpsProgram(false, _getOsThreadDumps));
-                        threads.Add(CollectOSThreadDumpsProgram);
-                        CollectOSThreadDumpsProgram.Start();
+                        countdown.AddCount();
+                        ThreadPool.QueueUserWorkItem(work => Program.CollectThreadDumpsProgram(false, _getOsThreadDumps, countdown));
+                        numberOfTasks++;
                     } else
                     {
                         Program.CollectThreadDumpsProgram(false, _getOsThreadDumps);
@@ -436,9 +439,9 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (useMultiThread)
                     {
-                        Thread CollectIISMemoryDumpsProgram = new Thread(() => Program.CollectMemoryDumpsProgram(getIisMemDumps, false));
-                        threads.Add(CollectIISMemoryDumpsProgram);
-                        CollectIISMemoryDumpsProgram.Start();
+                        countdown.AddCount();
+                        ThreadPool.QueueUserWorkItem(work => Program.CollectMemoryDumpsProgram(getIisMemDumps, false, countdown));
+                        numberOfTasks++;
                     } else
                     {
                         Program.CollectMemoryDumpsProgram(getIisMemDumps, false);
@@ -454,9 +457,9 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (useMultiThread)
                     {
-                        Thread CollectOSMemoryDumpsProgram = new Thread(() => Program.CollectMemoryDumpsProgram(false, getOsMemDumps));
-                        threads.Add(CollectOSMemoryDumpsProgram);
-                        CollectOSMemoryDumpsProgram.Start();
+                        countdown.AddCount();
+                        ThreadPool.QueueUserWorkItem(work => Program.CollectMemoryDumpsProgram(false, getOsMemDumps, countdown));
+                        numberOfTasks++;
                     } else
                     {
                         Program.CollectMemoryDumpsProgram(false, getOsMemDumps);
@@ -477,17 +480,16 @@ namespace OSDiagTool.OSDiagToolForm {
 
                     if (useMultiThread)
                     {
+                        countdown.AddCount();
+                        numberOfTasks++;
+
                         if (Program.dbEngine.Equals("sqlserver"))
                         {
-                            Thread threadSQLPlatformDiagnosticProgram = new Thread(() => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_pd.SQLConnString, null));
-                            threads.Add(threadSQLPlatformDiagnosticProgram);
-                            threadSQLPlatformDiagnosticProgram.Start();
+                            ThreadPool.QueueUserWorkItem(work => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_pd.SQLConnString, null, countdown));
                         }
                         else if (Program.dbEngine.Equals("oracle"))
                         {
-                            Thread threadORCLPlatformDiagnosticProgram = new Thread(() => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_pd.OracleConnString));
-                            threads.Add(threadORCLPlatformDiagnosticProgram);
-                            threadORCLPlatformDiagnosticProgram.Start();
+                            ThreadPool.QueueUserWorkItem(work => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_pd.OracleConnString), countdown);
                         }
                     } else
                     {
@@ -504,18 +506,15 @@ namespace OSDiagTool.OSDiagToolForm {
             }
 
             //  Wait for threads to complete before compression
-            foreach (Thread thread in threads)
+            if (Program.useMultiThread)
             {
-                thread.Join();
+                countdown.Signal();
+                countdown.Wait();
             }
-
+           
             backgroundWorker1.ReportProgress(12, configurationsHelper.popup);
             Program.GenerateZipFile();
             backgroundWorker1.ReportProgress(13, configurationsHelper.popup); // Last step to close pop up
-
-            /* REFACTOR */
-
-            
 
             if (!backgroundWorker1.CancellationPending == true) {
                 puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + Program._endFeedback);

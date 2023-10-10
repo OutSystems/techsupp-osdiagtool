@@ -116,14 +116,14 @@
     <Compile Include="Database\DatabaseQueries\OracleQueries.cs" />
     <Compile Include="Database\DatabaseQueries\SQLServerQueries.cs" />
     <Compile Include="DBConnector\ConnStringModel.cs" />
-    <Compile Include="CmdHelper.cs" />
+    <Compile Include="Helpers\CmdHelper.cs" />
     <Compile Include="CmdLineCommand.cs" />
     <Compile Include="DBConnector\DBConnector.cs" />
     <Compile Include="DBConnector\DBReader.cs" />
     <Compile Include="FileLogger.cs" />
-    <Compile Include="FileSystemHelper.cs" />
+    <Compile Include="Helpers\FileSystemHelper.cs" />
     <Compile Include="DBConnector\IDBConnector.cs" />
-    <Compile Include="IISHelper.cs" />
+    <Compile Include="Helpers\IISHelper.cs" />
     <Compile Include="OSDGTCmdLine.cs" />
     <Compile Include="OSDiagToolConf\ConfModel.cs" />
     <Compile Include="OSDiagToolConf\MetamodelTables.cs" />
@@ -166,7 +166,7 @@
     <Compile Include="Utils\NetworkUtils.cs" />
     <Compile Include="Utils\CryptoUtils.cs" />
     <Compile Include="Utils\WinUtils.cs" />
-    <Compile Include="WindowsEventLogHelper.cs" />
+    <Compile Include="Helpers\WindowsEventLogHelper.cs" />
     <Compile Include="WinPerfCounters.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -209,6 +209,7 @@
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

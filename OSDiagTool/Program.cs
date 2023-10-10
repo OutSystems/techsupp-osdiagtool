@@ -10,6 +10,7 @@ using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
 using System.Reflection;
+using System.Threading;
 
 namespace OSDiagTool
 {
@@ -146,7 +147,7 @@ namespace OSDiagTool
             separateLogCatalog = !osPlatformVersion.StartsWith("10.");
         }
 
-        public static void GetPlatformAndServerFiles() {
+        public static void GetPlatformAndServerFiles(CountdownEvent countdown = null /*used for multithread*/) {
 
             // Process Platform and Server Configuration files
             FileLogger.TraceLog("Copying Platform and Server configuration files... ");
@@ -171,10 +172,17 @@ namespace OSDiagTool
             } catch (Exception e) {
                 FileLogger.LogError("Failed to export Registry:", e.Message + e.StackTrace);
             }
+            finally
+            {
+                if (Program.useMultiThread) { countdown.Signal(); }
+            }
+
+
 
         }
 
-        public static void ExportEventViewerAndServerLogs() {
+        public static void ExportEventViewerAndServerLogs(CountdownEvent countdown = null /*used for multithread*/)
+        {
 
             WindowsEventLogHelper welHelper = new WindowsEventLogHelper();
 
@@ -183,18 +191,19 @@ namespace OSDiagTool
             Directory.CreateDirectory(_windowsInfoDest);
             welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
             ExecuteCommands();
-            
+            if (Program.useMultiThread) { countdown.Signal(); }
         }                       
 
-        public static void CopyIISAccessLogs(int iisLogsNrDays) {
+        public static void CopyIISAccessLogs(int iisLogsNrDays, CountdownEvent countdown = null) {
 
             FileSystemHelper fsHelper = new FileSystemHelper();
             FileLogger.TraceLog(string.Format("Exporting IIS Access logs({0} days)...", iisLogsNrDays));
             IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, iisLogsNrDays);
-            
+            if (Program.useMultiThread) { countdown.Signal(); }
+
         }
 
-        public static void DatabaseTroubleshootProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel orclConnString = null) {
+        public static void DatabaseTroubleshootProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel orclConnString = null, CountdownEvent countdown = null) {
 
             Directory.CreateDirectory(_osDatabaseTroubleshootDest);
 
@@ -211,10 +220,14 @@ namespace OSDiagTool
             } catch (Exception e) {
                 FileLogger.LogError("Failed to perform Database Troubleshoot", e.Message + e.StackTrace);
             }
+            finally
+            {
+                if (Program.useMultiThread) { countdown.Signal(); }
+            }
         }
 
         public static void ExportPlatformMetamodel(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
-            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null) {
+            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, CountdownEvent countdown = null) {
 
             FileLogger.TraceLog("Exporting Platform Metamodel...");
 
@@ -263,10 +276,11 @@ namespace OSDiagTool
                     }
                 }
             }
+            if (Program.useMultiThread) { countdown.Signal(); }
         }
 
         public static void ExportServiceCenterLogs(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
-            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, string adminSchema = null) {
+            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, string adminSchema = null, CountdownEvent countdown = null) {
 
             FileLogger.TraceLog(string.Format("Exporting Platform logs ({0} records)...", FormConfigurations.osLogTopRecords));
 
@@ -284,19 +298,24 @@ namespace OSDiagTool
             } else if (dbEngine.Equals("oracle")) {
                 Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
             }
+            if (Program.useMultiThread) { countdown.Signal(); }
         }
 
-        public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps) {
+        public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps, CountdownEvent countdown = null) {
 
             FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS thread dumps: {0} ; OutSystems Services thread dumps: {1})", getIisThreadDumps, getOsThreadDumps));
             CollectThreadDumps(getIisThreadDumps, getOsThreadDumps); // evaluate if this method is really necessary
+            if (Program.useMultiThread) {
+                countdown.Signal();
+            }
 
         }
 
-        public static void CollectMemoryDumpsProgram(bool getIisMemDumps, bool getOsMemDumps) {
+        public static void CollectMemoryDumpsProgram(bool getIisMemDumps, bool getOsMemDumps, CountdownEvent countdown = null) {
 
             FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS memory dumps: {0} ; OutSystems Services memory dumps: {1})", getIisMemDumps, getOsMemDumps));
             CollectMemoryDumps(getIisMemDumps, getOsMemDumps);
+            if (Program.useMultiThread) { countdown.Signal(); }
 
         }
 
@@ -398,7 +417,7 @@ namespace OSDiagTool
          * Diagnose the OutSystems Platform
          */
         public static void PlatformDiagnosticProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, 
-            DBConnector.OracleConnStringModel oracleConnString = null)
+            DBConnector.OracleConnStringModel oracleConnString = null, CountdownEvent countdown = null)
         {
             Directory.CreateDirectory(_osPlatformDiagnostic);
             try
@@ -418,6 +437,10 @@ namespace OSDiagTool
             catch (Exception e)
             {
                 FileLogger.LogError("Failed to diagnose the OutSystems Platform: ", e.Message + e.StackTrace);
+            }
+            finally
+            {
+                if (Program.useMultiThread) { countdown.Signal(); }
             }
         }
 
