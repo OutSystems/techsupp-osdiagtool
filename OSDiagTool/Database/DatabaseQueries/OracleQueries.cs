@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace OSDiagTool.Database.DatabaseQueries {
+﻿namespace OSDiagTool.Database.DatabaseQueries {
     class OracleQueries {
 
         // Use string.format to append parameters // Sid is always the 1st column

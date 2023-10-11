@@ -55,11 +55,6 @@ namespace OSDiagTool
 
             OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             var configurations = dgtConfReader.GetOsDiagToolConfigurations();
-            // Override Multithread config from OSDiagToolConfReader
-            if(WinPerfCounters.GetCPUUsage() > 2.0)
-            {
-                Program.useMultiThread = false;
-            }
 
             try {
                 RegistryKey OSPlatformInstaller = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(_osServerRegistry);

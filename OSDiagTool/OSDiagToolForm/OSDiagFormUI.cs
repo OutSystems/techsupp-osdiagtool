@@ -4,13 +4,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using OSDiagTool.OSDiagToolConf;
 using System.Threading;
-using OSDiagTool.Platform.ConfigFiles;
-using System.IO;
 
 namespace OSDiagTool.OSDiagToolForm {
     public partial class OsDiagForm : Form {

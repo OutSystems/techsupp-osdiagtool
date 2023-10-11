@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
-using System.Linq;
 using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.Utils;

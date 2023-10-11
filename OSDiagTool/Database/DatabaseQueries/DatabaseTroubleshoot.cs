@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
-using System.Reflection;
 
 namespace OSDiagTool.Database.DatabaseQueries {
     class DatabaseTroubleshoot {
