@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
 namespace OSDiagTool.OSDiagToolForm {
-    class OsDiagFormConfModel {
+    public class OsDiagFormConfModel {
 
         public class strFormConfigurationsModel {
 

@@ -14,19 +14,19 @@ using System.Threading;
 
 namespace OSDiagTool
 {
-    class Program
+    public class Program
     {
         private static string _windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-        private static string _tempFolderPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "collect_data"); 
+        public static string _tempFolderPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "collect_data"); 
         private static string _targetZipFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "outsystems_data_" + DateTimeToTimestamp(DateTime.Now) + "_" + DateTime.Now.Second + DateTime.Now.Millisecond + ".zip");
         private static string _osInstallationFolder = @"C:\Program Files\OutSystems\Platform Server";
-        private static string _iisApplicationHostPath = Path.Combine(_windir, @"system32\inetsrv\config\applicationHost.config");
+        public static string _iisApplicationHostPath = Path.Combine(_windir, @"system32\inetsrv\config\applicationHost.config");
         private static string _iisWebConfigPath = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), @"inetpub\wwwroot\web.config");
         private static string _machineConfigPath = Path.Combine(_windir, @"Microsoft.NET\Framework64\v4.0.30319\CONFIG\machine.config");
-        private static string _evtVwrLogsDest = Path.Combine(_tempFolderPath, "EventViewerLogs");
-        private static string _osPlatFilesDest = Path.Combine(_tempFolderPath, "Windows_And_OutSystems_Files");
+        public static string _evtVwrLogsDest = Path.Combine(_tempFolderPath, "EventViewerLogs");
+        public static string _osPlatFilesDest = Path.Combine(_tempFolderPath, "Windows_And_OutSystems_Files");
         private static string _osMetamodelTablesDest = Path.Combine(_tempFolderPath, "PlatformMetamodelTables");
-        private static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
+        public static string _windowsInfoDest = Path.Combine(_tempFolderPath, "WindowsInformation");
         private static string _errorDumpFile = Path.Combine(_tempFolderPath, "ConsoleLog.txt");
         private static string _osDatabaseTroubleshootDest = Path.Combine(_tempFolderPath, "DatabaseTroubleshoot");
         private static string _osPlatformLogs = Path.Combine(_tempFolderPath, "PlatformLogs");
@@ -240,7 +240,7 @@ namespace OSDiagTool
                     FileLogger.TraceLog("Starting exporting tables: ");
                     foreach (string table in FormConfigurations.metamodelTables) {
                         if ((isLifeTimeEnvironment && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                            FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                            FileLogger.TraceLog(table + ", ", isTaskFinished: true, writeDateTime: false);
                             string selectAllQuery = "SELECT * FROM " + table;
                             CSVExporter.SQLToCSVExport(dbEngine, table, _osMetamodelTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
                         }
