@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OSDiagTool.Platform.ConfigFiles
 {
-    class ConfigFileInfo
+    public class ConfigFileInfo
     {
         private string _platformDBType;
         private string _dbms;

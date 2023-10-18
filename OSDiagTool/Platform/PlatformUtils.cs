@@ -7,7 +7,7 @@ using System.Data;
 using System.Data.SqlClient;
 
 namespace OSDiagTool.Platform {
-    class PlatformUtils {
+    public class PlatformUtils {
 
         public static string GetPlatformVersion(string osServerRegistry) {
 

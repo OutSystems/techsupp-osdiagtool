@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Reflection;
 
 namespace OSDiagTool.OSDiagToolConf {
-    class OSDiagToolConfReader {
+    public class OSDiagToolConfReader {
 
         private static string _osDGTConfFile = "OSDGTool.exe.config";
         //private static string _osDiagToolConfigPath = Path.Combine(Directory.GetCurrentDirectory(), _osDGTConfFile);

@@ -2,7 +2,7 @@
 
 namespace OSDiagTool.Platform.ConfigFiles
 {
-    class ConfigFileProperty
+    public class ConfigFileProperty
     {
         private string _name;
         private string _value;

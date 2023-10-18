@@ -4,7 +4,7 @@ using System.Windows.Forms;
 
 namespace OSDiagTool.Platform.ConfigFiles
 {
-    class ConfigFileReader
+    public class ConfigFileReader
     {
         public static string PlatformDatabaseConfigurationElement = "PlatformDatabaseConfiguration";
         public static string LoggingDatabaseConfigurationElement = "LoggingDatabaseConfiguration";
