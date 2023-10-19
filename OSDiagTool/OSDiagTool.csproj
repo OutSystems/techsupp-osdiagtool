@@ -194,7 +194,7 @@
     <Compile Include="Utils\CryptoUtils.cs" />
     <Compile Include="Utils\WinUtils.cs" />
     <Compile Include="Helpers\WindowsEventLogHelper.cs" />
-    <Compile Include="WinPerfCounters.cs" />
+    <Compile Include="Utils\WinPerfCounters.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -95,6 +95,7 @@ namespace OSDiagTool
                 // args[1] saUser; args[2] sapwd;
 
                 OSDiagToolInitialization();
+                FileLogger.TraceLog("CPU Usage is: " + WinPerfCounters.GetCPUUsage());
 
                 if (!args.Length.Equals(0))
                 {
@@ -435,7 +436,9 @@ namespace OSDiagTool
             }
             finally
             {
-                if (Program.useMultiThread) { countdown.Signal(); }
+                if (Program.useMultiThread) {
+                    countdown.Signal();
+                }
             }
         }
 

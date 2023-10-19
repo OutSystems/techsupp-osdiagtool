@@ -485,7 +485,7 @@ namespace OSDiagTool.OSDiagToolForm {
                         }
                         else if (Program.dbEngine.Equals("oracle"))
                         {
-                            ThreadPool.QueueUserWorkItem(work => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_pd.OracleConnString), countdown);
+                            ThreadPool.QueueUserWorkItem(work => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_pd.OracleConnString, countdown));
                         }
                     } else
                     {
