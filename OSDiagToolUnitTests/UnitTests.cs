@@ -94,6 +94,25 @@ namespace OSDiagToolUnitTests
             }
 
             Assert.IsTrue(SearchFiles(OSDiagTool.Program._osDatabaseTroubleshootDest, ".csv")); // Checks if just one .csv file exists in sub-directories
+        }
+
+        [TestMethod]
+        public void Test_CollectThreadDumpsProgram()
+        {
+            Program.CollectThreadDumpsProgram(true, true);
+
+            Assert.IsTrue(Directory.Exists(Program.threadDumpsPath));
+            Assert.IsTrue(SearchFiles(Program.threadDumpsPath, ".log")); // Checks if just one.log file exists in sub - directories
+
+        }
+
+        [TestMethod]
+        public void Test_CollectMemoryDumpsProgram()
+        {
+            Program.CollectMemoryDumpsProgram(true, true);
+
+            Assert.IsTrue(Directory.Exists(Program.memoryDumpsPath));
+            Assert.IsTrue(SearchFiles(Program.memoryDumpsPath, ".dmp")); // check if one .dmp file exists in sub-directories
 
         }
 
@@ -137,6 +156,7 @@ namespace OSDiagToolUnitTests
         {
             //OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
             configurations = dgtConfReader.GetOsDiagToolConfigurations();
+
             Program.useMultiThread = false; // override to not use multithread - prevents null pointers in the tests
 
             try
@@ -160,7 +180,7 @@ namespace OSDiagToolUnitTests
             {
                 sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                 sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
-                sqlConnString.userId = "<user id>";
+                sqlConnString.userId = "<user>";
                 sqlConnString.pwd = "<pwd>";
 
             }

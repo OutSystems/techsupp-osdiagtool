@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OSDiagTool
@@ -17,9 +18,11 @@ namespace OSDiagTool
             _outputFile = outputFile;
         }
 
-        public void Execute()
+        public void Execute(CountdownEvent cmdCountdown = null)
         {
+            if (Program.useMultiThread) { cmdCountdown.AddCount(); }
             CmdHelper.RunCommand(FullCmd);
+            if (Program.useMultiThread) { cmdCountdown.Signal(); }
         }
 
         public string FullCmd

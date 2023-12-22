@@ -34,6 +34,9 @@ namespace OSDiagTool
         private static string _targetDiagnosticFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "diagnostic_" + DateTimeToTimestamp(DateTime.Now) + ".log");
         public static string _platformConfigurationFilepath = Path.Combine(_osInstallationFolder, "server.hsconf");
         private static string _appCmdPath = @"%windir%\system32\inetsrv\appcmd";
+        public static int serverProcessorCount = Environment.ProcessorCount;
+        public static string threadDumpsPath = Path.Combine(_tempFolderPath, "ThreadDumps");
+        public static string memoryDumpsPath = Path.Combine(_tempFolderPath, "MemoryDumps");
 
         // Registry paths
         private static string _netFrameworkRegistryPath = @"SOFTWARE\Microsoft\NET Framework Setup\NDP";
@@ -95,7 +98,6 @@ namespace OSDiagTool
                 // args[1] saUser; args[2] sapwd;
 
                 OSDiagToolInitialization();
-                FileLogger.TraceLog("CPU Usage is: " + WinPerfCounters.GetCPUUsage());
 
                 if (!args.Length.Equals(0))
                 {
@@ -170,7 +172,7 @@ namespace OSDiagTool
             }
             finally
             {
-                if (Program.useMultiThread) { countdown.Signal(); }
+                if (Program.useMultiThread) { countdown.Signal(); FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount); }
             }
 
 
@@ -179,27 +181,51 @@ namespace OSDiagTool
 
         public static void ExportEventViewerAndServerLogs(CountdownEvent countdown = null /*used for multithread*/)
         {
+            try
+            {
+                WindowsEventLogHelper welHelper = new WindowsEventLogHelper();
 
-            WindowsEventLogHelper welHelper = new WindowsEventLogHelper();
+                FileLogger.TraceLog("Exporting Event Viewer and Server logs... ");
+                Directory.CreateDirectory(_evtVwrLogsDest);
+                Directory.CreateDirectory(_windowsInfoDest);
+                welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
+                ExecuteCommands();
+            }
+            catch (Exception e)
+            {
+                FileLogger.LogError("Failed to export Event Viewer and Server logs:", e.Message + e.StackTrace);
+            }
+            finally
+            {
+                if (Program.useMultiThread) { countdown.Signal(); FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount); }
+            }
 
-            FileLogger.TraceLog("Exporting Event Viewer and Server logs... ");
-            Directory.CreateDirectory(_evtVwrLogsDest);
-            Directory.CreateDirectory(_windowsInfoDest);
-            welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
-            ExecuteCommands();
-            if (Program.useMultiThread) { countdown.Signal(); }
+            
+            
         }                       
 
         public static void CopyIISAccessLogs(int iisLogsNrDays, CountdownEvent countdown = null) {
 
-            FileSystemHelper fsHelper = new FileSystemHelper();
-            FileLogger.TraceLog(string.Format("Exporting IIS Access logs({0} days)...", iisLogsNrDays));
-            IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, iisLogsNrDays);
-            if (Program.useMultiThread) { countdown.Signal(); }
+            try
+            {
+                FileSystemHelper fsHelper = new FileSystemHelper();
+                FileLogger.TraceLog(string.Format("Exporting IIS Access logs({0} days)...", iisLogsNrDays));
+                IISHelper.GetIISAccessLogs(_iisApplicationHostPath, _tempFolderPath, fsHelper, iisLogsNrDays);
+            }
+            catch(Exception e)
+            {
+                FileLogger.LogError("Failed to copy IIS Access logs:", e.Message + e.StackTrace);
+            }
+            finally
+            {
+                if (Program.useMultiThread) { countdown.Signal(); FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount); }
+            }
+            
+            
 
         }
 
-        public static void DatabaseTroubleshootProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel orclConnString = null, CountdownEvent countdown = null) {
+        public static void DatabaseTroubleshootProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel orclConnString = null) {
 
             Directory.CreateDirectory(_osDatabaseTroubleshootDest);
 
@@ -216,103 +242,144 @@ namespace OSDiagTool
             } catch (Exception e) {
                 FileLogger.LogError("Failed to perform Database Troubleshoot", e.Message + e.StackTrace);
             }
-            finally
-            {
-                if (Program.useMultiThread) { countdown.Signal(); }
-            }
         }
 
         public static void ExportPlatformMetamodel(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
-            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, CountdownEvent countdown = null) {
+            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null) {
 
-            FileLogger.TraceLog("Exporting Platform Metamodel...");
+            try
+            {
+                FileLogger.TraceLog("Exporting Platform Metamodel...");
 
-            Directory.CreateDirectory(_osMetamodelTablesDest);
+                Directory.CreateDirectory(_osMetamodelTablesDest);
 
-            if (dbEngine.Equals("sqlserver")) {
+                if (dbEngine.Equals("sqlserver"))
+                {
 
-                var connector = new DBConnector.SLQDBConnector();
-                SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
+                    var connector = new DBConnector.SLQDBConnector();
+                    SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
 
-                using (connection) {
+                    using (connection)
+                    {
 
-                    bool isLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, connection);
+                        bool isLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, connection);
 
-                    FileLogger.TraceLog("Starting exporting tables: ");
-                    foreach (string table in FormConfigurations.metamodelTables) {
-                        if ((isLifeTimeEnvironment && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                            FileLogger.TraceLog(table + ", ", isTaskFinished: true, writeDateTime: false);
-                            string selectAllQuery = "SELECT * FROM " + table;
-                            CSVExporter.SQLToCSVExport(dbEngine, table, _osMetamodelTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
+                        FileLogger.TraceLog("Starting exporting tables: ");
+                        foreach (string table in FormConfigurations.metamodelTables)
+                        {
+                            if ((isLifeTimeEnvironment && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys")))
+                            {
+                                FileLogger.TraceLog(table + ", ", isTaskFinished: true, writeDateTime: false);
+                                string selectAllQuery = "SELECT * FROM " + table;
+                                CSVExporter.SQLToCSVExport(dbEngine, table, _osMetamodelTablesDest, configurations.queryTimeout, selectAllQuery, connection, null);
+                            }
                         }
+
                     }
 
                 }
+                else if (dbEngine.Equals("oracle"))
+                {
 
-            }
-            else if (dbEngine.Equals("oracle")) {
+                    var connector = new DBConnector.OracleDBConnector();
+                    OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
 
-                var connector = new DBConnector.OracleDBConnector();
-                OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
+                    ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
+                    string platformDBAdminUser = Platform.PlatformUtils.GetConfigurationValue("AdminUser", confFileParser.DBPlatformInfo); ;
 
-                ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
-                string platformDBAdminUser = Platform.PlatformUtils.GetConfigurationValue("AdminUser", confFileParser.DBPlatformInfo); ;
+                    using (connection)
+                    {
 
-                using (connection) {
+                        bool isLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, null, connection, platformDBAdminUser);
 
-                    bool isLifeTimeEnvironment = Platform.PlatformUtils.IsLifeTimeEnvironment(dbEngine, configurations.queryTimeout, null, connection, platformDBAdminUser);
-
-                    FileLogger.TraceLog("Starting exporting tables: ");
-                    foreach (string table in FormConfigurations.metamodelTables) {
-                        if ((isLifeTimeEnvironment && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys"))) {
-                            FileLogger.TraceLog(table + ", ", writeDateTime: false);
-                            string selectAllQuery = "SELECT * FROM " + platformDBAdminUser + "." + table;
-                            CSVExporter.ORCLToCsvExport(connection, table, _osMetamodelTablesDest, configurations.queryTimeout, platformDBAdminUser, selectAllQuery);
+                        FileLogger.TraceLog("Starting exporting tables: ");
+                        foreach (string table in FormConfigurations.metamodelTables)
+                        {
+                            if ((isLifeTimeEnvironment && table.ToLower().StartsWith("osltm") || table.ToLower().StartsWith("ossys")))
+                            {
+                                FileLogger.TraceLog(table + ", ", writeDateTime: false);
+                                string selectAllQuery = "SELECT * FROM " + platformDBAdminUser + "." + table;
+                                CSVExporter.ORCLToCsvExport(connection, table, _osMetamodelTablesDest, configurations.queryTimeout, platformDBAdminUser, selectAllQuery);
+                            }
                         }
                     }
                 }
             }
-            if (Program.useMultiThread) { countdown.Signal(); }
+            catch (Exception e)
+            {
+                FileLogger.LogError("Failed to export Platform metamodel", e.Message + e.StackTrace);
+            }
         }
 
         public static void ExportServiceCenterLogs(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
-            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, string adminSchema = null, CountdownEvent countdown = null) {
+            DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, string adminSchema = null) {
 
-            FileLogger.TraceLog(string.Format("Exporting Platform logs ({0} records)...", FormConfigurations.osLogTopRecords));
+            try
+            {
+                FileLogger.TraceLog(string.Format("Exporting Platform logs ({0} records)...", FormConfigurations.osLogTopRecords));
 
-            Directory.CreateDirectory(_osPlatformLogs);
+                Directory.CreateDirectory(_osPlatformLogs);
 
-            List<string> platformLogs = new List<string>();
-            foreach (string table in configurations.tableNames) { // add only oslog tables to list
-                if (table.ToLower().StartsWith("oslog")) {
-                    platformLogs.Add(table);
+                List<string> platformLogs = new List<string>();
+                foreach (string table in configurations.tableNames)
+                { // add only oslog tables to list
+                    if (table.ToLower().StartsWith("oslog"))
+                    {
+                        platformLogs.Add(table);
+                    }
+                }
+
+                if (dbEngine.Equals("sqlserver"))
+                {
+                    Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
+                }
+                else if (dbEngine.Equals("oracle"))
+                {
+                    Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
                 }
             }
-
-            if (dbEngine.Equals("sqlserver")) {
-                Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
-            } else if (dbEngine.Equals("oracle")) {
-                Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
+            catch (Exception e)
+            {
+                FileLogger.LogError("Failed to perform export Service Center logs", e.Message + e.StackTrace);
             }
-            if (Program.useMultiThread) { countdown.Signal(); }
         }
 
         public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps, CountdownEvent countdown = null) {
 
-            FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS thread dumps: {0} ; OutSystems Services thread dumps: {1})", getIisThreadDumps, getOsThreadDumps));
-            CollectThreadDumps(getIisThreadDumps, getOsThreadDumps); // evaluate if this method is really necessary
-            if (Program.useMultiThread) {
-                countdown.Signal();
+            try
+            {
+                FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS thread dumps: {0} ; OutSystems Services thread dumps: {1})", getIisThreadDumps, getOsThreadDumps));
+                CollectThreadDumps(getIisThreadDumps, getOsThreadDumps); // evaluate if this method is really necessary
             }
-
+            catch (Exception e)
+            {
+                FileLogger.LogError("Failed to export thread dumps", e.Message + e.StackTrace);
+            }
+            finally
+            {
+                if (Program.useMultiThread)
+                {
+                    countdown.Signal();
+                    FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount);
+                }
+            }
         }
 
         public static void CollectMemoryDumpsProgram(bool getIisMemDumps, bool getOsMemDumps, CountdownEvent countdown = null) {
 
-            FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS memory dumps: {0} ; OutSystems Services memory dumps: {1})", getIisMemDumps, getOsMemDumps));
-            CollectMemoryDumps(getIisMemDumps, getOsMemDumps);
-            if (Program.useMultiThread) { countdown.Signal(); }
-
+            try
+            {
+                FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS memory dumps: {0} ; OutSystems Services memory dumps: {1})", getIisMemDumps, getOsMemDumps));
+                CollectMemoryDumps(getIisMemDumps, getOsMemDumps);
+            }
+            catch (Exception e)
+            {
+                FileLogger.LogError("Failed to collect memory dumps:", e.Message + e.StackTrace);
+            }
+            finally
+            {
+                if (Program.useMultiThread) { countdown.Signal(); FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount); }
+            }
         }
 
         public static void GenerateZipFile() {
@@ -333,6 +400,8 @@ namespace OSDiagTool
 
         private static void ExecuteCommands()
         {
+            ThreadPool.SetMaxThreads(serverProcessorCount, serverProcessorCount);
+            CountdownEvent cmdCountdown = new CountdownEvent(2);
 
             IDictionary<string, CmdLineCommand> commands = new Dictionary<string, CmdLineCommand>
             {
@@ -357,7 +426,21 @@ namespace OSDiagTool
             foreach (KeyValuePair<string, CmdLineCommand> commandEntry in commands)
             {
                 FileLogger.TraceLog("Getting " + commandEntry.Key + "...");
-                commandEntry.Value.Execute();
+                if (Program.useMultiThread)
+                {
+                    FileLogger.TraceLog("cmdCountdown: " + cmdCountdown.CurrentCount);
+                    ThreadPool.QueueUserWorkItem(work => commandEntry.Value.Execute(cmdCountdown));
+                }
+                else
+                {
+                    commandEntry.Value.Execute();
+                }
+                //Thread.Sleep(1000);
+                if (Program.useMultiThread)
+                {
+                    cmdCountdown.Signal();
+                    cmdCountdown.Wait();
+                }
             }
         }
 
@@ -375,7 +458,6 @@ namespace OSDiagTool
                 return;
             }
 
-            string threadDumpsPath = Path.Combine(_tempFolderPath, "ThreadDumps");
             Directory.CreateDirectory(threadDumpsPath);
 
             ThreadDumpCollector dc = new ThreadDumpCollector(5000);
@@ -438,6 +520,7 @@ namespace OSDiagTool
             {
                 if (Program.useMultiThread) {
                     countdown.Signal();
+                    FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount);
                 }
             }
         }
@@ -458,7 +541,7 @@ namespace OSDiagTool
                 return;
             }
 
-            string memoryDumpsPath = Path.Combine(_tempFolderPath, "MemoryDumps");
+
             Directory.CreateDirectory(memoryDumpsPath);
 
             CmdLineCommand command;
