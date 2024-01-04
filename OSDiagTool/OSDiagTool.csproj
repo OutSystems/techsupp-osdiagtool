@@ -143,6 +143,8 @@
     <Compile Include="Database\DatabaseQueries\OracleQueries.cs" />
     <Compile Include="Database\DatabaseQueries\SQLServerQueries.cs" />
     <Compile Include="DBConnector\ConnStringModel.cs" />
+    <Compile Include="DBConnector\IDatabaseCommand.cs" />
+    <Compile Include="DBConnector\SqlCommandExecutor.cs" />
     <Compile Include="Helpers\CmdHelper.cs" />
     <Compile Include="CmdLineCommand.cs" />
     <Compile Include="DBConnector\DBConnector.cs" />
@@ -171,6 +173,7 @@
       <DependentUpon>PopUpForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Platform\ConnectionList.cs" />
+    <Compile Include="Platform\PlatformDBIntegrity.cs" />
     <Compile Include="Platform\PlatformDiagnostic.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileInfo.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileProperty.cs" />

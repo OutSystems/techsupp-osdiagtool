@@ -37,6 +37,7 @@ namespace OSDiagTool
         public static int serverProcessorCount = Environment.ProcessorCount;
         public static string threadDumpsPath = Path.Combine(_tempFolderPath, "ThreadDumps");
         public static string memoryDumpsPath = Path.Combine(_tempFolderPath, "MemoryDumps");
+        public static string platDBIntCheckPath = Path.Combine(_tempFolderPath, "PlatformDatabaseIntegrity");
 
         // Registry paths
         private static string _netFrameworkRegistryPath = @"SOFTWARE\Microsoft\NET Framework Setup\NDP";
@@ -571,7 +572,6 @@ namespace OSDiagTool
 
                             parentProcessId = WinPerfCounters.GetParentProcess(pid);
                             var svchostProcess = Process.GetProcessById(parentProcessId);
-                            // TODO: implement suspend
 
                             Utils.WinUtils.SuspendProcess(parentProcessId);
                             parentPrcNeedsResume = true;
@@ -594,6 +594,23 @@ namespace OSDiagTool
                 if (parentPrcNeedsResume) Utils.WinUtils.ResumeProcess(parentProcessId);
             }
             
+        }
+
+        public static void PlatformDatabaseIntegritycheck(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, CountdownEvent countdown = null /*used for multithread*/)
+        {
+            Directory.CreateDirectory(platDBIntCheckPath);
+
+            try
+            {
+                FileLogger.TraceLog("Performing Platform Database Integrity Check");
+
+                OSDiagTool.Platform.PlatformDBIntegrity.RunDBIntegrityCheck(dbEngine, configurations, platDBIntCheckPath, sqlConnString, oracleConnString);
+
+            } catch (Exception e)
+            {
+                FileLogger.LogError("Error performing Platform Database Integrity Check: ", e.Message + e.StackTrace);
+            }
+
         }
 
         private static string DateTimeToTimestamp(DateTime dateTime)

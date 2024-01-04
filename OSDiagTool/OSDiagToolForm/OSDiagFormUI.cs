@@ -28,6 +28,7 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _diDbTroubleshoot = "Database Troubleshoot";
         public static string _plPlatformLogs = "Platform Logs";
         public static string _plPlatformAndServerFiles = "Platform and Server Configuration files";
+        public static string _plPlatformDatabaseIntegrity = "Platform Database Integrity";
         // new check box items must be added to dictHelper dictionary
 
         public SortedDictionary<int, string> FeedbackSteps = new SortedDictionary<int, string> {
@@ -42,8 +43,9 @@ namespace OSDiagTool.OSDiagToolForm {
             { 9, "Exporting Platform metamodel" },
             { 10, "Performing Database Troubleshoot" },
             { 11, "Diagnosing the OutSystems Platform" },
-            { 12, "Zipping file..." },
-            { 13, "" }, // Last step for closing the pop up
+            { 12, "Checking Platform Database Integrity" },
+            { 13, "Zipping file..." },
+            { 14, "" }, // Last step for closing the pop up
         };
 
         public OsDiagForm(OSDiagToolConf.ConfModel.strConfModel configurations, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
@@ -72,6 +74,7 @@ namespace OSDiagTool.OSDiagToolForm {
             
             this.nud_topLogs.Value = configurations.osLogTopRecords;
             this.cb_platformAndServerFiles.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_platform][OSDiagToolConfReader._l3_platformAndServerConfigFiles];
+            this.cb_PlatDBInt.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_platform][OSDiagToolConfReader._l3_platformDatabaseIntegrity];
 
             this.cb_dbPlatformMetamodel.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_platformMetamodel];
             this.cb_dbTroubleshoot.Checked = configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_databaseOperations][OSDiagToolConfReader._l3_databaseTroubleshoot];
@@ -152,6 +155,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _diDbTroubleshoot, cb_dbTroubleshoot.Checked},
                 { _plPlatformLogs, cb_platformLogs.Checked},
                 { _plPlatformAndServerFiles, cb_platformAndServerFiles.Checked },
+                { _plPlatformDatabaseIntegrity, cb_PlatDBInt.Checked }
             };
 
             formConfigurations.cbConfs = dictHelper;
@@ -244,6 +248,31 @@ namespace OSDiagTool.OSDiagToolForm {
                         Program.GetPlatformAndServerFiles();
                     }
                     
+                }
+            }
+
+            // TO DO: Platform Database Integrity Check
+            if (!backgroundWorker1.CancellationPending) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformDatabaseIntegrity, out bool performPlatDBIntegrity)) {
+
+                    backgroundWorker1.ReportProgress(12, configurationsHelper.popup);
+
+                    // Connecting to the database, by using the credentials located in the server.hsconf
+                    Platform.PlatformConnectionStringDefiner ConnectionStringDefiner_pdic = new Platform.PlatformConnectionStringDefiner();
+                    Platform.PlatformConnectionStringDefiner ConnStringHelper_pdic = ConnectionStringDefiner_pdic.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner_pdic);
+
+                    if (useMultiThread)
+                    {
+                        numberOfTasks++;
+                        countdown.AddCount();
+                        ThreadPool.QueueUserWorkItem(work => Program.PlatformDatabaseIntegritycheck(configurationsHelper.ConfigFileConfigurations, ConnectionStringDefiner_pdic.SQLConnString, ConnectionStringDefiner_pdic.OracleConnString , countdown));
+
+                    }
+                    else
+                    {
+                        Program.PlatformDatabaseIntegritycheck(configurationsHelper.ConfigFileConfigurations, ConnectionStringDefiner_pdic.SQLConnString, ConnectionStringDefiner_pdic.OracleConnString, countdown);
+                    }
+
                 }
             }
 
@@ -464,9 +493,9 @@ namespace OSDiagTool.OSDiagToolForm {
                 countdown.Wait();
             }
            
-            backgroundWorker1.ReportProgress(12, configurationsHelper.popup);
+            backgroundWorker1.ReportProgress(13, configurationsHelper.popup);
             Program.GenerateZipFile();
-            backgroundWorker1.ReportProgress(13, configurationsHelper.popup); // Last step to close pop up
+            backgroundWorker1.ReportProgress(14, configurationsHelper.popup); // Last step to close pop up
 
             if (!backgroundWorker1.CancellationPending == true) {
                 puf_popUpForm popup2 = new puf_popUpForm(puf_popUpForm._feedbackDoneType, _doneMessage + Environment.NewLine + Program._endFeedback);

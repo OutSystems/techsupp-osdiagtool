@@ -87,6 +87,7 @@
             this.lbl_feedbackOsDiagForm = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.bw_iisMonit = new System.ComponentModel.BackgroundWorker();
+            this.cb_PlatDBInt = new System.Windows.Forms.CheckBox();
             this.menuStrip1.SuspendLayout();
             this.tb_osDiagConf.SuspendLayout();
             this.tb_osDiagGenConf.SuspendLayout();
@@ -103,10 +104,9 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(24, 17);
-            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.Location = new System.Drawing.Point(18, 14);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(320, 18);
+            this.label1.Size = new System.Drawing.Size(263, 15);
             this.label1.TabIndex = 0;
             this.label1.Text = "Select below the information you wish to collect";
             // 
@@ -114,20 +114,18 @@
             // 
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(24, 65);
-            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label4.Location = new System.Drawing.Point(18, 53);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(106, 18);
+            this.label4.Size = new System.Drawing.Size(89, 15);
             this.label4.TabIndex = 2;
             this.label4.Text = "Thread Dumps";
             // 
             // label5
             // 
             this.label5.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label5.Location = new System.Drawing.Point(24, 95);
-            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label5.Location = new System.Drawing.Point(18, 77);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(547, 2);
+            this.label5.Size = new System.Drawing.Size(410, 2);
             this.label5.TabIndex = 3;
             // 
             // cb_iisThreads
@@ -135,10 +133,9 @@
             this.cb_iisThreads.AutoSize = true;
             this.cb_iisThreads.Checked = true;
             this.cb_iisThreads.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_iisThreads.Location = new System.Drawing.Point(32, 113);
-            this.cb_iisThreads.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_iisThreads.Location = new System.Drawing.Point(24, 92);
             this.cb_iisThreads.Name = "cb_iisThreads";
-            this.cb_iisThreads.Size = new System.Drawing.Size(165, 21);
+            this.cb_iisThreads.Size = new System.Drawing.Size(129, 17);
             this.cb_iisThreads.TabIndex = 4;
             this.cb_iisThreads.Text = "IIS Worker Processes";
             this.cb_iisThreads.UseVisualStyleBackColor = true;
@@ -148,10 +145,9 @@
             this.cb_osServicesThreads.AutoSize = true;
             this.cb_osServicesThreads.Checked = true;
             this.cb_osServicesThreads.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_osServicesThreads.Location = new System.Drawing.Point(277, 113);
-            this.cb_osServicesThreads.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_osServicesThreads.Location = new System.Drawing.Point(208, 92);
             this.cb_osServicesThreads.Name = "cb_osServicesThreads";
-            this.cb_osServicesThreads.Size = new System.Drawing.Size(164, 21);
+            this.cb_osServicesThreads.Size = new System.Drawing.Size(126, 17);
             this.cb_osServicesThreads.TabIndex = 5;
             this.cb_osServicesThreads.Text = "OutSystems Services";
             this.cb_osServicesThreads.UseVisualStyleBackColor = true;
@@ -159,10 +155,9 @@
             // cb_osMemDumps
             // 
             this.cb_osMemDumps.AutoSize = true;
-            this.cb_osMemDumps.Location = new System.Drawing.Point(277, 198);
-            this.cb_osMemDumps.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_osMemDumps.Location = new System.Drawing.Point(208, 161);
             this.cb_osMemDumps.Name = "cb_osMemDumps";
-            this.cb_osMemDumps.Size = new System.Drawing.Size(164, 21);
+            this.cb_osMemDumps.Size = new System.Drawing.Size(126, 17);
             this.cb_osMemDumps.TabIndex = 9;
             this.cb_osMemDumps.Text = "OutSystems Services";
             this.cb_osMemDumps.UseVisualStyleBackColor = true;
@@ -170,10 +165,9 @@
             // cb_iisMemDumps
             // 
             this.cb_iisMemDumps.AutoSize = true;
-            this.cb_iisMemDumps.Location = new System.Drawing.Point(32, 198);
-            this.cb_iisMemDumps.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_iisMemDumps.Location = new System.Drawing.Point(24, 161);
             this.cb_iisMemDumps.Name = "cb_iisMemDumps";
-            this.cb_iisMemDumps.Size = new System.Drawing.Size(165, 21);
+            this.cb_iisMemDumps.Size = new System.Drawing.Size(129, 17);
             this.cb_iisMemDumps.TabIndex = 8;
             this.cb_iisMemDumps.Text = "IIS Worker Processes";
             this.cb_iisMemDumps.UseVisualStyleBackColor = true;
@@ -181,20 +175,18 @@
             // label7
             // 
             this.label7.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label7.Location = new System.Drawing.Point(24, 180);
-            this.label7.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label7.Location = new System.Drawing.Point(18, 146);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(547, 2);
+            this.label7.Size = new System.Drawing.Size(410, 2);
             this.label7.TabIndex = 7;
             // 
             // label8
             // 
             this.label8.AutoSize = true;
             this.label8.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label8.Location = new System.Drawing.Point(24, 150);
-            this.label8.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label8.Location = new System.Drawing.Point(18, 122);
             this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(115, 18);
+            this.label8.Size = new System.Drawing.Size(95, 15);
             this.label8.TabIndex = 6;
             this.label8.Text = "Memory Dumps";
             // 
@@ -203,10 +195,9 @@
             this.cb_iisAccessLogs.AutoSize = true;
             this.cb_iisAccessLogs.Checked = true;
             this.cb_iisAccessLogs.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_iisAccessLogs.Location = new System.Drawing.Point(277, 310);
-            this.cb_iisAccessLogs.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_iisAccessLogs.Location = new System.Drawing.Point(208, 252);
             this.cb_iisAccessLogs.Name = "cb_iisAccessLogs";
-            this.cb_iisAccessLogs.Size = new System.Drawing.Size(129, 21);
+            this.cb_iisAccessLogs.Size = new System.Drawing.Size(103, 17);
             this.cb_iisAccessLogs.TabIndex = 13;
             this.cb_iisAccessLogs.Text = "IIS Access Logs";
             this.cb_iisAccessLogs.UseVisualStyleBackColor = true;
@@ -216,10 +207,9 @@
             this.cb_EvtViewerLogs.AutoSize = true;
             this.cb_EvtViewerLogs.Checked = true;
             this.cb_EvtViewerLogs.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_EvtViewerLogs.Location = new System.Drawing.Point(32, 310);
-            this.cb_EvtViewerLogs.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_EvtViewerLogs.Location = new System.Drawing.Point(24, 252);
             this.cb_EvtViewerLogs.Name = "cb_EvtViewerLogs";
-            this.cb_EvtViewerLogs.Size = new System.Drawing.Size(221, 21);
+            this.cb_EvtViewerLogs.Size = new System.Drawing.Size(170, 17);
             this.cb_EvtViewerLogs.TabIndex = 12;
             this.cb_EvtViewerLogs.Text = "Event Viewer and Server Logs";
             this.cb_EvtViewerLogs.UseVisualStyleBackColor = true;
@@ -227,20 +217,18 @@
             // label9
             // 
             this.label9.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label9.Location = new System.Drawing.Point(24, 293);
-            this.label9.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label9.Location = new System.Drawing.Point(18, 238);
             this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(547, 2);
+            this.label9.Size = new System.Drawing.Size(410, 2);
             this.label9.TabIndex = 11;
             // 
             // label10
             // 
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label10.Location = new System.Drawing.Point(24, 263);
-            this.label10.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label10.Location = new System.Drawing.Point(18, 214);
             this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(88, 18);
+            this.label10.Size = new System.Drawing.Size(72, 15);
             this.label10.TabIndex = 10;
             this.label10.Text = "Server Logs";
             // 
@@ -248,10 +236,9 @@
             // 
             this.label13.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.label13.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label13.Location = new System.Drawing.Point(24, 48);
-            this.label13.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label13.Location = new System.Drawing.Point(18, 39);
             this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(546, 2);
+            this.label13.Size = new System.Drawing.Size(410, 2);
             this.label13.TabIndex = 18;
             // 
             // menuStrip1
@@ -261,7 +248,8 @@
             this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(620, 28);
+            this.menuStrip1.Padding = new System.Windows.Forms.Padding(4, 2, 0, 2);
+            this.menuStrip1.Size = new System.Drawing.Size(465, 24);
             this.menuStrip1.TabIndex = 20;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -271,20 +259,20 @@
             this.mstrp_Help,
             this.mstrp_Exit});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(46, 24);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // mstrp_Help
             // 
             this.mstrp_Help.Name = "mstrp_Help";
-            this.mstrp_Help.Size = new System.Drawing.Size(124, 26);
+            this.mstrp_Help.Size = new System.Drawing.Size(99, 22);
             this.mstrp_Help.Text = "Help";
             this.mstrp_Help.Click += new System.EventHandler(this.mstrp_Help_Click);
             // 
             // mstrp_Exit
             // 
             this.mstrp_Exit.Name = "mstrp_Exit";
-            this.mstrp_Exit.Size = new System.Drawing.Size(124, 26);
+            this.mstrp_Exit.Size = new System.Drawing.Size(99, 22);
             this.mstrp_Exit.Text = "Exit";
             this.mstrp_Exit.Click += new System.EventHandler(this.mstrp_Exit_Click);
             // 
@@ -292,15 +280,15 @@
             // 
             this.tb_osDiagConf.Controls.Add(this.tb_osDiagGenConf);
             this.tb_osDiagConf.Controls.Add(this.tb_databaseConf);
-            this.tb_osDiagConf.Location = new System.Drawing.Point(16, 44);
-            this.tb_osDiagConf.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tb_osDiagConf.Location = new System.Drawing.Point(12, 36);
             this.tb_osDiagConf.Name = "tb_osDiagConf";
             this.tb_osDiagConf.SelectedIndex = 0;
-            this.tb_osDiagConf.Size = new System.Drawing.Size(599, 594);
+            this.tb_osDiagConf.Size = new System.Drawing.Size(449, 483);
             this.tb_osDiagConf.TabIndex = 21;
             // 
             // tb_osDiagGenConf
             // 
+            this.tb_osDiagGenConf.Controls.Add(this.cb_PlatDBInt);
             this.tb_osDiagGenConf.Controls.Add(this.cb_osDiagnotic);
             this.tb_osDiagGenConf.Controls.Add(this.label22);
             this.tb_osDiagGenConf.Controls.Add(this.cb_platformAndServerFiles);
@@ -325,11 +313,10 @@
             this.tb_osDiagGenConf.Controls.Add(this.label9);
             this.tb_osDiagGenConf.Controls.Add(this.cb_osMemDumps);
             this.tb_osDiagGenConf.Controls.Add(this.label10);
-            this.tb_osDiagGenConf.Location = new System.Drawing.Point(4, 25);
-            this.tb_osDiagGenConf.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tb_osDiagGenConf.Location = new System.Drawing.Point(4, 22);
             this.tb_osDiagGenConf.Name = "tb_osDiagGenConf";
-            this.tb_osDiagGenConf.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.tb_osDiagGenConf.Size = new System.Drawing.Size(591, 565);
+            this.tb_osDiagGenConf.Padding = new System.Windows.Forms.Padding(3, 3, 3, 3);
+            this.tb_osDiagGenConf.Size = new System.Drawing.Size(441, 457);
             this.tb_osDiagGenConf.TabIndex = 0;
             this.tb_osDiagGenConf.Text = "General Configurations";
             this.tb_osDiagGenConf.UseVisualStyleBackColor = true;
@@ -340,10 +327,9 @@
             this.cb_osDiagnotic.AutoSize = true;
             this.cb_osDiagnotic.Checked = true;
             this.cb_osDiagnotic.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_osDiagnotic.Location = new System.Drawing.Point(32, 484);
-            this.cb_osDiagnotic.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_osDiagnotic.Location = new System.Drawing.Point(24, 393);
             this.cb_osDiagnotic.Name = "cb_osDiagnotic";
-            this.cb_osDiagnotic.Size = new System.Drawing.Size(151, 21);
+            this.cb_osDiagnotic.Size = new System.Drawing.Size(119, 17);
             this.cb_osDiagnotic.TabIndex = 29;
             this.cb_osDiagnotic.Text = "Network Diagnostic";
             this.cb_osDiagnotic.UseVisualStyleBackColor = true;
@@ -352,10 +338,9 @@
             // 
             this.label22.AutoSize = true;
             this.label22.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label22.Location = new System.Drawing.Point(24, 234);
-            this.label22.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label22.Location = new System.Drawing.Point(18, 190);
             this.label22.Name = "label22";
-            this.label22.Size = new System.Drawing.Size(411, 17);
+            this.label22.Size = new System.Drawing.Size(306, 13);
             this.label22.TabIndex = 28;
             this.label22.Text = "* Retrieval of memory dumps can cause temporary unavailability";
             // 
@@ -364,34 +349,31 @@
             this.cb_platformAndServerFiles.AutoSize = true;
             this.cb_platformAndServerFiles.Checked = true;
             this.cb_platformAndServerFiles.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_platformAndServerFiles.Location = new System.Drawing.Point(32, 442);
-            this.cb_platformAndServerFiles.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_platformAndServerFiles.Location = new System.Drawing.Point(24, 359);
             this.cb_platformAndServerFiles.Name = "cb_platformAndServerFiles";
-            this.cb_platformAndServerFiles.Size = new System.Drawing.Size(273, 21);
+            this.cb_platformAndServerFiles.Size = new System.Drawing.Size(205, 17);
             this.cb_platformAndServerFiles.TabIndex = 27;
             this.cb_platformAndServerFiles.Text = "Platform and Server Configuration files";
             this.cb_platformAndServerFiles.UseVisualStyleBackColor = true;
             // 
             // nud_topLogs
             // 
-            this.nud_topLogs.Location = new System.Drawing.Point(157, 399);
-            this.nud_topLogs.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.nud_topLogs.Location = new System.Drawing.Point(118, 324);
             this.nud_topLogs.Maximum = new decimal(new int[] {
             10000,
             0,
             0,
             0});
             this.nud_topLogs.Name = "nud_topLogs";
-            this.nud_topLogs.Size = new System.Drawing.Size(75, 22);
+            this.nud_topLogs.Size = new System.Drawing.Size(56, 20);
             this.nud_topLogs.TabIndex = 26;
             // 
             // label21
             // 
             this.label21.AutoSize = true;
-            this.label21.Location = new System.Drawing.Point(240, 401);
-            this.label21.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label21.Location = new System.Drawing.Point(180, 326);
             this.label21.Name = "label21";
-            this.label21.Size = new System.Drawing.Size(205, 17);
+            this.label21.Size = new System.Drawing.Size(154, 13);
             this.label21.TabIndex = 25;
             this.label21.Text = "Number of Records in the Logs";
             // 
@@ -399,48 +381,43 @@
             // 
             this.label19.AutoSize = true;
             this.label19.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label19.Location = new System.Drawing.Point(28, 352);
-            this.label19.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label19.Location = new System.Drawing.Point(21, 286);
             this.label19.Name = "label19";
-            this.label19.Size = new System.Drawing.Size(64, 18);
+            this.label19.Size = new System.Drawing.Size(53, 15);
             this.label19.TabIndex = 22;
             this.label19.Text = "Platform";
             // 
             // label20
             // 
             this.label20.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label20.Location = new System.Drawing.Point(28, 382);
-            this.label20.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label20.Location = new System.Drawing.Point(21, 310);
             this.label20.Name = "label20";
-            this.label20.Size = new System.Drawing.Size(547, 2);
+            this.label20.Size = new System.Drawing.Size(410, 2);
             this.label20.TabIndex = 23;
             // 
             // cb_platformLogs
             // 
             this.cb_platformLogs.AutoSize = true;
-            this.cb_platformLogs.Location = new System.Drawing.Point(32, 400);
-            this.cb_platformLogs.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_platformLogs.Location = new System.Drawing.Point(24, 325);
             this.cb_platformLogs.Name = "cb_platformLogs";
-            this.cb_platformLogs.Size = new System.Drawing.Size(117, 21);
+            this.cb_platformLogs.Size = new System.Drawing.Size(90, 17);
             this.cb_platformLogs.TabIndex = 24;
             this.cb_platformLogs.Text = "Platform Logs";
             this.cb_platformLogs.UseVisualStyleBackColor = true;
             // 
             // nud_iisLogsNrDays
             // 
-            this.nud_iisLogsNrDays.Location = new System.Drawing.Point(423, 309);
-            this.nud_iisLogsNrDays.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.nud_iisLogsNrDays.Location = new System.Drawing.Point(317, 251);
             this.nud_iisLogsNrDays.Name = "nud_iisLogsNrDays";
-            this.nud_iisLogsNrDays.Size = new System.Drawing.Size(51, 22);
+            this.nud_iisLogsNrDays.Size = new System.Drawing.Size(38, 20);
             this.nud_iisLogsNrDays.TabIndex = 21;
             // 
             // label18
             // 
             this.label18.AutoSize = true;
-            this.label18.Location = new System.Drawing.Point(475, 311);
-            this.label18.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label18.Location = new System.Drawing.Point(356, 253);
             this.label18.Name = "label18";
-            this.label18.Size = new System.Drawing.Size(108, 17);
+            this.label18.Size = new System.Drawing.Size(81, 13);
             this.label18.TabIndex = 20;
             this.label18.Text = "Number of days";
             // 
@@ -459,11 +436,10 @@
             this.tb_databaseConf.Controls.Add(this.cb_dbPlatformMetamodel);
             this.tb_databaseConf.Controls.Add(this.label11);
             this.tb_databaseConf.Controls.Add(this.label12);
-            this.tb_databaseConf.Location = new System.Drawing.Point(4, 25);
-            this.tb_databaseConf.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tb_databaseConf.Location = new System.Drawing.Point(4, 22);
             this.tb_databaseConf.Name = "tb_databaseConf";
-            this.tb_databaseConf.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.tb_databaseConf.Size = new System.Drawing.Size(591, 565);
+            this.tb_databaseConf.Padding = new System.Windows.Forms.Padding(3, 3, 3, 3);
+            this.tb_databaseConf.Size = new System.Drawing.Size(441, 457);
             this.tb_databaseConf.TabIndex = 1;
             this.tb_databaseConf.Text = "Database Configurations";
             this.tb_databaseConf.UseVisualStyleBackColor = true;
@@ -471,10 +447,9 @@
             // 
             // bt_removeMetamodelTables
             // 
-            this.bt_removeMetamodelTables.Location = new System.Drawing.Point(395, 505);
-            this.bt_removeMetamodelTables.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.bt_removeMetamodelTables.Location = new System.Drawing.Point(296, 410);
             this.bt_removeMetamodelTables.Name = "bt_removeMetamodelTables";
-            this.bt_removeMetamodelTables.Size = new System.Drawing.Size(100, 28);
+            this.bt_removeMetamodelTables.Size = new System.Drawing.Size(75, 23);
             this.bt_removeMetamodelTables.TabIndex = 33;
             this.bt_removeMetamodelTables.Text = "Remove";
             this.bt_removeMetamodelTables.UseVisualStyleBackColor = true;
@@ -482,10 +457,9 @@
             // 
             // bt_addMetamodelTables
             // 
-            this.bt_addMetamodelTables.Location = new System.Drawing.Point(395, 421);
-            this.bt_addMetamodelTables.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.bt_addMetamodelTables.Location = new System.Drawing.Point(296, 342);
             this.bt_addMetamodelTables.Name = "bt_addMetamodelTables";
-            this.bt_addMetamodelTables.Size = new System.Drawing.Size(100, 28);
+            this.bt_addMetamodelTables.Size = new System.Drawing.Size(75, 23);
             this.bt_addMetamodelTables.TabIndex = 32;
             this.bt_addMetamodelTables.Text = "Add";
             this.bt_addMetamodelTables.UseVisualStyleBackColor = true;
@@ -494,58 +468,51 @@
             // label17
             // 
             this.label17.AutoSize = true;
-            this.label17.Location = new System.Drawing.Point(333, 352);
-            this.label17.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label17.Location = new System.Drawing.Point(250, 286);
             this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(152, 17);
+            this.label17.Size = new System.Drawing.Size(115, 13);
             this.label17.TabIndex = 31;
             this.label17.Text = "Add Metamodel tables:";
             // 
             // tb_inptMetamodelTables
             // 
-            this.tb_inptMetamodelTables.Location = new System.Drawing.Point(337, 382);
-            this.tb_inptMetamodelTables.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tb_inptMetamodelTables.Location = new System.Drawing.Point(253, 310);
             this.tb_inptMetamodelTables.Name = "tb_inptMetamodelTables";
-            this.tb_inptMetamodelTables.Size = new System.Drawing.Size(228, 22);
+            this.tb_inptMetamodelTables.Size = new System.Drawing.Size(172, 20);
             this.tb_inptMetamodelTables.TabIndex = 30;
             // 
             // label15
             // 
             this.label15.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label15.Location = new System.Drawing.Point(20, 327);
-            this.label15.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label15.Location = new System.Drawing.Point(15, 266);
             this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(547, 2);
+            this.label15.Size = new System.Drawing.Size(410, 2);
             this.label15.TabIndex = 29;
             // 
             // label16
             // 
             this.label16.AutoSize = true;
             this.label16.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label16.Location = new System.Drawing.Point(20, 298);
-            this.label16.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label16.Location = new System.Drawing.Point(15, 242);
             this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(142, 18);
+            this.label16.Size = new System.Drawing.Size(119, 15);
             this.label16.TabIndex = 28;
             this.label16.Text = "Platform Metamodel";
             // 
             // label14
             // 
             this.label14.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label14.Location = new System.Drawing.Point(20, 108);
-            this.label14.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label14.Location = new System.Drawing.Point(15, 88);
             this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(547, 2);
+            this.label14.Size = new System.Drawing.Size(410, 2);
             this.label14.TabIndex = 27;
             // 
             // lb_metamodelTables
             // 
             this.lb_metamodelTables.FormattingEnabled = true;
-            this.lb_metamodelTables.ItemHeight = 16;
-            this.lb_metamodelTables.Location = new System.Drawing.Point(24, 352);
-            this.lb_metamodelTables.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.lb_metamodelTables.Location = new System.Drawing.Point(18, 286);
             this.lb_metamodelTables.Name = "lb_metamodelTables";
-            this.lb_metamodelTables.Size = new System.Drawing.Size(287, 180);
+            this.lb_metamodelTables.Size = new System.Drawing.Size(216, 147);
             this.lb_metamodelTables.TabIndex = 25;
             // 
             // DBCredentials
@@ -557,21 +524,18 @@
             this.DBCredentials.Controls.Add(this.label3);
             this.DBCredentials.Controls.Add(this.label2);
             this.DBCredentials.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.DBCredentials.Location = new System.Drawing.Point(20, 121);
-            this.DBCredentials.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.DBCredentials.Location = new System.Drawing.Point(15, 98);
             this.DBCredentials.Name = "DBCredentials";
-            this.DBCredentials.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.DBCredentials.Size = new System.Drawing.Size(547, 162);
+            this.DBCredentials.Size = new System.Drawing.Size(410, 132);
             this.DBCredentials.TabIndex = 20;
             this.DBCredentials.TabStop = false;
             this.DBCredentials.Text = "Database sa credentials";
             // 
             // bt_TestSaConnection
             // 
-            this.bt_TestSaConnection.Location = new System.Drawing.Point(391, 49);
-            this.bt_TestSaConnection.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.bt_TestSaConnection.Location = new System.Drawing.Point(293, 40);
             this.bt_TestSaConnection.Name = "bt_TestSaConnection";
-            this.bt_TestSaConnection.Size = new System.Drawing.Size(148, 28);
+            this.bt_TestSaConnection.Size = new System.Drawing.Size(111, 23);
             this.bt_TestSaConnection.TabIndex = 5;
             this.bt_TestSaConnection.Text = "Test Connection";
             this.bt_TestSaConnection.UseVisualStyleBackColor = true;
@@ -580,49 +544,44 @@
             // 
             this.label6.AutoSize = true;
             this.label6.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label6.Location = new System.Drawing.Point(8, 113);
-            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label6.Location = new System.Drawing.Point(6, 92);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(439, 30);
+            this.label6.Size = new System.Drawing.Size(329, 24);
             this.label6.TabIndex = 4;
             this.label6.Text = "* If no sa credentials are provided, Database troubleshoot will not be performed." +
     "\r\nDatabase Troubleshoot checkbox must be checked.";
             // 
             // tb_iptSaPwd
             // 
-            this.tb_iptSaPwd.Location = new System.Drawing.Point(103, 68);
-            this.tb_iptSaPwd.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tb_iptSaPwd.Location = new System.Drawing.Point(77, 55);
             this.tb_iptSaPwd.Name = "tb_iptSaPwd";
             this.tb_iptSaPwd.PasswordChar = '*';
-            this.tb_iptSaPwd.Size = new System.Drawing.Size(265, 24);
+            this.tb_iptSaPwd.Size = new System.Drawing.Size(200, 21);
             this.tb_iptSaPwd.TabIndex = 3;
             this.tb_iptSaPwd.UseSystemPasswordChar = true;
             // 
             // tb_iptSaUsername
             // 
-            this.tb_iptSaUsername.Location = new System.Drawing.Point(103, 28);
-            this.tb_iptSaUsername.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tb_iptSaUsername.Location = new System.Drawing.Point(77, 23);
             this.tb_iptSaUsername.Name = "tb_iptSaUsername";
-            this.tb_iptSaUsername.Size = new System.Drawing.Size(265, 24);
+            this.tb_iptSaUsername.Size = new System.Drawing.Size(200, 21);
             this.tb_iptSaUsername.TabIndex = 2;
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(8, 71);
-            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label3.Location = new System.Drawing.Point(6, 58);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(75, 18);
+            this.label3.Size = new System.Drawing.Size(61, 15);
             this.label3.TabIndex = 1;
             this.label3.Text = "Password";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(45, 32);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label2.Location = new System.Drawing.Point(34, 26);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(40, 18);
+            this.label2.Size = new System.Drawing.Size(33, 15);
             this.label2.TabIndex = 0;
             this.label2.Text = "User";
             // 
@@ -631,10 +590,9 @@
             this.cb_dbTroubleshoot.AutoSize = true;
             this.cb_dbTroubleshoot.Checked = true;
             this.cb_dbTroubleshoot.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_dbTroubleshoot.Location = new System.Drawing.Point(291, 64);
-            this.cb_dbTroubleshoot.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_dbTroubleshoot.Location = new System.Drawing.Point(218, 52);
             this.cb_dbTroubleshoot.Name = "cb_dbTroubleshoot";
-            this.cb_dbTroubleshoot.Size = new System.Drawing.Size(179, 21);
+            this.cb_dbTroubleshoot.Size = new System.Drawing.Size(137, 17);
             this.cb_dbTroubleshoot.TabIndex = 24;
             this.cb_dbTroubleshoot.Text = "Database Troubleshoot";
             this.cb_dbTroubleshoot.UseVisualStyleBackColor = true;
@@ -644,10 +602,9 @@
             this.cb_dbPlatformMetamodel.AutoSize = true;
             this.cb_dbPlatformMetamodel.Checked = true;
             this.cb_dbPlatformMetamodel.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_dbPlatformMetamodel.Location = new System.Drawing.Point(32, 64);
-            this.cb_dbPlatformMetamodel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cb_dbPlatformMetamodel.Location = new System.Drawing.Point(24, 52);
             this.cb_dbPlatformMetamodel.Name = "cb_dbPlatformMetamodel";
-            this.cb_dbPlatformMetamodel.Size = new System.Drawing.Size(235, 21);
+            this.cb_dbPlatformMetamodel.Size = new System.Drawing.Size(178, 17);
             this.cb_dbPlatformMetamodel.TabIndex = 23;
             this.cb_dbPlatformMetamodel.Text = "OutSystems Platform Metamodel";
             this.cb_dbPlatformMetamodel.UseVisualStyleBackColor = true;
@@ -655,20 +612,18 @@
             // label11
             // 
             this.label11.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label11.Location = new System.Drawing.Point(20, 47);
-            this.label11.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label11.Location = new System.Drawing.Point(15, 38);
             this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(547, 2);
+            this.label11.Size = new System.Drawing.Size(410, 2);
             this.label11.TabIndex = 22;
             // 
             // label12
             // 
             this.label12.AutoSize = true;
             this.label12.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label12.Location = new System.Drawing.Point(20, 17);
-            this.label12.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label12.Location = new System.Drawing.Point(15, 14);
             this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(149, 18);
+            this.label12.Size = new System.Drawing.Size(125, 15);
             this.label12.TabIndex = 21;
             this.label12.Text = "Database Information";
             // 
@@ -696,7 +651,7 @@
             this.lb_iisMonitStatus.AutoSize = true;
             this.lb_iisMonitStatus.Location = new System.Drawing.Point(12, 300);
             this.lb_iisMonitStatus.Name = "lb_iisMonitStatus";
-            this.lb_iisMonitStatus.Size = new System.Drawing.Size(0, 17);
+            this.lb_iisMonitStatus.Size = new System.Drawing.Size(0, 13);
             this.lb_iisMonitStatus.TabIndex = 28;
             // 
             // bt_iisMonitStop
@@ -726,7 +681,7 @@
             this.label24.AutoSize = true;
             this.label24.Location = new System.Drawing.Point(12, 206);
             this.label24.Name = "label24";
-            this.label24.Size = new System.Drawing.Size(138, 17);
+            this.label24.Size = new System.Drawing.Size(104, 13);
             this.label24.TabIndex = 25;
             this.label24.Text = "Timestep in seconds";
             // 
@@ -744,7 +699,7 @@
             0,
             0});
             this.nud_iisTimestep.Name = "nud_iisTimestep";
-            this.nud_iisTimestep.Size = new System.Drawing.Size(38, 22);
+            this.nud_iisTimestep.Size = new System.Drawing.Size(38, 20);
             this.nud_iisTimestep.TabIndex = 24;
             this.nud_iisTimestep.Value = new decimal(new int[] {
             1,
@@ -757,7 +712,7 @@
             this.label23.AutoSize = true;
             this.label23.Location = new System.Drawing.Point(12, 166);
             this.label23.Name = "label23";
-            this.label23.Size = new System.Drawing.Size(138, 17);
+            this.label23.Size = new System.Drawing.Size(105, 13);
             this.label23.TabIndex = 23;
             this.label23.Text = "IIS Queue Threshold";
             // 
@@ -775,7 +730,7 @@
             0,
             0});
             this.nud_iisQueueThreshold.Name = "nud_iisQueueThreshold";
-            this.nud_iisQueueThreshold.Size = new System.Drawing.Size(38, 22);
+            this.nud_iisQueueThreshold.Size = new System.Drawing.Size(38, 20);
             this.nud_iisQueueThreshold.TabIndex = 22;
             this.nud_iisQueueThreshold.Value = new decimal(new int[] {
             1,
@@ -795,10 +750,9 @@
             // bt_runOsDiagTool
             // 
             this.bt_runOsDiagTool.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.bt_runOsDiagTool.Location = new System.Drawing.Point(240, 652);
-            this.bt_runOsDiagTool.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.bt_runOsDiagTool.Location = new System.Drawing.Point(180, 530);
             this.bt_runOsDiagTool.Name = "bt_runOsDiagTool";
-            this.bt_runOsDiagTool.Size = new System.Drawing.Size(143, 28);
+            this.bt_runOsDiagTool.Size = new System.Drawing.Size(107, 23);
             this.bt_runOsDiagTool.TabIndex = 25;
             this.bt_runOsDiagTool.Text = "Single Run";
             this.bt_runOsDiagTool.UseVisualStyleBackColor = true;
@@ -806,10 +760,9 @@
             // lbl_feedbackOsDiagForm
             // 
             this.lbl_feedbackOsDiagForm.AutoSize = true;
-            this.lbl_feedbackOsDiagForm.Location = new System.Drawing.Point(440, 668);
-            this.lbl_feedbackOsDiagForm.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lbl_feedbackOsDiagForm.Location = new System.Drawing.Point(330, 543);
             this.lbl_feedbackOsDiagForm.Name = "lbl_feedbackOsDiagForm";
-            this.lbl_feedbackOsDiagForm.Size = new System.Drawing.Size(0, 17);
+            this.lbl_feedbackOsDiagForm.Size = new System.Drawing.Size(0, 13);
             this.lbl_feedbackOsDiagForm.TabIndex = 26;
             // 
             // backgroundWorker1
@@ -824,19 +777,30 @@
             this.bw_iisMonit.WorkerSupportsCancellation = true;
             this.bw_iisMonit.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bw_iisMonit_DoWork);
             // 
+            // cb_PlatDBInt
+            // 
+            this.cb_PlatDBInt.AutoSize = true;
+            this.cb_PlatDBInt.Checked = true;
+            this.cb_PlatDBInt.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cb_PlatDBInt.Location = new System.Drawing.Point(208, 393);
+            this.cb_PlatDBInt.Name = "cb_PlatDBInt";
+            this.cb_PlatDBInt.Size = new System.Drawing.Size(153, 17);
+            this.cb_PlatDBInt.TabIndex = 30;
+            this.cb_PlatDBInt.Text = "Platform Database Integrity";
+            this.cb_PlatDBInt.UseVisualStyleBackColor = true;
+            // 
             // OsDiagForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
-            this.ClientSize = new System.Drawing.Size(620, 705);
+            this.ClientSize = new System.Drawing.Size(465, 573);
             this.Controls.Add(this.tb_osDiagConf);
             this.Controls.Add(this.lbl_feedbackOsDiagForm);
             this.Controls.Add(this.bt_runOsDiagTool);
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "OsDiagForm";
             this.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.Text = "OutSystems Diagnostics Tool";
@@ -925,5 +889,6 @@
         private System.Windows.Forms.Label lb_iisMonitStatus;
         private System.ComponentModel.BackgroundWorker bw_iisMonit;
         private System.Windows.Forms.CheckBox cb_osDiagnotic;
+        private System.Windows.Forms.CheckBox cb_PlatDBInt;
     }
 }
