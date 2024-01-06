@@ -123,25 +123,29 @@ namespace OSDiagTool.Platform
             using (connection)
             {
                 IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
-                ossys_user = commandExecutor.ReadData("SELECT ID, TENANT_ID FROM OSSYS_USER WHERE IS_ACTIVE=1;", configurations, connection).Select(row => row.ToList()).ToList();
+
                 ossys_user_developer = commandExecutor.ReadData("SELECT DISTINCT USER_ID FROM OSSYS_USER_DEVELOPER;", configurations, connection).Select(row => row.ToList()).ToList();
+                List<string> userIds = ossys_user_developer.SelectMany(innerList => innerList.Select(item => item.ToString())).ToList();
+                string formattedUserIds = String.Join(", ", userIds);
+
+                ossys_user = commandExecutor.ReadData(String.Format("SELECT ID, TENANT_ID FROM OSSYS_USER WHERE IS_ACTIVE=1 AND ID IN ({0});", formattedUserIds), configurations, connection).Select(row => row.ToList()).ToList();
             }
 
             for (int i = 0; i < ossys_user_developer.Count; i++)
             {
                 object user_devId = ossys_user_developer[i][0];
-                bool user_devId_OK = false;
 
-                object userId = ossys_user[(int)user_devId-1][0];
-                object tenantId = ossys_user[(int)user_devId-1][1];
-
-                if (tenantId.Equals(1))
+                for (int j = 0; j < ossys_user.Count; j++)
                 {
-                    user_devId_OK = true;
-                }
-                else
-                {
-                    devsWithWrongTenant.Add((int)user_devId, (int)tenantId);
+                    object userId = ossys_user[j][0];
+                    if (userId.Equals(user_devId))
+                    {
+                        object tenantId = ossys_user[j][1];
+                        if (!tenantId.Equals(1))
+                        {
+                            devsWithWrongTenant.Add((int)user_devId, (int)tenantId);
+                        }
+                    } 
                 }
             }
 
@@ -150,11 +154,9 @@ namespace OSDiagTool.Platform
                 return checks[check] = true;
             }
 
-            var lines = devsWithWrongTenant.Select(kvp => kvp.Key + ": " + kvp.Value.ToString());
-
             using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
             {
-                writer.WriteLine(string.Format("== A Platform integrty issue was found - please open a support case to follow up and provide the output of OSDiagTool ==" + Environment.NewLine));
+                writer.WriteLine(string.Format("== A Platform integrty issue was found - Developers with wront tenants (expected tenant ID 1) were found - please open a support case to follow up and provide the output of OSDiagTool ==" + Environment.NewLine));
                 writer.WriteLine(string.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, devsWithWrongTenant.Select(kv => $"- User ID {kv.Key} with tenant {kv.Value}"))));
             }
 
