@@ -103,13 +103,13 @@ namespace OSDiagTool.DBConnector
 
     public static class DatabaseCommandFactory
     {
-        public static IDatabaseCommand GetCommandExecutor(string dbEngine, IDatabaseConnection connection)
+        public static IDatabaseCommand GetCommandExecutor(Database.DatabaseType dbEngine, IDatabaseConnection connection)
         {
             switch (dbEngine)
             {
-                case "sqlserver":
+                case Database.DatabaseType.SqlServer:
                     return new SqlCommandExecutor(connection);
-                case "oracle":
+                case Database.DatabaseType.Oracle:
                     return new OracleCommandExecutor(connection);
                 default:
                     throw new ArgumentException("Unsupported database type while getting command executor");

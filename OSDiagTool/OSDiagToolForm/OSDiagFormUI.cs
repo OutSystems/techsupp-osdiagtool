@@ -48,7 +48,7 @@ namespace OSDiagTool.OSDiagToolForm {
             { 14, "" }, // Last step for closing the pop up
         };
 
-        public OsDiagForm(OSDiagToolConf.ConfModel.strConfModel configurations, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
+        public OsDiagForm(OSDiagToolConf.ConfModel.strConfModel configurations, Database.DatabaseType dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
 
             InitializeComponent();
 
@@ -87,11 +87,11 @@ namespace OSDiagTool.OSDiagToolForm {
             //bt_iisMonitRun.Click += delegate (object sender, EventArgs e) { bt_iisMonitRun_Click(sender, e, ); };
         }
 
-        private void bt_TestSaConnection_Click(object sender, EventArgs e, string dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
+        private void bt_TestSaConnection_Click(object sender, EventArgs e, Database.DatabaseType dbms, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null) {
 
             string testConnectionResult = null;
 
-            if (dbms.ToLower().Equals("sqlserver")) {
+            if (dbms.Equals(Database.DatabaseType.SqlServer)) {
                 SQLConnectionString.userId = this.tb_iptSaUsername.Text;
                 SQLConnectionString.pwd = this.tb_iptSaPwd.Text;
 
@@ -105,7 +105,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 }
 
 
-            } else if (dbms.ToLower().Equals("oracle")) {
+            } else if (dbms.Equals(Database.DatabaseType.Oracle)) {
                 OracleConnectionString.userId = this.tb_iptSaUsername.Text;
                 OracleConnectionString.pwd = this.tb_iptSaPwd.Text;
 
@@ -251,7 +251,6 @@ namespace OSDiagTool.OSDiagToolForm {
                 }
             }
 
-            // TO DO: Platform Database Integrity Check
             if (!backgroundWorker1.CancellationPending) {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformDatabaseIntegrity, out bool performPlatDBIntegrity)) {
 
@@ -398,21 +397,21 @@ namespace OSDiagTool.OSDiagToolForm {
                         countdown.AddCount();
                         numberOfTasks++;
 
-                        if (Program.dbEngine.Equals("sqlserver"))
+                        if (Program.dbEngine.Equals(Database.DatabaseType.SqlServer))
                         {
                             ThreadPool.QueueUserWorkItem(work => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_pd.SQLConnString, null, countdown));
                         }
-                        else if (Program.dbEngine.Equals("oracle"))
+                        else if (Program.dbEngine.Equals(Database.DatabaseType.Oracle))
                         {
                             ThreadPool.QueueUserWorkItem(work => Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_pd.OracleConnString, countdown));
                         }
                     } else
                     {
-                        if (Program.dbEngine.Equals("sqlserver"))
+                        if (Program.dbEngine.Equals(Database.DatabaseType.SqlServer))
                         {
                             Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_pd.SQLConnString, null);
                         }
-                        else if (Program.dbEngine.Equals("oracle"))
+                        else if (Program.dbEngine.Equals(Database.DatabaseType.Oracle))
                         {
                             Program.PlatformDiagnosticProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_pd.OracleConnString);
                         }
@@ -430,11 +429,11 @@ namespace OSDiagTool.OSDiagToolForm {
                     Platform.PlatformConnectionStringDefiner ConnectionStringDefiner_pm = new Platform.PlatformConnectionStringDefiner();
                     Platform.PlatformConnectionStringDefiner ConnStringHelper_pm = ConnectionStringDefiner_pm.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner_pm);
 
-                    if (Program.dbEngine.Equals("sqlserver"))
+                    if (Program.dbEngine.Equals(Database.DatabaseType.SqlServer))
                     {
                         Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pm.SQLConnString, null);
                     }
-                    else if (Program.dbEngine.Equals("oracle"))
+                    else if (Program.dbEngine.Equals(Database.DatabaseType.Oracle))
                     {
                         Program.ExportPlatformMetamodel(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper_pm.OracleConnString);
                     }
@@ -452,11 +451,11 @@ namespace OSDiagTool.OSDiagToolForm {
                     Platform.PlatformConnectionStringDefiner ConnectionStringDefiner_pl = new Platform.PlatformConnectionStringDefiner();
                     Platform.PlatformConnectionStringDefiner ConnStringHelper_pl = ConnectionStringDefiner_pl.GetConnectionString(Program.dbEngine, Program.separateLogCatalog, false, ConnectionStringDefiner_pl);
 
-                    if (Program.dbEngine.Equals("sqlserver"))
+                    if (Program.dbEngine.Equals(Database.DatabaseType.SqlServer))
                     {
                         Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, ConnStringHelper_pl.SQLConnString, null);
                     }
-                    else if (Program.dbEngine.Equals("oracle"))
+                    else if (Program.dbEngine.Equals(Database.DatabaseType.Oracle))
                     {
                         Program.ExportServiceCenterLogs(Program.dbEngine, configurationsHelper.ConfigFileConfigurations, configurationsHelper.FormConfigurations, null, ConnStringHelper_pl.OracleConnString, ConnStringHelper_pl.AdminSchema);
                     }
@@ -474,11 +473,11 @@ namespace OSDiagTool.OSDiagToolForm {
                     Platform.PlatformConnectionStringDefiner ConnectionStringDefiner_dt = new Platform.PlatformConnectionStringDefiner();
                     Platform.PlatformConnectionStringDefiner ConnStringHelper_dt = ConnectionStringDefiner_dt.GetConnectionString(Program.dbEngine, false, true, ConnectionStringDefiner_dt, configurationsHelper.FormConfigurations.saUser, configurationsHelper.FormConfigurations.saPwd);
 
-                    if (Program.dbEngine.Equals("sqlserver"))
+                    if (Program.dbEngine.Equals(Database.DatabaseType.SqlServer))
                     {
                         Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, ConnStringHelper_dt.SQLConnString);
                     }
-                    else if (Program.dbEngine.Equals("oracle"))
+                    else if (Program.dbEngine.Equals(Database.DatabaseType.Oracle))
                     {
                         Program.DatabaseTroubleshootProgram(configurationsHelper.ConfigFileConfigurations, null, ConnStringHelper_dt.OracleConnString);
                     }

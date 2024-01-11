@@ -202,16 +202,16 @@ namespace OSDiagTool.DBConnector
 
     public static class DatabaseConnectionFactory
     {
-        public static IDatabaseConnection GetDatabaseConnection(string dbEngine, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null)
+        public static IDatabaseConnection GetDatabaseConnection(Database.DatabaseType dbEngine, DBConnector.SQLConnStringModel SQLConnectionString = null, DBConnector.OracleConnStringModel OracleConnectionString = null)
         {
             switch (dbEngine)
             {
-                case "sqlserver":
+                case Database.DatabaseType.SqlServer:
                     SqlConnector sqlConnection = new SqlConnector();
                     sqlConnection.Connect(SQLConnectionString: SQLConnectionString);
                     return sqlConnection;
 
-                case "oracle":
+                case Database.DatabaseType.Oracle:
                     OracleConnector oracleConnection = new OracleConnector();
                     oracleConnection.Connect(OracleConnectionString: OracleConnectionString);
                     return oracleConnection;

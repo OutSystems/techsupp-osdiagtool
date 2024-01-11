@@ -6,13 +6,13 @@ using System.Text.RegularExpressions;
 namespace OSDiagTool.DatabaseExporter {
     class CSVExporter {
         
-        public static void SQLToCSVExport(string dbEngine, string tableName, string csvFilePath, int queryTimeout, string query, SqlConnection SqlConnection = null, OracleConnection Orclconnection = null) {
+        public static void SQLToCSVExport(Database.DatabaseType dbEngine, string tableName, string csvFilePath, int queryTimeout, string query, SqlConnection SqlConnection = null, OracleConnection Orclconnection = null) {
 
             try {
 
                 using (System.IO.StreamWriter fs = new System.IO.StreamWriter(csvFilePath + "\\" + tableName + ".csv")) {
 
-                    if (dbEngine.ToLower().Equals("sqlserver")) {
+                    if (dbEngine.Equals(Database.DatabaseType.SqlServer)) {
 
                         SqlCommand command = new SqlCommand(query, SqlConnection) {
                             CommandTimeout = queryTimeout
@@ -50,7 +50,7 @@ namespace OSDiagTool.DatabaseExporter {
                             fs.WriteLine();
                         }
 
-                    } else if(dbEngine.ToLower().Equals("oracle")) { // oracle
+                    } else if(dbEngine.Equals(Database.DatabaseType.Oracle)) { // oracle
 
                         OracleCommand command = new OracleCommand(query, Orclconnection) {
                             CommandTimeout = queryTimeout

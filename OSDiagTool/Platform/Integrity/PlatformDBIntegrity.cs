@@ -6,18 +6,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OSDiagTool.DBConnector;
+using System.Collections.Generic;
 
 namespace OSDiagTool.Platform
 {
     public class PlatformDBIntegrity
     {
+        private static string _appSettingsConfig = "appSettings.config";
+        private static string _runtimeConnectionStringKey = "OutSystems.DB.Platform.Application.Runtime.ConnectionString (DEFAULT)";
+        private static string _sessionConnectionStringKey = "OutSystems.DB.Platform.Application.Session.ConnectionString (DEFAULT)";
+        private static string _loggingConnectingStringKey = "OutSystems.DB.Logging.Application.Runtime.ConnectionString (DEFAULT)";
+
         public static Dictionary<string, bool> checks = new Dictionary<string, bool>()
             {
                 { "RPM-4012-OK", false },
                 { "Devs_Tenant-OK", false },
+                { "ModulesConnectionStrings-OK", false },
             };
 
-        public static void RunDBIntegrityCheck(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
+        public static void RunDBIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
         {
             bool modulesMappingOK = CheckModulesMappingOK(dbEngine, configurations, outputDestination, "RPM-4012-OK", SQLConnectionString, OracleConnectionString);
@@ -26,10 +33,12 @@ namespace OSDiagTool.Platform
             bool devsTenantsOK = CheckDevelopersTenantOK(dbEngine, configurations, outputDestination, "Devs_Tenant-OK", SQLConnectionString, OracleConnectionString);
             FileLogger.TraceLog("Check developers tenant OK result: " + devsTenantsOK);
 
+            CheckAppsConnectionStrings(dbEngine, configurations, outputDestination, "ModulesConnectionStrings-OK", SQLConnectionString, OracleConnectionString);
+
         }
 
         // This method checks if all extensions and espaces have a corresponding entry in the OSSYS_MODULE 
-        private static bool CheckModulesMappingOK(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
+        private static bool CheckModulesMappingOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
         {
             List<List<object>> ossys_module = new List<List<object>>();
@@ -111,7 +120,7 @@ namespace OSDiagTool.Platform
         }
 
         // This method cross references the User_ID of OSSYS_USER_DEVELOPER with the User_Id of OSSYS_USER and checks if the users have Service Center tenant (1)
-        private static bool CheckDevelopersTenantOK(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
+        private static bool CheckDevelopersTenantOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
         {
             List<List<object>> ossys_user = new List<List<object>>();
@@ -161,6 +170,45 @@ namespace OSDiagTool.Platform
             }
 
             return checks[check] = false;
+        }
+
+        private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
+            DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
+        {
+            List<string> connectionStringList = new List<string> { _runtimeConnectionStringKey, _sessionConnectionStringKey, _loggingConnectingStringKey };
+            string platformRunningPath = Path.Combine(Program._osInstallationFolder, "running");
+
+            // Load connection string from server.hsconf, build and hash it TBC
+            if (dbEngine.Equals(Database.DatabaseType.SqlServer))
+            {
+                string serverhsConfRuntimeCS = String.Format("Data Source={0};Initial Catalog={1};User id={2};Password={3};{4}",
+                SQLConnectionString.dataSource, SQLConnectionString.initialCatalog, SQLConnectionString.userId, SQLConnectionString.pwd, SQLConnectionString.advancedSettings);
+            }
+
+            // Load connection string from each module in running folder, compare hashes //TBC
+
+            Dictionary<string, Dictionary<string, DateTime>> allRunningFolders = Integrity.IntegrityHelper.GetLastModulesPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
+            Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = new Dictionary<string, Dictionary<string, string>>(); // <path folder>, [<connection string name>, <connection string value>]
+
+            foreach (KeyValuePair<string, Dictionary<string, DateTime>> moduleRunningPath in allRunningFolders)
+            {
+                string moduleName = moduleRunningPath.Key.Substring(moduleRunningPath.Key.LastIndexOf('\\') + 1, moduleRunningPath.Key.LastIndexOf('.') - (moduleRunningPath.Key.LastIndexOf('\\') + 1));
+
+                foreach (string connection in connectionStringList)
+                {
+                    /* Modify ReadAppSettingsConnectiongString() to return all connection strings of a given module
+                     * string connectionStringValue = Platform.ConfigFiles.XmlReader.ReadAppSettingsConnectiongString(Path.Combine(moduleRunning, _appSettingsConfig), connection);
+                    */
+                    //modulesConnectionStrings.Add(moduleName, new Dictionary<string, string> { { connection, connectionStringValue } } );
+                    
+
+                }
+
+
+            }
+
+
+            return false;
         }
     }
 }

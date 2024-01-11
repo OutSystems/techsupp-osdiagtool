@@ -45,9 +45,9 @@ namespace OSDiagTool.Platform {
             }
         }
 
-        public static bool IsLifeTimeEnvironment(string dbEngine, int queryTimeout, SqlConnection SqlConnection = null, OracleConnection orclConnection = null, string platformDBAdminUser = null) {
+        public static bool IsLifeTimeEnvironment(Database.DatabaseType dbEngine, int queryTimeout, SqlConnection SqlConnection = null, OracleConnection orclConnection = null, string platformDBAdminUser = null) {
 
-            if (dbEngine.Equals("sqlserver")) {
+            if (dbEngine.Equals(Database.DatabaseType.SqlServer)) {
 
                 string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1"; // check if it's registered on LifeTime. If it isn't, assume it's LifeTime
 
@@ -63,7 +63,7 @@ namespace OSDiagTool.Platform {
                 }
 
             }
-            else if (dbEngine.Equals("oracle")) {
+            else if (dbEngine.Equals(Database.DatabaseType.Oracle)) {
 
                 string _selectPlatSVCSObserver = "SELECT COUNT(ID) FROM " + platformDBAdminUser + "." + "OSSYS_PLATFORMSVCS_OBSERVER WHERE ISACTIVE = 1";
 
@@ -83,12 +83,12 @@ namespace OSDiagTool.Platform {
 
         }
 
-        public static Dictionary<string, string> GetServerList(string dbEngine, int queryTimeout, SqlConnection SqlConnection = null, OracleConnection orclConnection = null, string platformDBAdminUser = null)
+        public static Dictionary<string, string> GetServerList(Database.DatabaseType dbEngine, int queryTimeout, SqlConnection SqlConnection = null, OracleConnection orclConnection = null, string platformDBAdminUser = null)
         {
 
             Dictionary<string, string> lst = new Dictionary<string, string>();
 
-            if (dbEngine.Equals("sqlserver"))
+            if (dbEngine.Equals(Database.DatabaseType.SqlServer))
             {
                 // Retrieve list of active servers
                 string _selectPlatSVCSObserver = "SELECT NAME, IP_ADDRESS FROM OSSYS_SERVER WHERE IS_ACTIVE = 1";
@@ -107,7 +107,7 @@ namespace OSDiagTool.Platform {
                     }
                 }
             }
-            else if (dbEngine.Equals("oracle"))
+            else if (dbEngine.Equals(Database.DatabaseType.Oracle))
             {
 
                 string _selectPlatSVCSObserver = "SELECT NAME, IP_ADDRESS FROM " + platformDBAdminUser + "." + "OSSYS_SERVER WHERE IS_ACTIVE = 1";

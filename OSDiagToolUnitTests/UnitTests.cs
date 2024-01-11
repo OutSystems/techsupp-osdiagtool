@@ -84,11 +84,11 @@ namespace OSDiagToolUnitTests
         [TestMethod]
         public void Test_DatabaseTroubleshoot()
         {
-            if (Program.dbEngine.Equals("sqlserver"))
+            if (Program.dbEngine.Equals(OSDiagTool.Database.DatabaseType.SqlServer))
             {
                 Program.DatabaseTroubleshootProgram(configurations, sqlConnString);
             }
-            else if (Program.dbEngine.Equals("oracle"))
+            else if (Program.dbEngine.Equals(OSDiagTool.Database.DatabaseType.Oracle))
             {
                 Program.DatabaseTroubleshootProgram(configurations, null, orclConnString);
             }
@@ -174,9 +174,16 @@ namespace OSDiagToolUnitTests
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program._platformConfigurationFilepath, Program.osPlatformVersion);
             ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
-            Program.dbEngine = platformDBInfo.DBMS.ToLower();
+            string dbEngineString = platformDBInfo.DBMS.ToLower();
 
-            if (Program.dbEngine.Equals("sqlserver"))
+            if (dbEngineString.Equals("sqlserver")) {
+                Program.dbEngine = OSDiagTool.Database.DatabaseType.SqlServer;
+            } else if (dbEngineString.Equals("oracle"))
+            {
+                Program.dbEngine = OSDiagTool.Database.DatabaseType.Oracle;
+            }
+
+            if (Program.dbEngine.Equals(OSDiagTool.Database.DatabaseType.SqlServer))
             {
                 sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                 sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
@@ -184,7 +191,7 @@ namespace OSDiagToolUnitTests
                 sqlConnString.pwd = "<pwd>";
 
             }
-            else if (Program.dbEngine.Equals("oracle"))
+            else if (Program.dbEngine.Equals(OSDiagTool.Database.DatabaseType.Oracle))
             {
                 orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                 orclConnString.port = platformDBInfo.GetProperty("Port").Value;

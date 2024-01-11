@@ -16,6 +16,8 @@ namespace OSDiagTool.DBConnector
 
         public string pwd { get; set; }
 
+        public string advancedSettings { get; set; }
+
     }
 
     public class OracleConnStringModel

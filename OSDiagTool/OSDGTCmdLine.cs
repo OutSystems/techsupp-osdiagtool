@@ -48,11 +48,11 @@ namespace OSDiagTool {
                 Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new Platform.PlatformConnectionStringDefiner();
                 Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, true, ConnectionStringDefiner, dbSaUser, dbSaPwd);
 
-                if (Program.dbEngine.Equals("sqlserver")) {
+                if (Program.dbEngine.Equals(Database.DatabaseType.SqlServer)) {
                     EventLog.WriteEntry(osDiagToolEventSource, "Command Line run of OSDiagTool: Performing Database Troubleshoot (Database engine: SQL Server);", EventLogEntryType.Information); 
                     Program.DatabaseTroubleshootProgram(configurations, ConnStringHelper.SQLConnString);
 
-                } else if (Program.dbEngine.Equals("oracle")) {
+                } else if (Program.dbEngine.Equals(Database.DatabaseType.Oracle)) {
                     EventLog.WriteEntry(osDiagToolEventSource, "Command Line run of OSDiagTool: Performing Database Troubleshoot (Database engine: Oracle);", EventLogEntryType.Information);
                     Program.DatabaseTroubleshootProgram(configurations, null, ConnStringHelper.OracleConnString);
 

@@ -50,7 +50,7 @@ namespace OSDiagTool
         public static string privateKeyFilepath;
         public static string platformConfigurationFilepath;
         public static string osPlatformVersion;
-        public static string dbEngine;
+        public static OSDiagTool.Database.DatabaseType dbEngine;
         public static string _endFeedback;
         public static bool separateLogCatalog;
         public static bool useMultiThread;
@@ -76,19 +76,21 @@ namespace OSDiagTool
 
                 ConfigFileReader confFileParser = new ConfigFileReader(_platformConfigurationFilepath, osPlatformVersion);
                 ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
-                dbEngine = platformDBInfo.DBMS.ToLower();
+                string dbEngineString = platformDBInfo.DBMS.ToLower();
 
                 var sqlConnString = new DBConnector.SQLConnStringModel();
                 var orclConnString = new DBConnector.OracleConnStringModel();
 
-                if (dbEngine.Equals("sqlserver"))
+                if (dbEngineString.Equals("sqlserver"))
                 {
+                    dbEngine = Database.DatabaseType.SqlServer;
                     sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                     sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
 
                 }
-                else if (dbEngine.Equals("oracle"))
+                else if (dbEngineString.Equals("oracle"))
                 {
+                    dbEngine = Database.DatabaseType.Oracle;
                     orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                     orclConnString.port = platformDBInfo.GetProperty("Port").Value;
                     orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
@@ -231,12 +233,12 @@ namespace OSDiagTool
             Directory.CreateDirectory(_osDatabaseTroubleshootDest);
 
             try {
-                FileLogger.TraceLog(string.Format("Performing {0} Database Troubleshoot...", dbEngine.ToUpper()));
+                FileLogger.TraceLog(string.Format("Performing {0} Database Troubleshoot...", dbEngine.ToString()));
 
-                if (dbEngine.Equals("sqlserver")) {
+                if (dbEngine.Equals(Database.DatabaseType.SqlServer)) {
                     Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, sqlConnString, null);
 
-                }else if (dbEngine.Equals("oracle")) {
+                }else if (dbEngine.Equals(Database.DatabaseType.Oracle)) {
                     Database.DatabaseQueries.DatabaseTroubleshoot.DatabaseTroubleshooting(dbEngine, configurations, _osDatabaseTroubleshootDest, null, orclConnString);
                 }
 
@@ -245,7 +247,7 @@ namespace OSDiagTool
             }
         }
 
-        public static void ExportPlatformMetamodel(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
+        public static void ExportPlatformMetamodel(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
             DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null) {
 
             try
@@ -254,7 +256,7 @@ namespace OSDiagTool
 
                 Directory.CreateDirectory(_osMetamodelTablesDest);
 
-                if (dbEngine.Equals("sqlserver"))
+                if (dbEngine.Equals(Database.DatabaseType.SqlServer))
                 {
 
                     var connector = new DBConnector.SLQDBConnector();
@@ -312,7 +314,7 @@ namespace OSDiagTool
             }
         }
 
-        public static void ExportServiceCenterLogs(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
+        public static void ExportServiceCenterLogs(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations,
             DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null, string adminSchema = null) {
 
             try
@@ -330,11 +332,11 @@ namespace OSDiagTool
                     }
                 }
 
-                if (dbEngine.Equals("sqlserver"))
+                if (dbEngine.Equals(Database.DatabaseType.SqlServer))
                 {
                     Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, sqlConnString, null);
                 }
-                else if (dbEngine.Equals("oracle"))
+                else if (dbEngine.Equals(Database.DatabaseType.Oracle))
                 {
                     Platform.LogExporter.PlatformLogExporter(dbEngine, platformLogs, FormConfigurations, _osPlatformLogs, configurations.queryTimeout, null, oracleConnString, adminSchema);
                 }
@@ -503,12 +505,12 @@ namespace OSDiagTool
             {
                 FileLogger.TraceLog("Diagnosing the OutSystems Platform...");
 
-                if (dbEngine.Equals("sqlserver"))
+                if (dbEngine.Equals(Database.DatabaseType.SqlServer))
                 {
                     Platform.PlatformDiagnostic.WriteLog(dbEngine, _osPlatformDiagnostic, configurations, sqlConnString, null);
 
                 }
-                else if (dbEngine.Equals("oracle"))
+                else if (dbEngine.Equals(Database.DatabaseType.Oracle))
                 {
                     Platform.PlatformDiagnostic.WriteLog(dbEngine, _osPlatformDiagnostic, configurations,null, oracleConnString);
                 }

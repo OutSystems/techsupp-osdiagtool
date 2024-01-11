@@ -7,10 +7,10 @@ using Oracle.ManagedDataAccess.Client;
 namespace OSDiagTool.Platform {
     class LogExporter {
 
-        public static void PlatformLogExporter(string dbEngine, List<string> tableNames, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, string outputDestination, int queryTimeout, DBConnector.SQLConnStringModel SQLConnectionString = null,
+        public static void PlatformLogExporter(Database.DatabaseType dbEngine, List<string> tableNames, OSDiagToolForm.OsDiagFormConfModel.strFormConfigurationsModel FormConfigurations, string outputDestination, int queryTimeout, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null) {
 
-            if (dbEngine.ToLower().Equals("sqlserver")) {
+            if (dbEngine.Equals(Database.DatabaseType.SqlServer)) {
 
                 var connector = new DBConnector.SLQDBConnector();
                 SqlConnection connection = connector.SQLOpenConnection(SQLConnectionString);
@@ -29,7 +29,7 @@ namespace OSDiagTool.Platform {
                     }
                 }
 
-            } else if (dbEngine.ToLower().Equals("oracle")){
+            } else if (dbEngine.Equals(Database.DatabaseType.Oracle)){
 
                 var connector = new DBConnector.OracleDBConnector();
                 OracleConnection connection = connector.OracleOpenConnection(OracleConnectionString);
