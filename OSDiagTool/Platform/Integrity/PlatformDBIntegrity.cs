@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using OSDiagTool.DBConnector;
-using System.Collections.Generic;
+
 
 namespace OSDiagTool.Platform
 {
@@ -19,7 +16,7 @@ namespace OSDiagTool.Platform
 
         public static Dictionary<string, bool> checks = new Dictionary<string, bool>()
             {
-                { "RPM-4012-OK", false },
+                { "RPM-4012-OK", false }, // modules are mapped to an app ?
                 { "Devs_Tenant-OK", false },
                 { "ModulesConnectionStrings-OK", false },
             };
@@ -175,35 +172,18 @@ namespace OSDiagTool.Platform
         private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
         {
-            List<string> connectionStringList = new List<string> { _runtimeConnectionStringKey, _sessionConnectionStringKey, _loggingConnectingStringKey };
+            string[] connectionStringList =  { _runtimeConnectionStringKey, _sessionConnectionStringKey, _loggingConnectingStringKey };
             string platformRunningPath = Path.Combine(Program._osInstallationFolder, "running");
 
-            // Load connection string from server.hsconf, build and hash it TBC
-            if (dbEngine.Equals(Database.DatabaseType.SqlServer))
+            
+
+            // Load connection string from each module in running folder
+            Dictionary<string, Dictionary<string, DateTime>> allRunningFolders = Integrity.IntegrityHelper.GetLastModulesRunningPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
+            Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = Integrity.IntegrityHelper.GetModuleConnectionStrings(allRunningFolders, _appSettingsConfig, connectionStringList) ; // <path folder>, [<connection string name>, <connection string value>]
+
+            // Check each connection string and compare with what is defined on server.hsconf TBC
+            foreach (KeyValuePair<string, Dictionary<string,string>> moduleConnections in modulesConnectionStrings)
             {
-                string serverhsConfRuntimeCS = String.Format("Data Source={0};Initial Catalog={1};User id={2};Password={3};{4}",
-                SQLConnectionString.dataSource, SQLConnectionString.initialCatalog, SQLConnectionString.userId, SQLConnectionString.pwd, SQLConnectionString.advancedSettings);
-            }
-
-            // Load connection string from each module in running folder, compare hashes //TBC
-
-            Dictionary<string, Dictionary<string, DateTime>> allRunningFolders = Integrity.IntegrityHelper.GetLastModulesPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
-            Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = new Dictionary<string, Dictionary<string, string>>(); // <path folder>, [<connection string name>, <connection string value>]
-
-            foreach (KeyValuePair<string, Dictionary<string, DateTime>> moduleRunningPath in allRunningFolders)
-            {
-                string moduleName = moduleRunningPath.Key.Substring(moduleRunningPath.Key.LastIndexOf('\\') + 1, moduleRunningPath.Key.LastIndexOf('.') - (moduleRunningPath.Key.LastIndexOf('\\') + 1));
-
-                foreach (string connection in connectionStringList)
-                {
-                    /* Modify ReadAppSettingsConnectiongString() to return all connection strings of a given module
-                     * string connectionStringValue = Platform.ConfigFiles.XmlReader.ReadAppSettingsConnectiongString(Path.Combine(moduleRunning, _appSettingsConfig), connection);
-                    */
-                    //modulesConnectionStrings.Add(moduleName, new Dictionary<string, string> { { connection, connectionStringValue } } );
-                    
-
-                }
-
 
             }
 

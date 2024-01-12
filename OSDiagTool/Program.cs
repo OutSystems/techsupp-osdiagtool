@@ -121,7 +121,7 @@ namespace OSDiagTool
                 else
                 {
                     Application.EnableVisualStyles();
-                    Application.Run(new OSDiagToolForm.OsDiagForm(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString));
+                    Application.Run(new OSDiagToolForm.OsDiagForm(configurations, dbEngine, sqlConnString, orclConnString));
                 }
             }
         }
@@ -177,9 +177,6 @@ namespace OSDiagTool
             {
                 if (Program.useMultiThread) { countdown.Signal(); FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount); }
             }
-
-
-
         }
 
         public static void ExportEventViewerAndServerLogs(CountdownEvent countdown = null /*used for multithread*/)

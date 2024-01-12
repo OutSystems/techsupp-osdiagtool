@@ -9,25 +9,29 @@ namespace OSDiagTool.Platform.ConfigFiles
 {
     public class XmlReader
     {
-        public static string ReadAppSettingsConnectiongString(string filePath, string connectiongStringName)
+        public static Dictionary<string, string> ReadAppSettingsConnectiongStrings(string filePath, string[] connectiongStringNames) // <connection name>, <connection value>
         {
-            string connection = null;
+            Dictionary<string, string> ConnectionStrings = new Dictionary<string, string>();
+
             try
             {
-                XDocument xmlDoc = XDocument.Parse(filePath);
-                XElement element = xmlDoc.Descendants("add").FirstOrDefault(e => e.Attribute("key")?.Value == connectiongStringName);
+                XElement xmlElement = XElement.Load(filePath);
 
-                if (element != null)
+                foreach (string connection in connectiongStringNames)
                 {
-                    return connection = element.Attribute("value").Value;
-                }
+                    string value = (from element in xmlElement.Elements("add")
+                                    where (string)element.Attribute("key") == connection
+                                    select (string)element.Attribute("value")).FirstOrDefault();
+
+                    ConnectionStrings[connection] = value ?? "Connection not found";
+                }            
 
             } catch (Exception e)
             {
                 throw e;
             }
 
-            return connection;
+            return ConnectionStrings;
 
         }
     }

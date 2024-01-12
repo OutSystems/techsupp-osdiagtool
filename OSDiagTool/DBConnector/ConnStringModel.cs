@@ -31,5 +31,7 @@ namespace OSDiagTool.DBConnector
         public string userId { get; set; }
 
         public string pwd { get; set; }
+
+        public string advancedSettings { get; set; }
     }
 }

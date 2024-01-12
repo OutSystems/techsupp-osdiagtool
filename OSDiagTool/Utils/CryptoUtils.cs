@@ -117,25 +117,7 @@ namespace OSDiagTool.Utils
             }
         }
 
-        private static Aes getCipher() {
-            return new AesManaged() {
-                Mode = CipherMode.CBC,
-                Padding = PaddingMode.PKCS7
-            };
-        }
-
         
-
-        private static byte[] getRandomBytes(int count) {
-            byte[] res = new byte[count];
-            rnd.GetBytes(res);
-            return res;
-        }
-
-        private static byte[] GenerateSalt(int sizeInBytes) {
-            byte[] test = BitConverter.GetBytes(sizeInBytes);
-            return BitConverter.GetBytes(sizeInBytes); 
-        }
 
     }
 }
