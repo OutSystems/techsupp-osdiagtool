@@ -146,7 +146,7 @@ namespace OSDiagTool.DBConnector
 
     public class OracleConnector : IDatabaseConnection, IDisposable
     {
-        private OracleConnection oracleConnection;
+        public OracleConnection oracleConnection;
 
         public string OracleConnString(DBConnector.OracleConnStringModel OracleConnectionString)
         {
@@ -160,15 +160,17 @@ namespace OSDiagTool.DBConnector
         {
             string connectionString = OracleConnString(OracleConnectionString);
 
-            OracleConnection connection = new OracleConnection(connectionString);
+            oracleConnection = new OracleConnection(connectionString);
+            FileLogger.TraceLog("Connection debug: " + oracleConnection.State);
 
             try
             {
-                connection.Open();
+                oracleConnection.Open();
+                FileLogger.TraceLog("Connection debug: " + oracleConnection.State);
             }
             catch (Exception e)
             {
-                connection.Close();
+                oracleConnection.Close();
                 Console.WriteLine("Unable to retrieve Oracle DB Information" + e.Message);
                 throw e;
             }
@@ -184,6 +186,7 @@ namespace OSDiagTool.DBConnector
 
         public OracleConnection ReturnOracleConnection()
         {
+            //FileLogger.TraceLog("Connection state: " + oracleConnection.State);
             if (oracleConnection != null && oracleConnection.State == System.Data.ConnectionState.Open)
             {
                 return oracleConnection;

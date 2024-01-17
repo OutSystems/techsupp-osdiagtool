@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using OSDiagTool.DBConnector;
 
-
 namespace OSDiagTool.Platform
 {
     public class PlatformDBIntegrity
@@ -30,7 +29,8 @@ namespace OSDiagTool.Platform
             bool devsTenantsOK = CheckDevelopersTenantOK(dbEngine, configurations, outputDestination, "Devs_Tenant-OK", SQLConnectionString, OracleConnectionString);
             FileLogger.TraceLog("Check developers tenant OK result: " + devsTenantsOK);
 
-            CheckAppsConnectionStrings(dbEngine, configurations, outputDestination, "ModulesConnectionStrings-OK", SQLConnectionString, OracleConnectionString);
+            CheckAppsConnectionStrings(dbEngine, configurations, outputDestination, "ModulesConnectionStrings-OK");
+            FileLogger.TraceLog("Check all modules connection strings OK result: " + checks["ModulesConnectionStrings-OK"]);
 
         }
 
@@ -45,13 +45,13 @@ namespace OSDiagTool.Platform
             List<int> missingESpaceIds = new List<int>();
 
             IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
-
+            FileLogger.TraceLog("Connection debug check: " + connection);
             using (connection)
             {
                 IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
-                ossys_module = commandExecutor.ReadData("SELECT ESPACE_ID, EXTENSION_ID FROM OSSYS_MODULE;", configurations, connection).Select(row => row.ToList()).ToList();
-                ossys_extension = commandExecutor.ReadData("SELECT ID FROM OSSYS_EXTENSION WHERE IS_ACTIVE=1;", configurations, connection).Select(row => row.ToList()).ToList();
-                ossys_espace = commandExecutor.ReadData("SELECT ID FROM OSSYS_ESPACE WHERE IS_ACTIVE=1;", configurations, connection).Select(row => row.ToList()).ToList();
+                ossys_module = commandExecutor.ReadData("SELECT ESPACE_ID, EXTENSION_ID FROM OSSYS_MODULE", configurations, connection).Select(row => row.ToList()).ToList();
+                ossys_extension = commandExecutor.ReadData("SELECT ID FROM OSSYS_EXTENSION WHERE IS_ACTIVE=1", configurations, connection).Select(row => row.ToList()).ToList();
+                ossys_espace = commandExecutor.ReadData("SELECT ID FROM OSSYS_ESPACE WHERE IS_ACTIVE=1", configurations, connection).Select(row => row.ToList()).ToList();
             }
 
             // Check if ExtensionID exists in OSSYS_MODULE
@@ -162,33 +162,78 @@ namespace OSDiagTool.Platform
 
             using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
             {
-                writer.WriteLine(string.Format("== A Platform integrty issue was found - Developers with wront tenants (expected tenant ID 1) were found - please open a support case to follow up and provide the output of OSDiagTool ==" + Environment.NewLine));
+                writer.WriteLine(string.Format("== A Platform integrity issue was found - Developers with wront tenants (expected tenant ID 1) were found - please open a support case to follow up and provide the output of OSDiagTool ==" + Environment.NewLine));
                 writer.WriteLine(string.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, devsWithWrongTenant.Select(kv => $"- User ID {kv.Key} with tenant {kv.Value}"))));
             }
 
             return checks[check] = false;
         }
 
-        private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
-            DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
+        private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check)
         {
+            bool equalConnectionString = false;
+            List<string> differentConnectionStrings = new List<string>();
             string[] connectionStringList =  { _runtimeConnectionStringKey, _sessionConnectionStringKey, _loggingConnectingStringKey };
             string platformRunningPath = Path.Combine(Program._osInstallationFolder, "running");
-
-            
+            string pKey = Utils.CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath);
 
             // Load connection string from each module in running folder
             Dictionary<string, Dictionary<string, DateTime>> allRunningFolders = Integrity.IntegrityHelper.GetLastModulesRunningPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
-            Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = Integrity.IntegrityHelper.GetModuleConnectionStrings(allRunningFolders, _appSettingsConfig, connectionStringList) ; // <path folder>, [<connection string name>, <connection string value>]
+            Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = Integrity.IntegrityHelper.GetModuleConnectionStrings(allRunningFolders, _appSettingsConfig, connectionStringList, pKey) ; // <module name>, [<connection string name>, <connection string value>]
+            Dictionary<string, string> platformConnectionStrings = Integrity.IntegrityHelper.GetPlatformConnectionStrings(pKey); // <connection name>, <connection string>
+           
+            platformConnectionStrings.TryGetValue("RuntimeConnection", out string platformRuntimeConnectionString);
+            Dictionary<string, string> platformRuntimeCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(platformRuntimeConnectionString);
 
+            platformConnectionStrings.TryGetValue("LoggingConnection", out string platformLoggingConnectionString);
+            Dictionary<string, string> platformLoggingCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(platformLoggingConnectionString);
+
+            platformConnectionStrings.TryGetValue("SessionConnection", out string platformSessionConnectionString);
+            Dictionary<string, string> platformSessionCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(platformSessionConnectionString);
+            
             // Check each connection string and compare with what is defined on server.hsconf TBC
             foreach (KeyValuePair<string, Dictionary<string,string>> moduleConnections in modulesConnectionStrings)
             {
+                modulesConnectionStrings.TryGetValue(moduleConnections.Key, out Dictionary<string,string> innerConnections);
 
+                foreach (KeyValuePair<string,string> connection in innerConnections)
+                {
+                    Dictionary<string, string> moduleConnectionStringProperties = Integrity.IntegrityHelper.ConnectionStringParser(connection.Value);
+                    
+                    if (connection.Key.Equals(_runtimeConnectionStringKey)) {
+                        equalConnectionString = platformRuntimeCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
+                    } else if (connection.Key.Equals(_sessionConnectionStringKey))
+                    {
+                        equalConnectionString = platformSessionCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
+                    } else if (connection.Key.Equals(_loggingConnectingStringKey))
+                    {
+                        equalConnectionString = platformLoggingCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
+                    }
+
+                    if (!equalConnectionString)
+                    {
+                        differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string!", moduleConnections.Key /*module name*/, connection.Key /*connection name*/));
+                    }
+                }
             }
 
+            if (differentConnectionStrings.Count.Equals(0))
+            {
+                return checks[check] = true;
+            }
+            else
+            {
+                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
+                {
+                    writer.WriteLine("== Module connection strings were found to be different than what was defined in Configuration Tool. Please check the details below ==");
+                    foreach (string error in differentConnectionStrings)
+                    {
+                        writer.WriteLine(error + Environment.NewLine);
+                    }
+                }
 
-            return false;
+                return checks[check] = false;
+            }
         }
     }
 }

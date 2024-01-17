@@ -55,7 +55,7 @@ namespace OSDiagTool.DBConnector
     public class OracleCommandExecutor : IDatabaseCommand
     {
         private IDatabaseConnection connection;
-        private OracleConnection orclConnection;
+        private OracleConnection oracleConnection;
 
         public OracleCommandExecutor(IDatabaseConnection oracleConnection)
         {
@@ -80,10 +80,11 @@ namespace OSDiagTool.DBConnector
             List<object[]> result = new List<object[]>();
             if(connection is OracleConnector)
             {
-                orclConnection = connection.ReturnOracleConnection();
+                FileLogger.TraceLog("connection state in read data: " + connection);
+                oracleConnection = connection.ReturnOracleConnection();
             }
 
-            OracleCommand command = new OracleCommand(query, orclConnection)
+            OracleCommand command = new OracleCommand(query, oracleConnection)
             {
                 CommandTimeout = configurations.queryTimeout
             };

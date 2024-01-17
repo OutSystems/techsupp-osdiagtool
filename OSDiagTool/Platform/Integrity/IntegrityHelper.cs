@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace OSDiagTool.Platform.Integrity
 {
@@ -64,10 +65,9 @@ namespace OSDiagTool.Platform.Integrity
             return allRunningFolders;
         }
 
-        public static Dictionary<string, Dictionary<string,string>> GetModuleConnectionStrings(Dictionary<string, Dictionary<string, DateTime>> allRunningFolders, string appSettingsConfig, string[] connectionStringList) //<module name>, [< connection string name >, < connection string value >]
+        public static Dictionary<string, Dictionary<string,string>> GetModuleConnectionStrings(Dictionary<string, Dictionary<string, DateTime>> allRunningFolders, string appSettingsConfig, string[] connectionStringList, string pKey) //<module name>, [< connection string name >, < connection string value >]
         {
             Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = new Dictionary<string, Dictionary<string, string>>();
-            string pKey = Utils.CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath);
 
             foreach (KeyValuePair<string, Dictionary<string, DateTime>> moduleRunningPath in allRunningFolders)
             {
@@ -96,12 +96,11 @@ namespace OSDiagTool.Platform.Integrity
             return modulesConnectionStrings;
         }
 
-        public static Dictionary<string, Dictionary<string,string>> GetPlatformConnectionStrings()
+        public static Dictionary<string, string> GetPlatformConnectionStrings(string pKey)
         {
-            List<string> runtimeListProperties = new List<string>();
-            List<string> sessionListProperties = new List<string>();
-            List<string> loggingListProperties = new List<string>();
-            Dictionary<string, Dictionary<string, string>> platformConnectionProperties = new Dictionary<string, Dictionary<string, string>>();
+            Dictionary<string, string> platformConnectionProperties = new Dictionary<string, string>();
+            Dictionary<string, string> runtimeMappingHsConfToConnection = new Dictionary<string, string>();
+            Dictionary<string, string> sessionMappingHsConfToConnection = new Dictionary<string, string>();
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program._platformConfigurationFilepath, Program.osPlatformVersion);
             ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
@@ -114,34 +113,115 @@ namespace OSDiagTool.Platform.Integrity
 
             if (Program.dbEngine.Equals(Database.DatabaseType.SqlServer))
             {
-                IEnumerable<string> runtimeproperties = new[] { "Server", "Catalog", "RuntimeUser", "RuntimePassword", "RuntimeAdvancedSettings" };
-                IEnumerable<string> sessionProperties = new[] { "Server", "Catalog", "SessionUser", "SessionPassword", "SessionAdvancedSettings" };
-                runtimeListProperties.AddRange(runtimeproperties);
-                loggingListProperties.AddRange(runtimeproperties);
-                sessionListProperties.AddRange(sessionProperties);
+                runtimeMappingHsConfToConnection = new Dictionary<string, string> 
+                {
+                    { "Server", "data source" },
+                    { "Catalog", "initial catalog" },
+                    { "RuntimeUser", "user id" },
+                    { "RuntimePassword", "password" },
+                    { "RuntimeAdvancedSettings", "runtime advanced settings" }
+                };
+
+                sessionMappingHsConfToConnection = new Dictionary<string, string>
+                {
+                    { "Server", "data source" },
+                    { "Catalog", "initial catalog" },
+                    { "SessionUser", "user id" },
+                    { "SessionPassword", "password" },
+                    { "SessionAdvancedSettings", "session advanced settings" }
+                };
+                
             }
             else if (Program.dbEngine.Equals(Database.DatabaseType.Oracle))
             {
-                /* NEEDS UPDATE
-                IEnumerable<string> properties = new[] { "Host", "Port", "ServiceName", "UserId", "Password", "AdvancedSettings" };
-                IEnumerable<string> sessionProperties = new[] { "Server", "Catalog", "SessionUser", "SessionPassword", "SessionAdvancedSettings" };
-                */
-                //listProperties.AddRange(properties);
+                runtimeMappingHsConfToConnection = new Dictionary<string, string>
+                {
+                    { "Host", "data source" },
+                    { "Port", "port" },
+                    { "ServiceName", "service name" },
+                    { "RuntimeUser", "user id" },
+                    { "RuntimePassword", "password" },
+                    { "RuntimeAdvancedSettings", "runtime advanced settings" }
+                };
+
+                sessionMappingHsConfToConnection = new Dictionary<string, string>
+                {
+                    { "Host", "data source" },
+                    { "Port", "port" },
+                    { "ServiceName", "service name" },
+                    { "SessionUser", "user id" },
+                    { "SessionPassword", "password" },
+                    { "SessionAdvancedSettings", "session advanced settings" }
+                };
             }
 
-            foreach (string property in runtimeListProperties)
+            foreach (KeyValuePair<string,string> property in runtimeMappingHsConfToConnection)
             {
-                runtimeConnectionProperties.Add(property, platformDBInfo.GetProperty(property).Value);
-                loggingConnectionProperties.Add(property, loggingDBInfo.GetProperty(property).Value);
+                if (!property.Value.Equals("password"))
+                {
+                    runtimeConnectionProperties.Add(property.Value, platformDBInfo.GetProperty(property.Key).Value);
+                    loggingConnectionProperties.Add(property.Value, loggingDBInfo.GetProperty(property.Key).Value);
+                }
+                else
+                {
+                    runtimeConnectionProperties.Add(property.Value, Utils.CryptoUtils.Decrypt(pKey, platformDBInfo.GetProperty(property.Key).Value));
+                    loggingConnectionProperties.Add(property.Value, Utils.CryptoUtils.Decrypt(pKey, loggingDBInfo.GetProperty(property.Key).Value));
+                }
                 
             }
 
-            foreach (string property in sessionListProperties)
+            foreach (KeyValuePair<string, string> property in sessionMappingHsConfToConnection)
             {
-                sessionConnectionProperties.Add(property, sessionDBInfo.GetProperty(property).Value);
+                if (!property.Value.Equals("password"))
+                {
+                    sessionConnectionProperties.Add(property.Value, sessionDBInfo.GetProperty(property.Key).Value);
+                } else
+                {
+                    sessionConnectionProperties.Add(property.Value, Utils.CryptoUtils.Decrypt(pKey, sessionDBInfo.GetProperty(property.Key).Value));
+                }
             }
 
+            
+            platformConnectionProperties.Add("RuntimeConnection", ConnectionBuilder(runtimeConnectionProperties));
+            platformConnectionProperties.Add("LoggingConnection", ConnectionBuilder(loggingConnectionProperties));
+            platformConnectionProperties.Add("SessionConnection", ConnectionBuilder(sessionConnectionProperties));
+            return platformConnectionProperties;
 
+        }
+
+        public static Dictionary<string,string> ConnectionStringParser(string connectionString)
+        {
+            Dictionary<string, string> connectionDict = new Dictionary<string, string>();
+            string pattern = @"[^;]+";
+
+            MatchCollection properties = Regex.Matches(connectionString, pattern);
+
+            foreach (Match match in properties)
+            {
+                string[] separatedString = match.Value.Trim().Split('=');
+                connectionDict.Add(separatedString[0], separatedString[1]);
+            }
+
+            return connectionDict;
+        }
+
+        private static string ConnectionBuilder (Dictionary<string,string> connectionProperties)
+        {
+            string connectionString = null;
+
+            foreach (KeyValuePair<string, string> property in connectionProperties)
+            {
+                if (!property.Key.Contains("advanced settings"))
+                {
+                    connectionString = connectionString + property.Key + "=" + property.Value + ";";
+                }
+                else
+                {
+                    connectionString = connectionString + property.Value;
+                }
+            }
+
+            return connectionString;
         }
     }
 }
