@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace OSDiagTool.Database.DatabaseQueries {
+﻿namespace OSDiagTool.Database.DatabaseQueries {
     class OracleQueries {
 
         // Use string.format to append parameters // Sid is always the 1st column
@@ -27,6 +21,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
             where s.sql_address = t.address
             and s.sql_hash_value = t.hash_value
             and p.addr = s.paddr
+            and rownum < 10
             order by t.{0} desc"; // {0}: DISK_READS for Read Throughput || DIRECT_WRITES for Write Throughput
 
         public string sqlTextBySID { get; set; } = @"select a.sid, a.serial#, a.program, b.sql_text

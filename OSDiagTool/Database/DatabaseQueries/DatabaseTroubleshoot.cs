@@ -1,23 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.DatabaseExporter;
 using OSDiagTool.OSDiagToolConf;
-using System.Reflection;
 
 namespace OSDiagTool.Database.DatabaseQueries {
     class DatabaseTroubleshoot {
 
-        public static void DatabaseTroubleshooting(string dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations,string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,
+        public static void DatabaseTroubleshooting(DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations,string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null) {
 
             // Needs user with sa permissions
 
-            if (dbEngine.ToLower().Equals("sqlserver")) {
+            if (dbEngine.Equals(DatabaseType.SqlServer)) {
 
                 List<string> blockingAndBlockedSpids = new List<string>();
 
@@ -81,7 +77,7 @@ namespace OSDiagTool.Database.DatabaseQueries {
                 }
 
 
-            } else if (dbEngine.ToLower().Equals("oracle")) {
+            } else if (dbEngine.Equals(Database.DatabaseType.Oracle)) {
 
                 List<string> orclSids = new List<string>();
 

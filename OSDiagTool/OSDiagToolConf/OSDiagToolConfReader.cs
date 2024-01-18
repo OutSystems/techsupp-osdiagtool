@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Reflection;
 
 namespace OSDiagTool.OSDiagToolConf {
-    class OSDiagToolConfReader {
+    public class OSDiagToolConfReader {
 
         private static string _osDGTConfFile = "OSDGTool.exe.config";
         //private static string _osDiagToolConfigPath = Path.Combine(Directory.GetCurrentDirectory(), _osDGTConfFile);
@@ -32,6 +32,7 @@ namespace OSDiagTool.OSDiagToolConf {
         public static string _l2_databaseOperations = "databaseOperations";
         public static string _l2_platform = "platform";
         private static string _l2_databaseQueryConfigurations = "databaseQueryConfigurations";
+        private static string _l2_usemultithread = "useMultiThread";
 
         // L3
         private static string _l3_ossys = "ossys";
@@ -48,6 +49,7 @@ namespace OSDiagTool.OSDiagToolConf {
         public static string _l3_oracle = "oracle";
         public static string _l3_oslogTopRecords = "oslogTopRecords";
         public static string _l3_platformAndServerConfigFiles = "platformAndServerConfFiles";
+        public static string _l3_platformDatabaseIntegrity = "platformDatabaseIntegrity";
 
         // L4
         public static string _l4_top_statCachedPlans = "top_statCachedPlans";
@@ -69,9 +71,30 @@ namespace OSDiagTool.OSDiagToolConf {
             configuration.osLogTopRecords = GetOsLogTopRecords(xml);
             configuration.databaseQueryConfigurations = GetDatabaseQueryConfigurations(xml);
             configuration.osDiagToolConfigurations = GetOsDiagToolConfigurations(xml);
+            configuration.useMultiThread = GetMultiThreadConfig(xml);
 
             return configuration;
 
+        }
+
+        public bool GetMultiThreadConfig(XDocument xml)
+        {
+            var query = from n in xml.Descendants(_rootElement)
+                        select new
+                        {
+                            multithread = n.Element(_l1_osDiagToolConf).Element(_l2_usemultithread).Value,
+                        };
+            try
+            {
+                bool useMultiThread = Convert.ToBoolean(query.First().multithread);
+                Program.useMultiThread = useMultiThread;
+                return useMultiThread;
+            }
+            catch (Exception)
+            {
+                bool useMultiThread = false;
+                return useMultiThread;
+            }
         }
         
         public List<string> GetTableNames(XDocument xml) {

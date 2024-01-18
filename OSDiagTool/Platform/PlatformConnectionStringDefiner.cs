@@ -1,30 +1,26 @@
 ﻿using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OSDiagTool.Platform {
-    class PlatformConnectionStringDefiner {
+    public class PlatformConnectionStringDefiner {
 
         public DBConnector.SQLConnStringModel SQLConnString { get; set; }
         public DBConnector.OracleConnStringModel OracleConnString { get; set; }
         public string AdminSchema { get; set; }
 
-        public PlatformConnectionStringDefiner GetConnectionString(string dbEngine, bool isLogDatabase, bool isSaCredentials, PlatformConnectionStringDefiner ConnStringDefiner, string saUser = null, string saPwd = null) {
+        public PlatformConnectionStringDefiner GetConnectionString(Database.DatabaseType dbEngine, bool isLogDatabase, bool isSaCredentials, PlatformConnectionStringDefiner ConnStringDefiner, string saUser = null, string saPwd = null) {
 
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
             ConfigFileInfo platformDBInfo = confFileParser.DBPlatformInfo;
             ConfigFileInfo loggingDBInfo = confFileParser.DBLoggingInfo;
+            ConfigFileInfo sessionDBInfo = confFileParser.DBSessionInfo;
 
-            if (dbEngine.Equals("sqlserver")) {
+            if (dbEngine.Equals(Database.DatabaseType.SqlServer)) {
 
                 ConnStringDefiner.SQLConnString = SetPlatformSQLConnString(isLogDatabase, isSaCredentials, platformDBInfo, loggingDBInfo, saUser, saPwd);
                 return ConnStringDefiner;
 
-            } else if (dbEngine.Equals("oracle")) {
+            } else if (dbEngine.Equals(Database.DatabaseType.Oracle)) {
 
                 ConnStringDefiner.OracleConnString = SetPlatformOracleConnString(isLogDatabase, isSaCredentials, platformDBInfo, loggingDBInfo, saUser, saPwd);
                 ConnStringDefiner.AdminSchema = platformDBInfo.GetProperty("AdminUser").Value;
@@ -49,11 +45,10 @@ namespace OSDiagTool.Platform {
                 sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
                 sqlConnString.userId = platformDBRuntimeUser;
                 sqlConnString.pwd = platformDBRuntimeUserPwd;
+                sqlConnString.advancedSettings = platformDBInfo.GetProperty("RuntimeAdvancedSettings").Value;
 
             }
             else if (isLogDatabase) { // Uses Runtime Log user and Log Catalog
-
-                 
 
                 sqlConnString.dataSource = loggingDBInfo.GetProperty("Server").Value;
                 sqlConnString.userId = loggingDBInfo.GetProperty("RuntimeUser").Value; // needs to use oslog configurations

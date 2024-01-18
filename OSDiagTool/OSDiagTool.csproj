@@ -28,6 +28,8 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -83,14 +85,20 @@
     <Reference Include="ICSharpCode.SharpZipLib">
       <HintPath>..\..\..\Downloads\SharpZipLib-v1.3.3\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Diagnostics.Runtime, Version=1.0.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Diagnostics.Runtime.1.0.2\lib\net45\Microsoft.Diagnostics.Runtime.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Oracle.ManagedDataAccess, Version=4.122.19.1, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=MSIL">
-      <HintPath>..\packages\Oracle.ManagedDataAccess.19.6.0\lib\net40\Oracle.ManagedDataAccess.dll</HintPath>
+    <Reference Include="Oracle.ManagedDataAccess, Version=4.122.21.1, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=MSIL">
+      <HintPath>..\packages\Oracle.ManagedDataAccess.21.12.0\lib\net462\Oracle.ManagedDataAccess.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.OracleClient" />
@@ -100,7 +108,26 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
     <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Text.Encodings.Web, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.6.0.0\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json, Version=6.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.6.0.1\lib\net461\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
@@ -115,15 +142,18 @@
     <Compile Include="Database\DatabaseQueries\DatabaseTroubleshoot.cs" />
     <Compile Include="Database\DatabaseQueries\OracleQueries.cs" />
     <Compile Include="Database\DatabaseQueries\SQLServerQueries.cs" />
+    <Compile Include="Database\DatabaseType.cs" />
     <Compile Include="DBConnector\ConnStringModel.cs" />
-    <Compile Include="CmdHelper.cs" />
+    <Compile Include="DBConnector\IDatabaseCommand.cs" />
+    <Compile Include="DBConnector\SqlCommandExecutor.cs" />
+    <Compile Include="Helpers\CmdHelper.cs" />
     <Compile Include="CmdLineCommand.cs" />
     <Compile Include="DBConnector\DBConnector.cs" />
     <Compile Include="DBConnector\DBReader.cs" />
     <Compile Include="FileLogger.cs" />
-    <Compile Include="FileSystemHelper.cs" />
+    <Compile Include="Helpers\FileSystemHelper.cs" />
     <Compile Include="DBConnector\IDBConnector.cs" />
-    <Compile Include="IISHelper.cs" />
+    <Compile Include="Helpers\IISHelper.cs" />
     <Compile Include="OSDGTCmdLine.cs" />
     <Compile Include="OSDiagToolConf\ConfModel.cs" />
     <Compile Include="OSDiagToolConf\MetamodelTables.cs" />
@@ -143,7 +173,10 @@
     <Compile Include="OSDiagToolForm\PopUpForm.Designer.cs">
       <DependentUpon>PopUpForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Platform\ConfigFiles\XmlReader.cs" />
     <Compile Include="Platform\ConnectionList.cs" />
+    <Compile Include="Platform\Integrity\IntegrityHelper.cs" />
+    <Compile Include="Platform\Integrity\PlatformDBIntegrity.cs" />
     <Compile Include="Platform\PlatformDiagnostic.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileInfo.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileProperty.cs" />
@@ -166,12 +199,18 @@
     <Compile Include="Utils\NetworkUtils.cs" />
     <Compile Include="Utils\CryptoUtils.cs" />
     <Compile Include="Utils\WinUtils.cs" />
-    <Compile Include="WindowsEventLogHelper.cs" />
-    <Compile Include="WinPerfCounters.cs" />
+    <Compile Include="Helpers\WindowsEventLogHelper.cs" />
+    <Compile Include="Utils\WinPerfCounters.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="app1.manifest" />
+    <None Include="Oracle.DataAccess.Common.Configuration.Section.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Oracle.ManagedDataAccess.Client.Configuration.Section.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="OSDGTool.exe.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -209,7 +248,21 @@
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets" Condition="Exists('..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets'))" />
+  </Target>
+  <PropertyGroup>
+    <PostBuildEvent>mkdir "$(TargetDir)lib" &amp; 
+move /y "$(TargetDir)*.dll" "$(TargetDir)lib\" &amp; 
+move /y "$(TargetDir)*.xml" "$(TargetDir)lib\" &amp;
+move /y "$(TargetDir)*.pdb" "$(TargetDir)lib\"</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

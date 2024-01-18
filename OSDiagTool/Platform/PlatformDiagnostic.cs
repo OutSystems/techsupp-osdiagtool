@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
-using System.Linq;
 using Oracle.ManagedDataAccess.Client;
 using OSDiagTool.Platform.ConfigFiles;
 using OSDiagTool.Utils;
@@ -11,7 +10,7 @@ namespace OSDiagTool.Platform
 {
     class PlatformDiagnostic
     {
-        public static void WriteLog(string dbEngine, string reqFilePath, OSDiagToolConf.ConfModel.strConfModel configurations, 
+        public static void WriteLog(Database.DatabaseType dbEngine, string reqFilePath, OSDiagToolConf.ConfModel.strConfModel configurations, 
             DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel oracleConnString = null)
         {
 
@@ -20,7 +19,7 @@ namespace OSDiagTool.Platform
             Dictionary<string, string> databaseServerList = null;
             ConfigFileReader confFileParser = new ConfigFileReader(Program.platformConfigurationFilepath, Program.osPlatformVersion);
 
-            if (dbEngine.Equals("sqlserver"))
+            if (dbEngine.Equals(Database.DatabaseType.SqlServer))
             {
                 var connector = new DBConnector.SLQDBConnector();
                 SqlConnection connection = connector.SQLOpenConnection(sqlConnString);
@@ -32,7 +31,7 @@ namespace OSDiagTool.Platform
                 }
                 connector.SQLCloseConnection(connection);
             }
-            else if (dbEngine.Equals("oracle"))
+            else if (dbEngine.Equals(Database.DatabaseType.Oracle))
             {
                 var connector = new DBConnector.OracleDBConnector();
                 OracleConnection connection = connector.OracleOpenConnection(oracleConnString);
