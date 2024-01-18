@@ -161,12 +161,10 @@ namespace OSDiagTool.DBConnector
             string connectionString = OracleConnString(OracleConnectionString);
 
             oracleConnection = new OracleConnection(connectionString);
-            FileLogger.TraceLog("Connection debug: " + oracleConnection.State);
 
             try
             {
                 oracleConnection.Open();
-                FileLogger.TraceLog("Connection debug: " + oracleConnection.State);
             }
             catch (Exception e)
             {
@@ -186,7 +184,6 @@ namespace OSDiagTool.DBConnector
 
         public OracleConnection ReturnOracleConnection()
         {
-            //FileLogger.TraceLog("Connection state: " + oracleConnection.State);
             if (oracleConnection != null && oracleConnection.State == System.Data.ConnectionState.Open)
             {
                 return oracleConnection;

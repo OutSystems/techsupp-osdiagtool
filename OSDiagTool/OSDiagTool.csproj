@@ -257,6 +257,12 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent>mkdir "$(TargetDir)lib" &amp; 
+move /y "$(TargetDir)*.dll" "$(TargetDir)lib\" &amp; 
+move /y "$(TargetDir)*.xml" "$(TargetDir)lib\" &amp;
+move /y "$(TargetDir)*.pdb" "$(TargetDir)lib\"</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

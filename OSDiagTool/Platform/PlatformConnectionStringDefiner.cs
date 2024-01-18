@@ -2,7 +2,7 @@
 using OSDiagTool.Utils;
 
 namespace OSDiagTool.Platform {
-    class PlatformConnectionStringDefiner {
+    public class PlatformConnectionStringDefiner {
 
         public DBConnector.SQLConnStringModel SQLConnString { get; set; }
         public DBConnector.OracleConnStringModel OracleConnString { get; set; }

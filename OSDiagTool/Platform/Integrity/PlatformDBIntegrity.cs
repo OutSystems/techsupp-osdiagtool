@@ -20,13 +20,13 @@ namespace OSDiagTool.Platform
                 { "ModulesConnectionStrings-OK", false },
             };
 
-        public static void RunDBIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
-            DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
+        public static void RunIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
+            DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
         {
-            bool modulesMappingOK = CheckModulesMappingOK(dbEngine, configurations, outputDestination, "RPM-4012-OK", SQLConnectionString, OracleConnectionString);
+            bool modulesMappingOK = CheckModulesMappingOK(dbEngine, configurations, outputDestination, "RPM-4012-OK", SQLConnectionString, OracleConnectionString, oracleAdminSchema);
             FileLogger.TraceLog("Check modules mapping OK result: " + modulesMappingOK);
 
-            bool devsTenantsOK = CheckDevelopersTenantOK(dbEngine, configurations, outputDestination, "Devs_Tenant-OK", SQLConnectionString, OracleConnectionString);
+            bool devsTenantsOK = CheckDevelopersTenantOK(dbEngine, configurations, outputDestination, "Devs_Tenant-OK", SQLConnectionString, OracleConnectionString, oracleAdminSchema);
             FileLogger.TraceLog("Check developers tenant OK result: " + devsTenantsOK);
 
             CheckAppsConnectionStrings(dbEngine, configurations, outputDestination, "ModulesConnectionStrings-OK");
@@ -36,7 +36,7 @@ namespace OSDiagTool.Platform
 
         // This method checks if all extensions and espaces have a corresponding entry in the OSSYS_MODULE 
         private static bool CheckModulesMappingOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
-            DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
+            DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
         {
             List<List<object>> ossys_module = new List<List<object>>();
             List<List<object>> ossys_extension = new List<List<object>>();
@@ -45,13 +45,13 @@ namespace OSDiagTool.Platform
             List<int> missingESpaceIds = new List<int>();
 
             IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
-            FileLogger.TraceLog("Connection debug check: " + connection);
+
             using (connection)
             {
                 IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
-                ossys_module = commandExecutor.ReadData("SELECT ESPACE_ID, EXTENSION_ID FROM OSSYS_MODULE", configurations, connection).Select(row => row.ToList()).ToList();
-                ossys_extension = commandExecutor.ReadData("SELECT ID FROM OSSYS_EXTENSION WHERE IS_ACTIVE=1", configurations, connection).Select(row => row.ToList()).ToList();
-                ossys_espace = commandExecutor.ReadData("SELECT ID FROM OSSYS_ESPACE WHERE IS_ACTIVE=1", configurations, connection).Select(row => row.ToList()).ToList();
+                ossys_module = commandExecutor.ReadData("SELECT ESPACE_ID, EXTENSION_ID FROM OSSYS_MODULE", configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+                ossys_extension = commandExecutor.ReadData("SELECT ID FROM OSSYS_EXTENSION WHERE IS_ACTIVE=1", configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+                ossys_espace = commandExecutor.ReadData("SELECT ID FROM OSSYS_ESPACE WHERE IS_ACTIVE=1", configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
             }
 
             // Check if ExtensionID exists in OSSYS_MODULE
@@ -118,7 +118,7 @@ namespace OSDiagTool.Platform
 
         // This method cross references the User_ID of OSSYS_USER_DEVELOPER with the User_Id of OSSYS_USER and checks if the users have Service Center tenant (1)
         private static bool CheckDevelopersTenantOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
-            DBConnector.OracleConnStringModel OracleConnectionString = null, string adminSchema = null)
+            DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
         {
             List<List<object>> ossys_user = new List<List<object>>();
             List<List<object>> ossys_user_developer = new List<List<object>>();
@@ -130,11 +130,11 @@ namespace OSDiagTool.Platform
             {
                 IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
 
-                ossys_user_developer = commandExecutor.ReadData("SELECT DISTINCT USER_ID FROM OSSYS_USER_DEVELOPER;", configurations, connection).Select(row => row.ToList()).ToList();
+                ossys_user_developer = commandExecutor.ReadData("SELECT DISTINCT USER_ID FROM OSSYS_USER_DEVELOPER", configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
                 List<string> userIds = ossys_user_developer.SelectMany(innerList => innerList.Select(item => item.ToString())).ToList();
                 string formattedUserIds = String.Join(", ", userIds);
 
-                ossys_user = commandExecutor.ReadData(String.Format("SELECT ID, TENANT_ID FROM OSSYS_USER WHERE IS_ACTIVE=1 AND ID IN ({0});", formattedUserIds), configurations, connection).Select(row => row.ToList()).ToList();
+                ossys_user = commandExecutor.ReadData(String.Format("SELECT ID, TENANT_ID FROM OSSYS_USER WHERE IS_ACTIVE=1 AND ID IN ({0})", formattedUserIds), configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
             }
 
             for (int i = 0; i < ossys_user_developer.Count; i++)
@@ -147,9 +147,9 @@ namespace OSDiagTool.Platform
                     if (userId.Equals(user_devId))
                     {
                         object tenantId = ossys_user[j][1];
-                        if (!tenantId.Equals(1))
+                        if (!Convert.ToInt32(tenantId).Equals(1))
                         {
-                            devsWithWrongTenant.Add((int)user_devId, (int)tenantId);
+                            devsWithWrongTenant.Add(Convert.ToInt32(user_devId), Convert.ToInt32(tenantId));
                         }
                     } 
                 }
@@ -183,13 +183,13 @@ namespace OSDiagTool.Platform
             Dictionary<string, string> platformConnectionStrings = Integrity.IntegrityHelper.GetPlatformConnectionStrings(pKey); // <connection name>, <connection string>
            
             platformConnectionStrings.TryGetValue("RuntimeConnection", out string platformRuntimeConnectionString);
-            Dictionary<string, string> platformRuntimeCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(platformRuntimeConnectionString);
+            Dictionary<string, string> platformRuntimeCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformRuntimeConnectionString);
 
             platformConnectionStrings.TryGetValue("LoggingConnection", out string platformLoggingConnectionString);
-            Dictionary<string, string> platformLoggingCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(platformLoggingConnectionString);
+            Dictionary<string, string> platformLoggingCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformLoggingConnectionString);
 
             platformConnectionStrings.TryGetValue("SessionConnection", out string platformSessionConnectionString);
-            Dictionary<string, string> platformSessionCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(platformSessionConnectionString);
+            Dictionary<string, string> platformSessionCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformSessionConnectionString);
             
             // Check each connection string and compare with what is defined on server.hsconf TBC
             foreach (KeyValuePair<string, Dictionary<string,string>> moduleConnections in modulesConnectionStrings)
@@ -198,21 +198,39 @@ namespace OSDiagTool.Platform
 
                 foreach (KeyValuePair<string,string> connection in innerConnections)
                 {
-                    Dictionary<string, string> moduleConnectionStringProperties = Integrity.IntegrityHelper.ConnectionStringParser(connection.Value);
+                    Dictionary<string, string> moduleConnectionStringProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, connection.Value);
                     
                     if (connection.Key.Equals(_runtimeConnectionStringKey)) {
                         equalConnectionString = platformRuntimeCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
+
+                        if (!equalConnectionString)
+                        {
+                            List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformRuntimeCSProperties);
+                            differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
+                                moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine+"-", connStringDiffs)));
+                        }
+
                     } else if (connection.Key.Equals(_sessionConnectionStringKey))
                     {
                         equalConnectionString = platformSessionCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
+
+                        if (!equalConnectionString)
+                        {
+                            List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformSessionCSProperties);
+                            differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
+                                moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine + "-", connStringDiffs)));
+                        }
+
                     } else if (connection.Key.Equals(_loggingConnectingStringKey))
                     {
                         equalConnectionString = platformLoggingCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
-                    }
 
-                    if (!equalConnectionString)
-                    {
-                        differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string!", moduleConnections.Key /*module name*/, connection.Key /*connection name*/));
+                        if (!equalConnectionString)
+                        {
+                            List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformLoggingCSProperties);
+                            differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
+                                moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine + "-", connStringDiffs)));
+                        }
                     }
                 }
             }

@@ -28,7 +28,7 @@ namespace OSDiagTool.OSDiagToolForm {
         public static string _diDbTroubleshoot = "Database Troubleshoot";
         public static string _plPlatformLogs = "Platform Logs";
         public static string _plPlatformAndServerFiles = "Platform and Server Configuration files";
-        public static string _plPlatformDatabaseIntegrity = "Platform Database Integrity";
+        public static string _plPlatformIntegrity = "Platform Integrity";
         // new check box items must be added to dictHelper dictionary
 
         public SortedDictionary<int, string> FeedbackSteps = new SortedDictionary<int, string> {
@@ -155,7 +155,7 @@ namespace OSDiagTool.OSDiagToolForm {
                 { _diDbTroubleshoot, cb_dbTroubleshoot.Checked},
                 { _plPlatformLogs, cb_platformLogs.Checked},
                 { _plPlatformAndServerFiles, cb_platformAndServerFiles.Checked },
-                { _plPlatformDatabaseIntegrity, cb_PlatDBInt.Checked }
+                { _plPlatformIntegrity, cb_PlatDBInt.Checked }
             };
 
             formConfigurations.cbConfs = dictHelper;
@@ -247,12 +247,12 @@ namespace OSDiagTool.OSDiagToolForm {
                     } else { 
                         Program.GetPlatformAndServerFiles();
                     }
-                    
                 }
             }
 
+            // Platform Integrity
             if (!backgroundWorker1.CancellationPending) {
-                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformDatabaseIntegrity, out bool performPlatDBIntegrity)) {
+                if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._plPlatformIntegrity, out bool performPlatIntegrity) && performPlatIntegrity == true) {
 
                     backgroundWorker1.ReportProgress(12, configurationsHelper.popup);
 
@@ -264,14 +264,13 @@ namespace OSDiagTool.OSDiagToolForm {
                     {
                         numberOfTasks++;
                         countdown.AddCount();
-                        ThreadPool.QueueUserWorkItem(work => Program.PlatformDatabaseIntegritycheck(configurationsHelper.ConfigFileConfigurations, ConnectionStringDefiner_pdic.SQLConnString, ConnectionStringDefiner_pdic.OracleConnString , countdown));
+                        ThreadPool.QueueUserWorkItem(work => Program.PlatformIntegritycheck(configurationsHelper.ConfigFileConfigurations, ConnectionStringDefiner_pdic.SQLConnString, ConnectionStringDefiner_pdic.OracleConnString, ConnStringHelper_pdic.AdminSchema, countdown));
 
                     }
                     else
                     {
-                        Program.PlatformDatabaseIntegritycheck(configurationsHelper.ConfigFileConfigurations, ConnectionStringDefiner_pdic.SQLConnString, ConnectionStringDefiner_pdic.OracleConnString, countdown);
+                        Program.PlatformIntegritycheck(configurationsHelper.ConfigFileConfigurations, ConnectionStringDefiner_pdic.SQLConnString, ConnectionStringDefiner_pdic.OracleConnString, ConnStringHelper_pdic.AdminSchema, countdown);
                     }
-
                 }
             }
 

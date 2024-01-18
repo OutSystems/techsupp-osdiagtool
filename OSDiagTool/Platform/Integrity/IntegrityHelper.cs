@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
 namespace OSDiagTool.Platform.Integrity
@@ -137,7 +135,6 @@ namespace OSDiagTool.Platform.Integrity
                 runtimeMappingHsConfToConnection = new Dictionary<string, string>
                 {
                     { "Host", "data source" },
-                    { "Port", "port" },
                     { "ServiceName", "service name" },
                     { "RuntimeUser", "user id" },
                     { "RuntimePassword", "password" },
@@ -147,7 +144,6 @@ namespace OSDiagTool.Platform.Integrity
                 sessionMappingHsConfToConnection = new Dictionary<string, string>
                 {
                     { "Host", "data source" },
-                    { "Port", "port" },
                     { "ServiceName", "service name" },
                     { "SessionUser", "user id" },
                     { "SessionPassword", "password" },
@@ -189,7 +185,7 @@ namespace OSDiagTool.Platform.Integrity
 
         }
 
-        public static Dictionary<string,string> ConnectionStringParser(string connectionString)
+        public static Dictionary<string,string> ConnectionStringParser(Database.DatabaseType dbEngine, string connectionString)
         {
             Dictionary<string, string> connectionDict = new Dictionary<string, string>();
             string pattern = @"[^;]+";
@@ -202,7 +198,41 @@ namespace OSDiagTool.Platform.Integrity
                 connectionDict.Add(separatedString[0], separatedString[1]);
             }
 
+            if (dbEngine.Equals(Database.DatabaseType.Oracle))
+            {
+                connectionDict.TryGetValue("data source", out string oracleDataSource);
+                if (oracleDataSource.Contains("/"))
+                {
+                    string[] separatedDataSource = oracleDataSource.Trim().Split('/');
+                    connectionDict["data source"] = separatedDataSource[0];
+                    connectionDict["service name"] = separatedDataSource[1];
+                }
+            }
+
             return connectionDict;
+        }
+
+        public static List<string> ConnStringDifferenceFinder(Dictionary<string, string> moduleDict, Dictionary<string, string> platformDict)
+        {
+            List<string> differencesList = new List<string>();
+
+            var differences = platformDict
+                .Where(kvp => !moduleDict.ContainsKey(kvp.Key) || moduleDict[kvp.Key] != kvp.Value)
+                .Select(kvp => new { Key = kvp.Key, Value = kvp.Value, DictIndicator = "Platform" })
+                .Concat(moduleDict
+                    .Where(kvp => !platformDict.ContainsKey(kvp.Key) || platformDict[kvp.Key] != kvp.Value)
+                    .Select(kvp => new { Key = kvp.Key, Value = kvp.Value, DictIndicator = "Module" }))
+                .ToList();
+
+
+            foreach (var diff in differences)
+            {
+                string valueString = diff.Key == "password" ? "<password redacted>" : diff.Value;
+                string entryString = String.Format("{0} Property: {1}, Value: {2}", diff.DictIndicator, diff.Key, valueString);
+                differencesList.Add(entryString);
+            }
+
+            return differencesList;
         }
 
         private static string ConnectionBuilder (Dictionary<string,string> connectionProperties)

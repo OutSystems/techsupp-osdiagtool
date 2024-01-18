@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
@@ -27,7 +24,7 @@ namespace OSDiagTool.DBConnector
             };
         }
 
-        public IEnumerable<object[]> ReadData(string query, OSDiagToolConf.ConfModel.strConfModel configurations, IDatabaseConnection connection)
+        public IEnumerable<object[]> ReadData(string query, OSDiagToolConf.ConfModel.strConfModel configurations, IDatabaseConnection connection, string oracleAdminSchema = null)
         {
             List<object[]> result = new List<object[]>();
             if (connection is SqlConnector)
@@ -75,30 +72,54 @@ namespace OSDiagTool.DBConnector
             }
         }
 
-        public IEnumerable<object[]> ReadData(string query, OSDiagToolConf.ConfModel.strConfModel configurations, IDatabaseConnection connection)
+        public IEnumerable<object[]> ReadData(string query, OSDiagToolConf.ConfModel.strConfModel configurations, IDatabaseConnection connection, string oracleAdminSchema = null)
         {
             List<object[]> result = new List<object[]>();
             if(connection is OracleConnector)
             {
-                FileLogger.TraceLog("connection state in read data: " + connection);
                 oracleConnection = connection.ReturnOracleConnection();
             }
 
-            OracleCommand command = new OracleCommand(query, oracleConnection)
+            string alterSessionSql = String.Format("ALTER SESSION SET CURRENT_SCHEMA = {0}", oracleAdminSchema);
+            
+            using (OracleTransaction transaction = oracleConnection.BeginTransaction())
             {
-                CommandTimeout = configurations.queryTimeout
-            };
-
-            using (OracleDataReader reader = command.ExecuteReader())
-            {
-                while (reader.Read())
+                try
                 {
-                    object[] rowData = new object[reader.FieldCount];
-                    reader.GetValues(rowData);
-                    result.Add(rowData);
+                    using (OracleCommand alterSessionCmd = new OracleCommand(alterSessionSql, oracleConnection))
+                    {
+                        alterSessionCmd.Transaction = transaction;
+                        alterSessionCmd.ExecuteNonQuery();
+                    }
+
+                    OracleCommand command = new OracleCommand(query, oracleConnection)
+                    {
+                        CommandTimeout = configurations.queryTimeout
+                    };
+
+                    command.Transaction = transaction;
+
+                    using (OracleDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            object[] rowData = new object[reader.FieldCount];
+                            reader.GetValues(rowData);
+                            result.Add(rowData);
+                        }
+                    }
+
+                    transaction.Commit();
+
+                    return result;
+
+                } catch (Exception e)
+                {
+                    FileLogger.LogError("Eror executing Oracle reader.", e.Message + e.StackTrace);
+                    transaction.Rollback();
+                    return null;
                 }
             }
-            return result;
         }
     }
 
