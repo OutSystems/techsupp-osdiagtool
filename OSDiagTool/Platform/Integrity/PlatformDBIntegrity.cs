@@ -73,7 +73,7 @@ namespace OSDiagTool.Platform
 
                 if (extensionIdExists.Equals(false))
                 {
-                    missingExtensionIds.Add((int)extensionId);
+                    missingExtensionIds.Add(Convert.ToInt32(extensionId));
                 }
                 
             }
@@ -97,7 +97,7 @@ namespace OSDiagTool.Platform
 
                 if (eSpaceIdExists.Equals(false))
                 {
-                    missingESpaceIds.Add((int)espaceId);
+                    missingESpaceIds.Add(Convert.ToInt32(espaceId));
                 }
             }
 

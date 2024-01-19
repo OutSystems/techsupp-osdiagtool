@@ -43,7 +43,7 @@ namespace OSDiagTool.OSDiagToolForm {
             { 9, "Exporting Platform metamodel" },
             { 10, "Performing Database Troubleshoot" },
             { 11, "Diagnosing the OutSystems Platform" },
-            { 12, "Checking Platform Database Integrity" },
+            { 12, "Checking Platform Integrity" },
             { 13, "Zipping file..." },
             { 14, "" }, // Last step for closing the pop up
         };
