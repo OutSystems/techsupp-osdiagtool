@@ -235,6 +235,19 @@ namespace OSDiagTool.Platform.Integrity
             return differencesList;
         }
 
+        public static void IntegrityFileWriter(string outputDestination, string check, string openingLine, List<string> infoToWrite)
+        {
+            using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
+            {
+                writer.WriteLine(string.Format(openingLine + Environment.NewLine));
+
+                foreach (string info in infoToWrite)
+                {
+                    writer.WriteLine(info);
+                }
+            }
+        }
+
         private static string ConnectionBuilder (Dictionary<string,string> connectionProperties)
         {
             string connectionString = null;

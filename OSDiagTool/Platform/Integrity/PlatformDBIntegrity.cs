@@ -12,31 +12,45 @@ namespace OSDiagTool.Platform
         private static string _runtimeConnectionStringKey = "OutSystems.DB.Platform.Application.Runtime.ConnectionString (DEFAULT)";
         private static string _sessionConnectionStringKey = "OutSystems.DB.Platform.Application.Session.ConnectionString (DEFAULT)";
         private static string _loggingConnectingStringKey = "OutSystems.DB.Logging.Application.Runtime.ConnectionString (DEFAULT)";
+        private static string rpm_4012_check ="RPM-4012";
+        private static string devs_Tenants_check = "Developers_Tenants";
+        private static string moduleConnectionStrings_check = "ModuleConnectionStrings";
+        private static string modulesLinkedToApp_check = "ModulesLinkedToApp";
 
         public static Dictionary<string, bool> checks = new Dictionary<string, bool>()
             {
-                { "RPM-4012-OK", false }, // espaces and extensions exist in ossys_module?
-                { "Devs_Tenant-OK", false }, // developers have Service Center tenant (1)?
-                { "ModulesConnectionStrings-OK", false }, // modules have updated connection strings?
+                { rpm_4012_check, false }, // espaces and extensions exist in ossys_module?
+                { devs_Tenants_check, false }, // developers have Service Center tenant (1)?
+                { moduleConnectionStrings_check, false }, // modules have updated connection strings?
+                { modulesLinkedToApp_check, false }, // modules are associated to an application is OSSYS_APP_DEFINITION_MODULE?
             };
 
         public static void RunIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
         {
-            bool modulesMappingOK = CheckModulesMappingOK(dbEngine, configurations, outputDestination, "RPM-4012-OK", SQLConnectionString, OracleConnectionString, oracleAdminSchema);
-            FileLogger.TraceLog("Check modules mapping OK result: " + modulesMappingOK);
+            IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
+            IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
 
-            bool devsTenantsOK = CheckDevelopersTenantOK(dbEngine, configurations, outputDestination, "Devs_Tenant-OK", SQLConnectionString, OracleConnectionString, oracleAdminSchema);
-            FileLogger.TraceLog("Check developers tenant OK result: " + devsTenantsOK);
+            using (connection)
+            {
+                CheckModulesMappingOK(connection, commandExecutor, configurations, outputDestination, rpm_4012_check, oracleAdminSchema);
+                FileLogger.TraceLog("Check modules mapping OK result: " + checks[rpm_4012_check]);
 
-            CheckAppsConnectionStrings(dbEngine, configurations, outputDestination, "ModulesConnectionStrings-OK");
-            FileLogger.TraceLog("Check all modules connection strings OK result: " + checks["ModulesConnectionStrings-OK"]);
+                CheckDevelopersTenantOK(connection, commandExecutor, configurations, outputDestination, devs_Tenants_check, oracleAdminSchema);
+                FileLogger.TraceLog("Check developers tenant OK result: " + checks[devs_Tenants_check]);
+
+                CheckModulesHaveApp(connection, commandExecutor, configurations, outputDestination, modulesLinkedToApp_check, oracleAdminSchema);
+                FileLogger.TraceLog("Check modules have an application associated OK result: " + checks[modulesLinkedToApp_check]);
+
+            }
+
+            CheckAppsConnectionStrings(dbEngine, outputDestination, moduleConnectionStrings_check);
+            FileLogger.TraceLog("Check all modules connection strings OK result: " + checks[moduleConnectionStrings_check]);
 
         }
 
         // This method checks if all extensions and espaces have a corresponding entry in the OSSYS_MODULE 
-        private static bool CheckModulesMappingOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
-            DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
+        private static bool CheckModulesMappingOK(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string oracleAdminSchema = null)
         {
             List<List<object>> ossys_extensionMissing = new List<List<object>>();
             List<List<object>> ossys_espaceMissing = new List<List<object>>();
@@ -51,15 +65,9 @@ namespace OSDiagTool.Platform
                                     LEFT JOIN OSSYS_MODULE M ON E.ID = M.EXTENSION_ID
                                     WHERE M.EXTENSION_ID IS NULL AND E.IS_ACTIVE = 1";
 
-            IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
-
-            using (connection)
-            {
-                IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
-
-                ossys_extensionMissing = commandExecutor.ReadData(extensionMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-                ossys_espaceMissing = commandExecutor.ReadData(espaceMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-            }
+            ossys_extensionMissing = commandExecutor.ReadData(extensionMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+            ossys_espaceMissing = commandExecutor.ReadData(espaceMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+            
 
             if (ossys_extensionMissing.Count.Equals(0) && ossys_espaceMissing.Count.Equals(0))
 
@@ -67,54 +75,67 @@ namespace OSDiagTool.Platform
                 return checks[check] = true;
             }
 
-            using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
-            {
-                writer.WriteLine(string.Format("== A Platform integrty issue was found - please open a support case to follow up and provide the output of OSDiagTool and the contents of the tables OSSYS_ESPACE, OSSYS_EXTENSION and OSSYS_MODULE ==" + Environment.NewLine));
-                writer.WriteLine(string.Format("* Missing eSpace Ids in OSSYS_MODULE table: {0}", string.Join(", ", ossys_espaceMissing.Select(row => row[0].ToString()))));
-                writer.WriteLine(string.Format("* Missing extensions Ids in OSSYS_MODULE table: {0}", string.Join(", ", ossys_extensionMissing.Select(row => row[0].ToString()))));
-            }
+            Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check,
+                "== A Platform integrty issue was found - please open a support case to follow up and provide the output of OSDiagTool and the contents of the tables OSSYS_ESPACE, OSSYS_EXTENSION and OSSYS_MODULE ==",
+                 new List<string> { String.Format("* Missing eSpace Ids in OSSYS_MODULE table: {0}", String.Join(", ", ossys_espaceMissing.Select(row => row[0].ToString()))),
+                                    String.Format("* Missing extensions Ids in OSSYS_MODULE table: {0}", String.Join(", ", ossys_extensionMissing.Select(row => row[0].ToString())))});
 
             return checks[check] = false;
 
         }
             
         // This method cross references the User_ID of OSSYS_USER_DEVELOPER with the User_Id of OSSYS_USER and checks if the users have Service Center tenant (1)
-        private static bool CheckDevelopersTenantOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
-            DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
+        private static bool CheckDevelopersTenantOK(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string oracleAdminSchema = null)
         {
-            List<List<object>> ossys_user = new List<List<object>>();
             List<List<object>> devsWithWrongTenant = new List<List<object>>();
             
-
             string checkDevsTenantsSql = @"SELECT DISTINCT UD.USER_ID, US.TENANT_ID FROM OSSYS_USER_DEVELOPER UD
                                             LEFT JOIN OSSYS_USER US ON UD.USER_ID=US.ID
                                             WHERE US.IS_ACTIVE=1 AND US.TENANT_ID <> 1";
-
-
-            IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
-
-            using (connection)
-            {
-                IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
-                devsWithWrongTenant = commandExecutor.ReadData(checkDevsTenantsSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-            }
-
+            
+            devsWithWrongTenant = commandExecutor.ReadData(checkDevsTenantsSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+            
             if (devsWithWrongTenant.Count.Equals(0))
             {
                 return checks[check] = true;
             }
 
-            using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
-            {
-                writer.WriteLine(string.Format("== A Platform integrity issue was found - Developers with wront tenants (expected tenant ID 1) were found - please open a support case to follow up and provide the output of OSDiagTool ==" + Environment.NewLine));
-                writer.WriteLine(string.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, devsWithWrongTenant.Select(row => $"- User ID {row[0].ToString()} with tenant {row[1].ToString()}"))));
-            }
+            Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check,
+                "== A Platform integrity issue was found - Developers with wront tenants (expected tenant ID 1) were found - please open a support case to follow up and provide the output of OSDiagTool ==",
+                new List<string> { String.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, devsWithWrongTenant.Select(row => $"- User ID {row[0].ToString()} with tenant {row[1].ToString()}"))) } );
 
             return checks[check] = false;
 
         }
 
-        private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check)
+        private static bool CheckModulesHaveApp(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string oracleAdminSchema = null)
+        {
+            List<List<object>> modulesWithNoApp = new List<List<object>>();
+
+            string checkModulesHaveAppSql = @"SELECT M.ID, M.ESPACE_ID, M.EXTENSION_ID
+                                                FROM OSSYS_MODULE M
+                                                LEFT JOIN OSSYS_APP_DEFINITION_MODULE APPDEF ON M.ID = APPDEF.MODULE_ID
+                                                LEFT JOIN OSSYS_ESPACE E ON M.ESPACE_ID = E.ID
+                                                LEFT JOIN OSSYS_EXTENSION EXT ON M.EXTENSION_ID = EXT.ID
+                                                WHERE APPDEF.MODULE_ID IS NULL
+                                                AND (E.IS_ACTIVE = 1 OR EXT.IS_ACTIVE = 1)";
+
+            modulesWithNoApp = commandExecutor.ReadData(checkModulesHaveAppSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+
+            if (modulesWithNoApp.Count.Equals(0))
+            {
+                return checks[check] = true;
+            }
+
+            Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check,
+                "== A Platform integrity issue was found - Modules with no app associated were found - please open a support case to follow up and provide the contents of the tables OSSYS_ESPACE, OSSYS_EXTENSION, OSSYS_MODULE, OSSYS_APP_DEFINITION_MODULE and the output of OSDiagTool ==",
+                new List<string> {"List of modules with no application associated:" + Environment.NewLine + String.Join(Environment.NewLine, modulesWithNoApp.Select(row => $"- Module ID: {row[0].ToString()}; eSpace ID: {row[1].ToString()}; Extension ID: {row[2].ToString()}")) } );
+
+            return checks[check] = false;
+
+        }
+
+        private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, string outputDestination, string check)
         {
             bool equalConnectionString = false;
             List<string> differentConnectionStrings = new List<string>();
