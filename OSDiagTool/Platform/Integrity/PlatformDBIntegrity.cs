@@ -87,7 +87,7 @@ namespace OSDiagTool.Platform
 
             string checkDevsTenantsSql = @"SELECT DISTINCT UD.USER_ID, US.TENANT_ID FROM OSSYS_USER_DEVELOPER UD
                                             LEFT JOIN OSSYS_USER US ON UD.USER_ID=US.ID
-                                            WHERE US.IS_ACTIVE=1 /*AND US.TENANT_ID <> 1*/";
+                                            WHERE US.IS_ACTIVE=1 AND US.TENANT_ID <> 1";
 
             IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
 
