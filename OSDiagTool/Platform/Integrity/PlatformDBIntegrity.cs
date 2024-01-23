@@ -56,11 +56,13 @@ namespace OSDiagTool.Platform
             using (connection)
             {
                 IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
+
                 ossys_extensionMissing = commandExecutor.ReadData(extensionMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
                 ossys_espaceMissing = commandExecutor.ReadData(espaceMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
             }
 
             if (ossys_extensionMissing.Count.Equals(0) && ossys_espaceMissing.Count.Equals(0))
+
             {
                 return checks[check] = true;
             }
@@ -76,7 +78,6 @@ namespace OSDiagTool.Platform
 
         }
             
-
         // This method cross references the User_ID of OSSYS_USER_DEVELOPER with the User_Id of OSSYS_USER and checks if the users have Service Center tenant (1)
         private static bool CheckDevelopersTenantOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
@@ -88,6 +89,7 @@ namespace OSDiagTool.Platform
             string checkDevsTenantsSql = @"SELECT DISTINCT UD.USER_ID, US.TENANT_ID FROM OSSYS_USER_DEVELOPER UD
                                             LEFT JOIN OSSYS_USER US ON UD.USER_ID=US.ID
                                             WHERE US.IS_ACTIVE=1 /*AND US.TENANT_ID <> 1*/";
+
 
             IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
 
