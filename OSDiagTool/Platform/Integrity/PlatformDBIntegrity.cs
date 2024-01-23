@@ -15,9 +15,9 @@ namespace OSDiagTool.Platform
 
         public static Dictionary<string, bool> checks = new Dictionary<string, bool>()
             {
-                { "RPM-4012-OK", false }, // modules are mapped to an app ?
-                { "Devs_Tenant-OK", false },
-                { "ModulesConnectionStrings-OK", false },
+                { "RPM-4012-OK", false }, // espaces and extensions exist in ossys_module?
+                { "Devs_Tenant-OK", false }, // developers have Service Center tenant (1)?
+                { "ModulesConnectionStrings-OK", false }, // modules have updated connection strings?
             };
 
         public static void RunIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
@@ -38,121 +38,65 @@ namespace OSDiagTool.Platform
         private static bool CheckModulesMappingOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
         {
-            List<List<object>> ossys_module = new List<List<object>>();
-            List<List<object>> ossys_extension = new List<List<object>>();
-            List<List<object>> ossys_espace = new List<List<object>>();
-            List<int> missingExtensionIds = new List<int>();
-            List<int> missingESpaceIds = new List<int>();
+            List<List<object>> ossys_extensionMissing = new List<List<object>>();
+            List<List<object>> ossys_espaceMissing = new List<List<object>>();
+
+            string espaceMissingSql = @"SELECT E.ID, M.ESPACE_ID
+                                    FROM OSSYS_ESPACE E
+                                    LEFT JOIN OSSYS_MODULE M ON E.ID = M.ESPACE_ID
+                                    WHERE M.ESPACE_ID IS NULL AND E.IS_ACTIVE = 1";
+
+            string extensionMissingSql = @"SELECT E.ID, M.EXTENSION_ID
+                                    FROM OSSYS_EXTENSION E
+                                    LEFT JOIN OSSYS_MODULE M ON E.ID = M.EXTENSION_ID
+                                    WHERE M.EXTENSION_ID IS NULL AND E.IS_ACTIVE = 1";
 
             IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
 
             using (connection)
             {
                 IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
-                ossys_module = commandExecutor.ReadData("SELECT ESPACE_ID, EXTENSION_ID FROM OSSYS_MODULE", configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-                ossys_extension = commandExecutor.ReadData("SELECT ID FROM OSSYS_EXTENSION WHERE IS_ACTIVE=1", configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-                ossys_espace = commandExecutor.ReadData("SELECT ID FROM OSSYS_ESPACE WHERE IS_ACTIVE=1", configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+
+                ossys_extensionMissing = commandExecutor.ReadData(extensionMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+                ossys_espaceMissing = commandExecutor.ReadData(espaceMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
             }
 
-            // Check if ExtensionID exists in OSSYS_MODULE
-            for (int i = 0; i < ossys_extension.Count; i++)
-            {
-                object extensionId = ossys_extension[i][0];
-                bool extensionIdExists = false;
+            if (ossys_extensionMissing.Count.Equals(0) && ossys_espaceMissing.Count.Equals(0))
 
-                for (int j=0; j < ossys_module.Count; j++)
-                {
-                    object modExtId = ossys_module[j][1];
-
-                    if (extensionId.Equals(modExtId))
-                    {
-                        extensionIdExists = true;
-                        break;
-                    }
-                }
-
-                if (extensionIdExists.Equals(false))
-                {
-                    missingExtensionIds.Add((int)extensionId);
-                }
-                
-            }
-
-            // Check if eSpaceId exists in OSSYS_MODULE
-            for (int i = 0; i < ossys_espace.Count; i++)
-            {
-                object espaceId = ossys_espace[i][0];
-                bool eSpaceIdExists = false;
-
-                for (int j = 0; j < ossys_espace.Count; j++)
-                {
-                    object modESpaceId = ossys_espace[j][0];
-
-                    if (espaceId.Equals(modESpaceId))
-                    {
-                        eSpaceIdExists = true;
-                        break;
-                    }
-                }
-
-                if (eSpaceIdExists.Equals(false))
-                {
-                    missingESpaceIds.Add((int)espaceId);
-                }
-            }
-
-            if (missingESpaceIds.Count.Equals(0) && missingExtensionIds.Count.Equals(0))
             {
                 return checks[check] = true;
             }
 
             using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
             {
-                writer.WriteLine(string.Format("== A Platform integrty issue was found - please open a support case to follow up and provide the output of OSDiagTool ==" + Environment.NewLine));
-                writer.WriteLine(string.Format("* Missing eSpace Ids in OSSYS_MODULE table: {0}", String.Join(", ", missingESpaceIds)));
-                writer.WriteLine(string.Format("* Missing extension Ids in OSSYS_MODULE table: {0}", String.Join(", ", missingExtensionIds)));
+                writer.WriteLine(string.Format("== A Platform integrty issue was found - please open a support case to follow up and provide the output of OSDiagTool and the contents of the tables OSSYS_ESPACE, OSSYS_EXTENSION and OSSYS_MODULE ==" + Environment.NewLine));
+                writer.WriteLine(string.Format("* Missing eSpace Ids in OSSYS_MODULE table: {0}", string.Join(", ", ossys_espaceMissing.Select(row => row[0].ToString()))));
+                writer.WriteLine(string.Format("* Missing extensions Ids in OSSYS_MODULE table: {0}", string.Join(", ", ossys_extensionMissing.Select(row => row[0].ToString()))));
             }
 
             return checks[check] = false;
-        }
 
+        }
+            
         // This method cross references the User_ID of OSSYS_USER_DEVELOPER with the User_Id of OSSYS_USER and checks if the users have Service Center tenant (1)
         private static bool CheckDevelopersTenantOK(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
         {
             List<List<object>> ossys_user = new List<List<object>>();
-            List<List<object>> ossys_user_developer = new List<List<object>>();
-            Dictionary<int, int> devsWithWrongTenant = new Dictionary<int,int>();
+            List<List<object>> devsWithWrongTenant = new List<List<object>>();
+            
+
+            string checkDevsTenantsSql = @"SELECT DISTINCT UD.USER_ID, US.TENANT_ID FROM OSSYS_USER_DEVELOPER UD
+                                            LEFT JOIN OSSYS_USER US ON UD.USER_ID=US.ID
+                                            WHERE US.IS_ACTIVE=1 /*AND US.TENANT_ID <> 1*/";
+
 
             IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
 
             using (connection)
             {
                 IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
-
-                ossys_user_developer = commandExecutor.ReadData("SELECT DISTINCT USER_ID FROM OSSYS_USER_DEVELOPER", configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-                List<string> userIds = ossys_user_developer.SelectMany(innerList => innerList.Select(item => item.ToString())).ToList();
-                string formattedUserIds = String.Join(", ", userIds);
-
-                ossys_user = commandExecutor.ReadData(String.Format("SELECT ID, TENANT_ID FROM OSSYS_USER WHERE IS_ACTIVE=1 AND ID IN ({0})", formattedUserIds), configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-            }
-
-            for (int i = 0; i < ossys_user_developer.Count; i++)
-            {
-                object user_devId = ossys_user_developer[i][0];
-
-                for (int j = 0; j < ossys_user.Count; j++)
-                {
-                    object userId = ossys_user[j][0];
-                    if (userId.Equals(user_devId))
-                    {
-                        object tenantId = ossys_user[j][1];
-                        if (!Convert.ToInt32(tenantId).Equals(1))
-                        {
-                            devsWithWrongTenant.Add(Convert.ToInt32(user_devId), Convert.ToInt32(tenantId));
-                        }
-                    } 
-                }
+                devsWithWrongTenant = commandExecutor.ReadData(checkDevsTenantsSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
             }
 
             if (devsWithWrongTenant.Count.Equals(0))
@@ -163,10 +107,11 @@ namespace OSDiagTool.Platform
             using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
             {
                 writer.WriteLine(string.Format("== A Platform integrity issue was found - Developers with wront tenants (expected tenant ID 1) were found - please open a support case to follow up and provide the output of OSDiagTool ==" + Environment.NewLine));
-                writer.WriteLine(string.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, devsWithWrongTenant.Select(kv => $"- User ID {kv.Key} with tenant {kv.Value}"))));
+                writer.WriteLine(string.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, devsWithWrongTenant.Select(row => $"- User ID {row[0].ToString()} with tenant {row[1].ToString()}"))));
             }
 
             return checks[check] = false;
+
         }
 
         private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check)
