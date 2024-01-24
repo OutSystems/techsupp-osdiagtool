@@ -8,21 +8,72 @@ namespace OSDiagTool.Platform
 {
     public class PlatformDBIntegrity
     {
+        /* To add more metamodel checks:
+         * 1. create a private static string with the check name;
+         * 2. add the static string check key in the metamodelChecks Dictionary;
+         * 3. add the static string check key in the List Dictionary checksInfo where [0] is the sql to run the validation and [1] is the opening error message in case an integrity issue is found
+         * 4. upddate the GetUpdatedErrorMessages() method to return the information with the details of the metamodel related to the integrity issue
+         * 
+         * Assumptions:
+         * - the sql should validate the integrity by returning no records --> check RunDatabaseCheck() method return
+        */
         private static string _appSettingsConfig = "appSettings.config";
         private static string _runtimeConnectionStringKey = "OutSystems.DB.Platform.Application.Runtime.ConnectionString (DEFAULT)";
         private static string _sessionConnectionStringKey = "OutSystems.DB.Platform.Application.Session.ConnectionString (DEFAULT)";
         private static string _loggingConnectingStringKey = "OutSystems.DB.Logging.Application.Runtime.ConnectionString (DEFAULT)";
-        private static string rpm_4012_check ="RPM-4012";
+        private static string rpm_4012_espace_check = "RPM-4012-eSpace";
+        private static string rpm_4012_extension_check = "RPM-4012-extension";
         private static string devs_Tenants_check = "Developers_Tenants";
         private static string moduleConnectionStrings_check = "ModuleConnectionStrings";
         private static string modulesLinkedToApp_check = "ModulesLinkedToApp";
+        private static string duplicateUsernames_check = "DuplicateUsernames";
+        private static List<List<object>> sqlResult = new List<List<object>>();
 
-        public static Dictionary<string, bool> checks = new Dictionary<string, bool>()
+        public static Dictionary<string, bool> metamodelChecks = new Dictionary<string, bool>()
             {
-                { rpm_4012_check, false }, // espaces and extensions exist in ossys_module?
+                { rpm_4012_espace_check, false }, // espaces exist in ossys_module?
+                { rpm_4012_extension_check, false }, // extensions exist in ossys_module?
                 { devs_Tenants_check, false }, // developers have Service Center tenant (1)?
-                { moduleConnectionStrings_check, false }, // modules have updated connection strings?
                 { modulesLinkedToApp_check, false }, // modules are associated to an application is OSSYS_APP_DEFINITION_MODULE?
+                { duplicateUsernames_check, false }, // duplicate usernames in the same tenant exist?
+            };
+
+        public static List<Dictionary<string, string>> checksInfo = new List<Dictionary<string, string>>() { // [0] sql message, [1] openingErrorMessage
+
+            new Dictionary<string, string>()
+            {
+                { rpm_4012_espace_check,  @"SELECT E.ID, M.ESPACE_ID
+                                    FROM OSSYS_ESPACE E
+                                    LEFT JOIN OSSYS_MODULE M ON E.ID = M.ESPACE_ID
+                                    WHERE M.ESPACE_ID IS NULL AND E.IS_ACTIVE = 1" },
+                { rpm_4012_extension_check, @"SELECT E.ID, M.EXTENSION_ID
+                                    FROM OSSYS_EXTENSION E
+                                    LEFT JOIN OSSYS_MODULE M ON E.ID = M.EXTENSION_ID
+                                    WHERE M.EXTENSION_ID IS NULL AND E.IS_ACTIVE = 1" },
+                { devs_Tenants_check, @"SELECT DISTINCT UD.USER_ID, US.TENANT_ID FROM OSSYS_USER_DEVELOPER UD
+                                            LEFT JOIN OSSYS_USER US ON UD.USER_ID=US.ID
+                                            WHERE US.IS_ACTIVE=1 AND US.TENANT_ID <> 1" },
+                { modulesLinkedToApp_check, @"SELECT M.ID, M.ESPACE_ID, M.EXTENSION_ID
+                                                FROM OSSYS_MODULE M
+                                                LEFT JOIN OSSYS_APP_DEFINITION_MODULE APPDEF ON M.ID = APPDEF.MODULE_ID
+                                                LEFT JOIN OSSYS_ESPACE E ON M.ESPACE_ID = E.ID
+                                                LEFT JOIN OSSYS_EXTENSION EXT ON M.EXTENSION_ID = EXT.ID
+                                                WHERE APPDEF.MODULE_ID IS NULL
+                                                AND (E.IS_ACTIVE = 1 OR EXT.IS_ACTIVE = 1)" },
+                { duplicateUsernames_check, @"SELECT USERNAME, TENANT_ID, COUNT(1)
+                                                    FROM OSSYS_USER 
+                                                    WHERE IS_ACTIVE = 1
+                                                    GROUP BY TENANT_ID, USERNAME
+                                                    HAVING COUNT(1) > 1" },
+            }, 
+            new Dictionary<string, string>()
+            {
+                { rpm_4012_espace_check,  "== A Platform integrity issue was found - please open a support case to follow up and provide the output of OSDiagTool and the contents of the tables OSSYS_ESPACE and OSSYS_MODULE =="},
+                { rpm_4012_extension_check, "== A Platform integrity issue was found - please open a support case to follow up and provide the output of OSDiagTool and the contents of the tables OSSYS_EXTENSION and OSSYS_MODULE ==" },
+                { devs_Tenants_check, "== A Platform integrity issue was found - Developers with wront tenants (expected tenant ID 1) were found - please open a support case to follow up and provide the output of OSDiagTool ==" },
+                { modulesLinkedToApp_check, "== A Platform integrity issue was found - Modules with no app associated were found - please open a support case to follow up and provide the contents of the tables OSSYS_ESPACE, OSSYS_EXTENSION, OSSYS_MODULE, OSSYS_APP_DEFINITION_MODULE and the output of OSDiagTool ==" },
+                { duplicateUsernames_check, "== A Platform integrity issue was found - Duplicate usernames in the same tenant were found - please review your User Management application and review the duplicate users found in OSSYS_USER ==" },
+            }
             };
 
         public static void RunIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
@@ -33,106 +84,32 @@ namespace OSDiagTool.Platform
 
             using (connection)
             {
-                CheckModulesMappingOK(connection, commandExecutor, configurations, outputDestination, rpm_4012_check, oracleAdminSchema);
-                FileLogger.TraceLog("Check modules mapping OK result: " + checks[rpm_4012_check]);
-
-                CheckDevelopersTenantOK(connection, commandExecutor, configurations, outputDestination, devs_Tenants_check, oracleAdminSchema);
-                FileLogger.TraceLog("Check developers tenant OK result: " + checks[devs_Tenants_check]);
-
-                CheckModulesHaveApp(connection, commandExecutor, configurations, outputDestination, modulesLinkedToApp_check, oracleAdminSchema);
-                FileLogger.TraceLog("Check modules have an application associated OK result: " + checks[modulesLinkedToApp_check]);
-
+                Dictionary<string, bool> checksCopy = new Dictionary<string, bool> (metamodelChecks);
+                foreach (string key in checksCopy.Keys)
+                {
+                    metamodelChecks[key] = RunDatabaseCheck(connection, commandExecutor, configurations, outputDestination, key, checksInfo[0][key], checksInfo[1][key], oracleAdminSchema: oracleAdminSchema);
+                    FileLogger.TraceLog(String.Format("Check {0} OK result: {1}", key, metamodelChecks[key]));
+                }
             }
 
-            CheckAppsConnectionStrings(dbEngine, outputDestination, moduleConnectionStrings_check);
-            FileLogger.TraceLog("Check all modules connection strings OK result: " + checks[moduleConnectionStrings_check]);
+            bool connectionStringsOK = CheckAppsConnectionStrings(dbEngine, outputDestination, moduleConnectionStrings_check);
+            FileLogger.TraceLog("Check all modules connection strings OK result: " + connectionStringsOK);
 
         }
 
-        // This method checks if all extensions and espaces have a corresponding entry in the OSSYS_MODULE 
-        private static bool CheckModulesMappingOK(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string oracleAdminSchema = null)
+        private static bool RunDatabaseCheck(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string sql,
+            string openingErrorMessage, string oracleAdminSchema = null)
         {
-            List<List<object>> ossys_extensionMissing = new List<List<object>>();
-            List<List<object>> ossys_espaceMissing = new List<List<object>>();
+            sqlResult = commandExecutor.ReadData(sql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
 
-            string espaceMissingSql = @"SELECT E.ID, M.ESPACE_ID
-                                    FROM OSSYS_ESPACE E
-                                    LEFT JOIN OSSYS_MODULE M ON E.ID = M.ESPACE_ID
-                                    WHERE M.ESPACE_ID IS NULL AND E.IS_ACTIVE = 1";
-
-            string extensionMissingSql = @"SELECT E.ID, M.EXTENSION_ID
-                                    FROM OSSYS_EXTENSION E
-                                    LEFT JOIN OSSYS_MODULE M ON E.ID = M.EXTENSION_ID
-                                    WHERE M.EXTENSION_ID IS NULL AND E.IS_ACTIVE = 1";
-
-            ossys_extensionMissing = commandExecutor.ReadData(extensionMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-            ossys_espaceMissing = commandExecutor.ReadData(espaceMissingSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-            
-
-            if (ossys_extensionMissing.Count.Equals(0) && ossys_espaceMissing.Count.Equals(0))
-
+            if (sqlResult.Count.Equals(0))
             {
-                return checks[check] = true;
+                return true;
             }
 
-            Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check,
-                "== A Platform integrty issue was found - please open a support case to follow up and provide the output of OSDiagTool and the contents of the tables OSSYS_ESPACE, OSSYS_EXTENSION and OSSYS_MODULE ==",
-                 new List<string> { String.Format("* Missing eSpace Ids in OSSYS_MODULE table: {0}", String.Join(", ", ossys_espaceMissing.Select(row => row[0].ToString()))),
-                                    String.Format("* Missing extensions Ids in OSSYS_MODULE table: {0}", String.Join(", ", ossys_extensionMissing.Select(row => row[0].ToString())))});
+            Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check, openingErrorMessage, new List<string> { GetUpdatedErrorMessages(check) });
 
-            return checks[check] = false;
-
-        }
-            
-        // This method cross references the User_ID of OSSYS_USER_DEVELOPER with the User_Id of OSSYS_USER and checks if the users have Service Center tenant (1)
-        private static bool CheckDevelopersTenantOK(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string oracleAdminSchema = null)
-        {
-            List<List<object>> devsWithWrongTenant = new List<List<object>>();
-            
-            string checkDevsTenantsSql = @"SELECT DISTINCT UD.USER_ID, US.TENANT_ID FROM OSSYS_USER_DEVELOPER UD
-                                            LEFT JOIN OSSYS_USER US ON UD.USER_ID=US.ID
-                                            WHERE US.IS_ACTIVE=1 AND US.TENANT_ID <> 1";
-            
-            devsWithWrongTenant = commandExecutor.ReadData(checkDevsTenantsSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-            
-            if (devsWithWrongTenant.Count.Equals(0))
-            {
-                return checks[check] = true;
-            }
-
-            Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check,
-                "== A Platform integrity issue was found - Developers with wront tenants (expected tenant ID 1) were found - please open a support case to follow up and provide the output of OSDiagTool ==",
-                new List<string> { String.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, devsWithWrongTenant.Select(row => $"- User ID {row[0].ToString()} with tenant {row[1].ToString()}"))) } );
-
-            return checks[check] = false;
-
-        }
-
-        private static bool CheckModulesHaveApp(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string oracleAdminSchema = null)
-        {
-            List<List<object>> modulesWithNoApp = new List<List<object>>();
-
-            string checkModulesHaveAppSql = @"SELECT M.ID, M.ESPACE_ID, M.EXTENSION_ID
-                                                FROM OSSYS_MODULE M
-                                                LEFT JOIN OSSYS_APP_DEFINITION_MODULE APPDEF ON M.ID = APPDEF.MODULE_ID
-                                                LEFT JOIN OSSYS_ESPACE E ON M.ESPACE_ID = E.ID
-                                                LEFT JOIN OSSYS_EXTENSION EXT ON M.EXTENSION_ID = EXT.ID
-                                                WHERE APPDEF.MODULE_ID IS NULL
-                                                AND (E.IS_ACTIVE = 1 OR EXT.IS_ACTIVE = 1)";
-
-            modulesWithNoApp = commandExecutor.ReadData(checkModulesHaveAppSql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-
-            if (modulesWithNoApp.Count.Equals(0))
-            {
-                return checks[check] = true;
-            }
-
-            Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check,
-                "== A Platform integrity issue was found - Modules with no app associated were found - please open a support case to follow up and provide the contents of the tables OSSYS_ESPACE, OSSYS_EXTENSION, OSSYS_MODULE, OSSYS_APP_DEFINITION_MODULE and the output of OSDiagTool ==",
-                new List<string> {"List of modules with no application associated:" + Environment.NewLine + String.Join(Environment.NewLine, modulesWithNoApp.Select(row => $"- Module ID: {row[0].ToString()}; eSpace ID: {row[1].ToString()}; Extension ID: {row[2].ToString()}")) } );
-
-            return checks[check] = false;
-
+            return false;
         }
 
         private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, string outputDestination, string check)
@@ -203,7 +180,7 @@ namespace OSDiagTool.Platform
 
             if (differentConnectionStrings.Count.Equals(0))
             {
-                return checks[check] = true;
+                return true;
             }
             else
             {
@@ -216,7 +193,26 @@ namespace OSDiagTool.Platform
                     }
                 }
 
-                return checks[check] = false;
+                return false;
+            }
+        }
+
+        private static string GetUpdatedErrorMessages(string check)
+        {
+            switch (check)
+            {
+                case var _ when check == rpm_4012_espace_check:
+                    return String.Format("* Missing eSpace Ids in OSSYS_MODULE table: {0}", String.Join(", ", sqlResult.Select(row => row[0].ToString())));
+                case var _ when check.Equals(rpm_4012_extension_check):
+                    return String.Format("* Missing extension Ids in OSSYS_MODULE table: {0}", String.Join(", ", sqlResult.Select(row => row[0].ToString())));
+                case var _ when check.Equals(devs_Tenants_check):
+                    return String.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- User ID {row[0].ToString()} with tenant {row[1].ToString()}")));
+                case var _ when check.Equals(modulesLinkedToApp_check):
+                    return "List of modules with no application associated:" + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- Module ID: {row[0].ToString()}; eSpace ID: {row[1].ToString()}; Extension ID: {row[2].ToString()}"));
+                case var _ when check.Equals(duplicateUsernames_check):
+                    return "List of duplicate users found:" + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- Username '{row[0].ToString()}' with tenant {row[1].ToString()} was found {row[2].ToString()} times"));
+                default:
+                    return null;
             }
         }
     }
