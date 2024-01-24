@@ -110,6 +110,7 @@ namespace OSDiagTool.Platform
             Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check, openingErrorMessage, new List<string> { GetUpdatedErrorMessages(check) });
 
             return false;
+
         }
 
         private static bool CheckAppsConnectionStrings(Database.DatabaseType dbEngine, string outputDestination, string check)
