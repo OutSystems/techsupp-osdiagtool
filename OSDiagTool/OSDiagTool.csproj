@@ -176,6 +176,7 @@
     <Compile Include="Platform\ConfigFiles\XmlReader.cs" />
     <Compile Include="Platform\ConnectionList.cs" />
     <Compile Include="Platform\Integrity\IntegrityHelper.cs" />
+    <Compile Include="Platform\Integrity\IntegrityModel.cs" />
     <Compile Include="Platform\Integrity\PlatformDBIntegrity.cs" />
     <Compile Include="Platform\PlatformDiagnostic.cs" />
     <Compile Include="Platform\ConfigFiles\ConfigFileInfo.cs" />

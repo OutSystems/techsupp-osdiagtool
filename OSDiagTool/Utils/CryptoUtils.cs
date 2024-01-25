@@ -12,7 +12,7 @@ namespace OSDiagTool.Utils
     /*
      * Most private.key utilities are based on https://github.com/ardoric/ardo.decrypter.net 
      */
-    static class CryptoUtils
+    public static class CryptoUtils
     {
         static private RNGCryptoServiceProvider rnd = new RNGCryptoServiceProvider();
 
