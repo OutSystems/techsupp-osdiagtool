@@ -19,10 +19,11 @@ namespace OSDiagToolUnitTests
     public class ProgramUnitTest
     {
 
-        public static OSDiagTool.DBConnector.SQLConnStringModel sqlConnString = new OSDiagTool.DBConnector.SQLConnStringModel();
-        public static OSDiagTool.DBConnector.OracleConnStringModel orclConnString = new OSDiagTool.DBConnector.OracleConnStringModel();
-        public static OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
-        public static OSDiagTool.OSDiagToolConf.ConfModel.strConfModel configurations = new OSDiagTool.OSDiagToolConf.ConfModel.strConfModel();
+        private static OSDiagTool.DBConnector.SQLConnStringModel sqlConnString = new OSDiagTool.DBConnector.SQLConnStringModel();
+        private static OSDiagTool.DBConnector.OracleConnStringModel orclConnString = new OSDiagTool.DBConnector.OracleConnStringModel();
+        private static OSDiagToolConfReader dgtConfReader = new OSDiagToolConfReader();
+        private static OSDiagTool.OSDiagToolConf.ConfModel.strConfModel configurations = new OSDiagTool.OSDiagToolConf.ConfModel.strConfModel();
+        private static string oracleAdminSchema;
 
         [TestMethod]
         public void Test_GetPlatformAndServerFiles()
@@ -116,6 +117,24 @@ namespace OSDiagToolUnitTests
 
         }
 
+        [TestMethod]
+        public void Test_PlatformIntegrityCheckProgram()
+        {
+            Program.PlatformIntegritycheck(configurations, sqlConnString, orclConnString, oracleAdminSchema);
+
+            Assert.IsTrue(Directory.Exists(Program.platDBIntCheckPath));
+
+            foreach (string key in OSDiagTool.Platform.PlatformDBIntegrity.integrityModel.CheckDetails.Keys)
+            {
+                Assert.IsFalse(OSDiagTool.Platform.PlatformDBIntegrity.integrityModel.CheckDetails[key].checkOk is null); // dictionary value is a nullable bool. If the check ran OK, it was set to true or false
+            }
+
+            foreach (string key in OSDiagTool.Platform.PlatformDBIntegrity.ServerChecks.Keys)
+            {
+                Assert.IsFalse(OSDiagTool.Platform.PlatformDBIntegrity.ServerChecks[key] is null);
+            }
+        }
+
         static bool SearchFiles(string directory, string searchString)
         {
             bool foundFile = false;
@@ -158,6 +177,7 @@ namespace OSDiagToolUnitTests
             configurations = dgtConfReader.GetOsDiagToolConfigurations();
 
             Program.useMultiThread = false; // override to not use multithread - prevents null pointers in the tests
+            string privateKeyFilepath = Path.Combine(Program._osInstallationFolder, "private.key");
 
             try
             {
@@ -187,8 +207,8 @@ namespace OSDiagToolUnitTests
             {
                 sqlConnString.dataSource = platformDBInfo.GetProperty("Server").Value;
                 sqlConnString.initialCatalog = platformDBInfo.GetProperty("Catalog").Value;
-                sqlConnString.userId = "<user>";
-                sqlConnString.pwd = "<pwd>";
+                sqlConnString.userId = platformDBInfo.GetProperty("AdminUser").Value;
+                sqlConnString.pwd = platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(OSDiagTool.Utils.CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
 
             }
             else if (Program.dbEngine.Equals(OSDiagTool.Database.DatabaseType.Oracle))
@@ -196,9 +216,15 @@ namespace OSDiagToolUnitTests
                 orclConnString.host = platformDBInfo.GetProperty("Host").Value;
                 orclConnString.port = platformDBInfo.GetProperty("Port").Value;
                 orclConnString.serviceName = platformDBInfo.GetProperty("ServiceName").Value;
-                orclConnString.userId = "<user id>";
-                orclConnString.pwd = "<pwd>";
+                orclConnString.userId = platformDBInfo.GetProperty("AdminUser").Value;
+                orclConnString.pwd = platformDBInfo.GetProperty("AdminPassword").GetDecryptedValue(OSDiagTool.Utils.CryptoUtils.GetPrivateKeyFromFile(privateKeyFilepath));
+
+                OSDiagTool.Platform.PlatformConnectionStringDefiner ConnectionStringDefiner = new OSDiagTool.Platform.PlatformConnectionStringDefiner();
+                OSDiagTool.Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner);
+                string oracleAdminSchema = ConnStringHelper.AdminSchema;
             }
+
+            
 
             Program.OSDiagToolInitialization();
 
