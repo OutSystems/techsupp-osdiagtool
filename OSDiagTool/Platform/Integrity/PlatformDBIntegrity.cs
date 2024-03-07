@@ -115,6 +115,7 @@ namespace OSDiagTool.Platform
         {
             sqlResult = commandExecutor.ReadData(sql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
 
+
             if (!sqlResultReturnsRecords && sqlResult.Count.Equals(0))
             {
                 return true;
@@ -124,6 +125,7 @@ namespace OSDiagTool.Platform
             }
 
             Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check, openingErrorMessage, new List<string> { GetUpdatedErrorMessages(check) });
+
 
             return false;
 
