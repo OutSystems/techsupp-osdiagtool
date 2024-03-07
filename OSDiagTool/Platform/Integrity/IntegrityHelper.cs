@@ -9,6 +9,13 @@ namespace OSDiagTool.Platform.Integrity
 {
     class IntegrityHelper
     {
+        public static List<string> SystemComponentNames = new List<string>
+        {
+            "ServiceCenter", "ADAuthProvider", "appfeedbackapi", "AppFeedbackPlugin", "ChartingServicesCore", "DBCleaner_API", "ECT_Provider", "EPA_Taskbox",
+            "LDAPAuthProvider", "NativeAppBuilder", "PerformanceProbe", "PreviewInDevices", "RESTDevService", "RichWidgets", "SAPDevService",
+            "SecurityUtils", "SOAPDevService", "TemplateManager", "Users", "UsersLibrary", "UsersService"
+        };
+
         public static Dictionary<string, Dictionary<string, DateTime>> GetLastModulesRunningPublished(string platformRunningPath)
         {
             Dictionary<string, Dictionary<string, DateTime>> allRunningFolders = new Dictionary<string, Dictionary<string, DateTime>>(); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only
