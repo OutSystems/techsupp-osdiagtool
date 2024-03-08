@@ -30,17 +30,22 @@ namespace OSDiagTool.Platform
         private static string sessionModelVersion_check = "SessionModelVersion - NOT OK";
         private static string clientApplicationTokenExists_check = "ClientApplicationTokenExists - NOT OK";
         private static string metamodelVersion_check = "MetamodelVersion - NOT OK";
+        private static string systemComponentsInstalled_check = "SystemComponentsInstalled - NOT OK";
 
         private static List<List<object>> sqlResult = new List<List<object>>();
         public static Integrity.IntegrityModel integrityModel = new Integrity.IntegrityModel();
+        private static Dictionary<string, Dictionary<string, DateTime>> allRunningFolders = new Dictionary<string, Dictionary<string, DateTime>>();
 
         public static Dictionary<string, bool?> ServerChecks = new Dictionary<string, bool?>()
         {
-            { moduleConnectionStrings_check, null }
+            { moduleConnectionStrings_check, null },
+            { systemComponentsInstalled_check, null }
         };
 
         public static void InitializeIntegrityModel()
         {
+            string platformRunningPath = Path.Combine(Program._osInstallationFolder, "running");
+
             integrityModel.CheckDetails = new Dictionary<string, Integrity.IntegrityDetails>
             {
                 { rpm_4012_espace_check, new Integrity.IntegrityDetails { SqlText = @"SELECT E.ID, M.ESPACE_ID
@@ -77,6 +82,9 @@ namespace OSDiagTool.Platform
             };
         }
 
+            allRunningFolders = Integrity.IntegrityHelper.GetLastModulesRunningPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
+        }
+
         public static void RunIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
             DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
         {
@@ -97,6 +105,9 @@ namespace OSDiagTool.Platform
 
             ServerChecks[moduleConnectionStrings_check] = CheckAppsConnectionStrings(dbEngine, outputDestination, moduleConnectionStrings_check);
             FileLogger.TraceLog("Check all modules connection strings OK result: " + ServerChecks[moduleConnectionStrings_check]);
+
+            ServerChecks[systemComponentsInstalled_check] = CheckSystemComponentsInstalled(outputDestination, systemComponentsInstalled_check);
+            FileLogger.TraceLog("Check all System Components installed on the server OK result: " + ServerChecks[systemComponentsInstalled_check]);
 
         }
 
@@ -121,16 +132,60 @@ namespace OSDiagTool.Platform
 
         }
 
+        private static bool? CheckSystemComponentsInstalled(string outputDestination, string check)
+        {
+            Dictionary<string, bool> SystemComponentNotInstalledDict = new Dictionary<string, bool>();
+
+            foreach (string systemComponent in Integrity.IntegrityHelper.SystemComponentNames)
+            {
+                bool systemComponentInstalled = false;
+
+                foreach (KeyValuePair<string, Dictionary<string, DateTime>> runningModule in allRunningFolders)
+                {
+                    allRunningFolders.TryGetValue(runningModule.Key, out Dictionary<string, DateTime> innerDict);
+                    if (systemComponent.Equals(innerDict.Keys.FirstOrDefault())){
+                        systemComponentInstalled = true;
+                        break;
+                    }
+                }
+
+                if (!systemComponentInstalled) { SystemComponentNotInstalledDict.Add(systemComponent, !systemComponentInstalled); };
+
+            }
+
+            if (SystemComponentNotInstalledDict.Count.Equals(0))
+            {
+                return true;
+            } else
+            {
+                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
+                {
+                    writer.WriteLine("== Some Platform System Components were found to not be installed on this server. All System Components must be installed in all servers of the environment. Please check the details below ==" + Environment.NewLine + Environment.NewLine +
+                        "* Steps to fix this:" + Environment.NewLine + 
+                        "\t 1. Validate if the System Components solution is for the Platform server version installed on the environment and if it includes the components listed below" + Environment.NewLine +
+                        "\t \t 1.1 Publish the correct System Component if point 1 is not met and republish the factory" + Environment.NewLine +
+                        "\t 2. Validate if all the System Components applications are deployed in a deployment zone that includes all servers of the environment. Please check the documentation in 2.1 for more details" + Environment.NewLine +
+                        "\t \t 2.1 https://success.outsystems.com/documentation/11/managing_the_applications_lifecycle/deploy_applications/selective_deployment_using_deployment_zones/" + Environment.NewLine + Environment.NewLine +
+                        "* Please check the list of System Component modules that were not found to be installed on this server:");
+
+                    foreach (KeyValuePair<string, bool> notInstalledComponent in SystemComponentNotInstalledDict)
+                    {
+                        writer.WriteLine("\t - " + notInstalledComponent.Key + " was not found in the Platform running folder");
+                    }
+                }
+
+                return false;
+            }
+        }
+
         private static bool? CheckAppsConnectionStrings(Database.DatabaseType dbEngine, string outputDestination, string check)
         {
             bool equalConnectionString = false;
             List<string> differentConnectionStrings = new List<string>();
             string[] connectionStringList =  { _runtimeConnectionStringKey, _sessionConnectionStringKey, _loggingConnectingStringKey };
-            string platformRunningPath = Path.Combine(Program._osInstallationFolder, "running");
             string pKey = Utils.CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath);
 
             // Load connection string from each module in running folder
-            Dictionary<string, Dictionary<string, DateTime>> allRunningFolders = Integrity.IntegrityHelper.GetLastModulesRunningPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
             Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = Integrity.IntegrityHelper.GetModuleConnectionStrings(allRunningFolders, _appSettingsConfig, connectionStringList, pKey) ; // <module name>, [<connection string name>, <connection string value>]
             Dictionary<string, string> platformConnectionStrings = Integrity.IntegrityHelper.GetPlatformConnectionStrings(pKey); // <connection name>, <connection string>
            
