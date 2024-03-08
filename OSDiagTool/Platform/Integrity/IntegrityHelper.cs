@@ -13,7 +13,7 @@ namespace OSDiagTool.Platform.Integrity
         {
             "ServiceCenter", "ADAuthProvider", "appfeedbackapi", "AppFeedbackPlugin", "ChartingServicesCore", "DBCleaner_API", "ECT_Provider", "EPA_Taskbox",
             "LDAPAuthProvider", "NativeAppBuilder", "PerformanceProbe", "PreviewInDevices", "RESTDevService", "RichWidgets", "SAPDevService",
-            "SecurityUtils", "SOAPDevService", "TemplateManager", "Users", "UsersLibrary", "UsersService"
+            "SecurityUtils", "SOAPDevService", "TemplateManager", "Users", "UsersServices"
         };
 
         public static Dictionary<string, Dictionary<string, DateTime>> GetLastModulesRunningPublished(string platformRunningPath)

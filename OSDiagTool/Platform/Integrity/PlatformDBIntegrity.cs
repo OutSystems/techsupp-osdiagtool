@@ -159,10 +159,17 @@ namespace OSDiagTool.Platform
             {
                 using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
                 {
-                    writer.WriteLine("== Some Platform System Components were found to not be installed on this server. All System Components must be installed in all servers of the environment. Please check the details below ==" + Environment.NewLine);
+                    writer.WriteLine("== Some Platform System Components were found to not be installed on this server. All System Components must be installed in all servers of the environment. Please check the details below ==" + Environment.NewLine + Environment.NewLine +
+                        "* Steps to fix this:" + Environment.NewLine + 
+                        "\t 1. Validate if the System Components solution is for the Platform server version installed on the environment and if it includes the components listed below" + Environment.NewLine +
+                        "\t \t 1.1 Publish the correct System Component if point 1 is not met and republish the factory" + Environment.NewLine +
+                        "\t 2. Validate if all the System Components applications are deployed in a deployment zone that includes all servers of the environment. Please check the documentation in 2.1 for more details" + Environment.NewLine +
+                        "\t \t 2.1 https://success.outsystems.com/documentation/11/managing_the_applications_lifecycle/deploy_applications/selective_deployment_using_deployment_zones/" + Environment.NewLine + Environment.NewLine +
+                        "* Please check the list of System Component modules that were not found to be installed on this server:");
+
                     foreach (KeyValuePair<string, bool> notInstalledComponent in SystemComponentNotInstalledDict)
                     {
-                        writer.WriteLine(notInstalledComponent.Key + " was not found in the Platform running folder");
+                        writer.WriteLine("\t - " + notInstalledComponent.Key + " was not found in the Platform running folder");
                     }
                 }
 
