@@ -223,9 +223,7 @@ namespace OSDiagToolUnitTests
                 OSDiagTool.Platform.PlatformConnectionStringDefiner ConnStringHelper = ConnectionStringDefiner.GetConnectionString(Program.dbEngine, false, false, ConnectionStringDefiner);
                 string oracleAdminSchema = ConnStringHelper.AdminSchema;
             }
-
             
-
             Program.OSDiagToolInitialization();
 
         }

@@ -11,6 +11,7 @@ using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
 using System.Reflection;
 using System.Threading;
+using System;
 
 namespace OSDiagTool
 {
@@ -153,7 +154,7 @@ namespace OSDiagTool
             // Process Platform and Server Configuration files
             FileLogger.TraceLog("Copying Platform and Server configuration files... ");
             Directory.CreateDirectory(_osPlatFilesDest);
-            Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _iisWebConfigPath, _machineConfigPath, _osPlatFilesDest);
+            Platform.PlatformFilesHelper.CopyPlatformAndServerConfFiles(_osInstallationFolder, _iisApplicationHostPath, _iisWebConfigPath, _machineConfigPath, _osPlatFilesDest, osPlatformVersion);
 
             // Export Registry information
             // Create directory for Registry information

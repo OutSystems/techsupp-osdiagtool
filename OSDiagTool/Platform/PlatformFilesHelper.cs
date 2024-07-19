@@ -6,10 +6,16 @@ namespace OSDiagTool.Platform {
     class PlatformFilesHelper {
 
         private static string appPoolConfigPath = @"%SYSTEMDRIVE%\inetpub\temp\appPools";
+        //  OS services config files location changed in the below versions from the Platform installation folder to Platform/<service>
+        private static Version schedulerConfPathChangeVersion = new Version("11.11.1");
+        private static Version deploymentConfPathChangeVersion = new Version("11.24.0");
+        private static Version compilerConfPathChangeVersion = new Version("11.25.0");
 
-        public static void CopyPlatformAndServerConfFiles(string _osInstallationFolder, string _iisApplicationHostPath, string _iisWebConfigPath, string _machineConfigPath, string _osPlatFilesDest) {
+
+        public static void CopyPlatformAndServerConfFiles(string _osInstallationFolder, string _iisApplicationHostPath, string _iisWebConfigPath, string _machineConfigPath, string _osPlatFilesDest, string osPlatformVersion) {
 
             string confFilePath = "";
+            Version platformVersion = new Version(osPlatformVersion);
 
             // List of OS services and components
             IDictionary<string, string> osServiceNames = new Dictionary<string, string> {
@@ -18,7 +24,6 @@ namespace OSDiagTool.Platform {
                 { "CompilerService", "Deployment Controller Service" },
                 { "DeployService", "Deployment Service" },
                 { "Scheduler", "Scheduler Service" },
-                { "SMSConnector", "SMS Service" }
             };
 
             if (!Program.osPlatformVersion.StartsWith("10.")) {
@@ -40,7 +45,39 @@ namespace OSDiagTool.Platform {
 
                 bool isNlogConfFile = serviceFileEntry.Key.ToLower().Contains(@"\nlog");
 
-                confFilePath = isNlogConfFile ? Path.Combine(_osInstallationFolder, serviceFileEntry.Key + ".config") : Path.Combine(_osInstallationFolder, serviceFileEntry.Key + ".exe.config"); // Check if it's server API or identity
+                switch (serviceFileEntry.Key)
+                {
+                    case @"Server.Identity\nlog": case @"Server.API\nlog":
+                        confFilePath = Path.Combine(_osInstallationFolder, serviceFileEntry.Key + ".config");
+                        break;
+
+                    case "Scheduler":
+                        if (platformVersion.CompareTo(schedulerConfPathChangeVersion) >= 0)
+                        {
+                            confFilePath = Path.Combine(_osInstallationFolder, serviceFileEntry.Key, serviceFileEntry.Key + ".exe.config");
+                        } else { goto default; };
+                        break;
+
+                    case "CompilerService":
+                        if (platformVersion.CompareTo(compilerConfPathChangeVersion) >= 0)
+                        {
+                            confFilePath = Path.Combine(_osInstallationFolder, serviceFileEntry.Key, serviceFileEntry.Key + ".exe.config");
+                        }
+                        else { goto default; };
+                        break;
+
+                    case "DeployService":
+                        if (platformVersion.CompareTo(deploymentConfPathChangeVersion) >= 0)
+                        {
+                            confFilePath = Path.Combine(_osInstallationFolder, serviceFileEntry.Key, serviceFileEntry.Key + ".exe.config");
+                        }
+                        else { goto default; };
+                        break;
+
+                    default:
+                        confFilePath = Path.Combine(_osInstallationFolder, serviceFileEntry.Key + ".exe.config");
+                        break;
+                }
 
                 // Get log file location from conf file
                 OSServiceConfigFileParser confParser = new OSServiceConfigFileParser(serviceFileEntry.Value, confFilePath);
