@@ -80,6 +80,7 @@ namespace OSDiagTool.Platform
                 { metamodelVersion_check, new Integrity.IntegrityDetails { SqlText = String.Format(@"SELECT VAL FROM OSSYS_PARAMETER 
                                     WHERE LOWER(NAME) = 'version' AND VAL = '{0}'", Program.osPlatformVersion), ErrorMessage = _genericErrorMessage +" - Metamodel version is different from Platform version " + Program.osPlatformVersion + " - please provide the contents of the OSSYS_PARAMETER table ==", returnsRecords = true , checkOk = null }  },
             };
+        }
 
             allRunningFolders = Integrity.IntegrityHelper.GetLastModulesRunningPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
         }
