@@ -92,6 +92,7 @@ namespace OSDiagTool.Platform
         IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
 
         using (connection)
+
         {
             Integrity.IntegrityModel integrityModelCopy = new Integrity.IntegrityModel(integrityModel);
             foreach (string key in integrityModelCopy.CheckDetails.Keys)
@@ -151,6 +152,9 @@ namespace OSDiagTool.Platform
             }
 
             if (!systemComponentInstalled) { SystemComponentNotInstalledDict.Add(systemComponent, !systemComponentInstalled); };
+
+            ServerChecks[systemComponentsInstalled_check] = CheckSystemComponentsInstalled(outputDestination, systemComponentsInstalled_check);
+            FileLogger.TraceLog("Check all System Components installed on the server OK result: " + ServerChecks[systemComponentsInstalled_check]);
 
         }
 
