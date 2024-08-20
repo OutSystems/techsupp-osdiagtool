@@ -281,7 +281,7 @@ namespace OSDiagTool.OSDiagToolForm {
                     backgroundWorker1.ReportProgress(5, configurationsHelper.popup);
                     if (useMultiThread) {
                         countdown.AddCount();
-                        ThreadPool.QueueUserWorkItem(work => Program.ExportEventViewerAndServerLogs(countdown));
+                        ThreadPool.QueueUserWorkItem(work => Program.ExportEventViewerAndServerLogs(countdown: countdown));
                         numberOfTasks++;
                     }
                     else { 
@@ -312,6 +312,14 @@ namespace OSDiagTool.OSDiagToolForm {
             if (!backgroundWorker1.CancellationPending) {
                 if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._tdIis, out bool getIisThreadDumps) && getIisThreadDumps == true) {
 
+                    bool listIISRequests = false;
+
+                    // List also IIS requests if it is not being collected when exporting server logs
+                    if (configurationsHelper.FormConfigurations.cbConfs.TryGetValue(OSDiagToolForm.OsDiagForm._slEvt, out bool getEvt) && getEvt == false)
+                    {
+                        listIISRequests = true;
+                    }
+
                     backgroundWorker1.ReportProgress(1, configurationsHelper.popup);
 
                     if (useMultiThread)
@@ -321,7 +329,7 @@ namespace OSDiagTool.OSDiagToolForm {
                         numberOfTasks++;
                     } else
                     {
-                        Program.CollectThreadDumpsProgram(getIisThreadDumps, false);
+                        Program.CollectThreadDumpsProgram(getIisThreadDumps, false, listIISRequests: listIISRequests);
                     }
                 }
             }

@@ -9,8 +9,7 @@ using OSDiagTool.Platform.ConfigFiles;
 
 /* TEST INSTRUCTIONS
  * Run Visual Studio in Administrator mode
- * Configure Processor Architecture to x64: Test > Processor Architecture for AnyCPU Projects > x64 to be successful
- * The program expected user input with Database credentials. Change the credentials in [TestInitialize] (<user id> and <pwd>) to connect to the database. Sandboxes and local databases are not public but avoid commits with these
+ * Configure Processor Architecture to x64: Test > Processor Architecture for AnyCPU Projects > x64
 */
 
 namespace OSDiagToolUnitTests
