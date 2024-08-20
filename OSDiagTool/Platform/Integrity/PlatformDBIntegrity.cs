@@ -80,204 +80,213 @@ namespace OSDiagTool.Platform
                 { metamodelVersion_check, new Integrity.IntegrityDetails { SqlText = String.Format(@"SELECT VAL FROM OSSYS_PARAMETER 
                                     WHERE LOWER(NAME) = 'version' AND VAL = '{0}'", Program.osPlatformVersion), ErrorMessage = _genericErrorMessage +" - Metamodel version is different from Platform version " + Program.osPlatformVersion + " - please provide the contents of the OSSYS_PARAMETER table ==", returnsRecords = true , checkOk = null }  },
             };
+        
+        allRunningFolders = Integrity.IntegrityHelper.GetLastModulesRunningPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
         }
 
-            allRunningFolders = Integrity.IntegrityHelper.GetLastModulesRunningPublished(platformRunningPath); // <path folder>, [<module name>, <creation date>] - check for duplicates and use latest created only            
-        }
+    public static void RunIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,
+        DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
+    {
+        InitializeIntegrityModel();
+        IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
+        IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
 
-        public static void RunIntegrityCheck(Database.DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination,  DBConnector.SQLConnStringModel SQLConnectionString = null,
-            DBConnector.OracleConnStringModel OracleConnectionString = null, string oracleAdminSchema = null)
+        using (connection)
+
         {
-            InitializeIntegrityModel();
-            IDatabaseConnection connection = DatabaseConnectionFactory.GetDatabaseConnection(dbEngine, SQLConnectionString, OracleConnectionString);
-            IDatabaseCommand commandExecutor = DatabaseCommandFactory.GetCommandExecutor(dbEngine, connection);
-
-            using (connection)
+            Integrity.IntegrityModel integrityModelCopy = new Integrity.IntegrityModel(integrityModel);
+            foreach (string key in integrityModelCopy.CheckDetails.Keys)
             {
-                Integrity.IntegrityModel integrityModelCopy = new Integrity.IntegrityModel(integrityModel);
-                foreach (string key in integrityModelCopy.CheckDetails.Keys)
-                {
-                    integrityModel.CheckDetails[key].checkOk = RunDatabaseCheck(connection, commandExecutor, configurations, outputDestination, key, integrityModel.CheckDetails[key].SqlText, integrityModel.CheckDetails[key].ErrorMessage,
-                        integrityModel.CheckDetails[key].returnsRecords, oracleAdminSchema: oracleAdminSchema);
-                    FileLogger.TraceLog(String.Format("Check {0} OK result: {1}", key, integrityModel.CheckDetails[key].checkOk));
-                }
-            } 
+                integrityModel.CheckDetails[key].checkOk = RunDatabaseCheck(connection, commandExecutor, configurations, outputDestination, key, integrityModel.CheckDetails[key].SqlText, integrityModel.CheckDetails[key].ErrorMessage,
+                    integrityModel.CheckDetails[key].returnsRecords, oracleAdminSchema: oracleAdminSchema);
+                FileLogger.TraceLog(String.Format("Check {0} OK result: {1}", key, integrityModel.CheckDetails[key].checkOk));
+            }
+        }
 
-            ServerChecks[moduleConnectionStrings_check] = CheckAppsConnectionStrings(dbEngine, outputDestination, moduleConnectionStrings_check);
-            FileLogger.TraceLog("Check all modules connection strings OK result: " + ServerChecks[moduleConnectionStrings_check]);
+        ServerChecks[moduleConnectionStrings_check] = CheckAppsConnectionStrings(dbEngine, outputDestination, moduleConnectionStrings_check);
+        FileLogger.TraceLog("Check all modules connection strings OK result: " + ServerChecks[moduleConnectionStrings_check]);
+
+        ServerChecks[systemComponentsInstalled_check] = CheckSystemComponentsInstalled(outputDestination, systemComponentsInstalled_check);
+        FileLogger.TraceLog("Check all System Components installed on the server OK result: " + ServerChecks[systemComponentsInstalled_check]);
+
+    }
+
+    private static bool RunDatabaseCheck(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string sql,
+        string openingErrorMessage, bool sqlResultReturnsRecords, string oracleAdminSchema = null)
+    {
+        sqlResult = commandExecutor.ReadData(sql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
+
+
+        if (!sqlResultReturnsRecords && sqlResult.Count.Equals(0))
+        {
+            return true;
+        }
+        else if (sqlResultReturnsRecords && sqlResult.Count >= 1)
+        {
+            return true;
+        }
+
+        Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check, openingErrorMessage, new List<string> { GetUpdatedErrorMessages(check) });
+
+
+        return false;
+
+    }
+
+    private static bool? CheckSystemComponentsInstalled(string outputDestination, string check)
+    {
+        Dictionary<string, bool> SystemComponentNotInstalledDict = new Dictionary<string, bool>();
+
+        foreach (string systemComponent in Integrity.IntegrityHelper.SystemComponentNames)
+        {
+            bool systemComponentInstalled = false;
+
+            foreach (KeyValuePair<string, Dictionary<string, DateTime>> runningModule in allRunningFolders)
+            {
+                allRunningFolders.TryGetValue(runningModule.Key, out Dictionary<string, DateTime> innerDict);
+                if (systemComponent.Equals(innerDict.Keys.FirstOrDefault()))
+                {
+                    systemComponentInstalled = true;
+                    break;
+                }
+            }
+
+            if (!systemComponentInstalled) { SystemComponentNotInstalledDict.Add(systemComponent, !systemComponentInstalled); };
 
             ServerChecks[systemComponentsInstalled_check] = CheckSystemComponentsInstalled(outputDestination, systemComponentsInstalled_check);
             FileLogger.TraceLog("Check all System Components installed on the server OK result: " + ServerChecks[systemComponentsInstalled_check]);
 
         }
 
-        private static bool RunDatabaseCheck(IDatabaseConnection connection, IDatabaseCommand commandExecutor, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, string check, string sql,
-            string openingErrorMessage, bool sqlResultReturnsRecords, string oracleAdminSchema = null)
+        if (SystemComponentNotInstalledDict.Count.Equals(0))
         {
-            sqlResult = commandExecutor.ReadData(sql, configurations, connection, oracleAdminSchema).Select(row => row.ToList()).ToList();
-
-
-            if (!sqlResultReturnsRecords && sqlResult.Count.Equals(0))
+            return true;
+        }
+        else
+        {
+            using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
             {
-                return true;
-            } else if (sqlResultReturnsRecords && sqlResult.Count >= 1)
-            {
-                return true;
+                writer.WriteLine("== Some Platform System Components were found to not be installed on this server. All System Components must be installed in all servers of the environment. Please check the details below ==" + Environment.NewLine + Environment.NewLine +
+                    "* Steps to fix this:" + Environment.NewLine +
+                    "\t 1. Validate if the System Components solution is for the Platform server version installed on the environment and if it includes the components listed below" + Environment.NewLine +
+                    "\t \t 1.1 Publish the correct System Component if point 1 is not met and republish the factory" + Environment.NewLine +
+                    "\t 2. Validate if all the System Components applications are deployed in a deployment zone that includes all servers of the environment. Please check the documentation in 2.1 for more details" + Environment.NewLine +
+                    "\t \t 2.1 https://success.outsystems.com/documentation/11/managing_the_applications_lifecycle/deploy_applications/selective_deployment_using_deployment_zones/" + Environment.NewLine + Environment.NewLine +
+                    "* Please check the list of System Component modules that were not found to be installed on this server:");
+
+                foreach (KeyValuePair<string, bool> notInstalledComponent in SystemComponentNotInstalledDict)
+                {
+                    writer.WriteLine("\t - " + notInstalledComponent.Key + " was not found in the Platform running folder");
+                }
             }
-
-            Integrity.IntegrityHelper.IntegrityFileWriter(outputDestination, check, openingErrorMessage, new List<string> { GetUpdatedErrorMessages(check) });
-
 
             return false;
-
-        }
-
-        private static bool? CheckSystemComponentsInstalled(string outputDestination, string check)
-        {
-            Dictionary<string, bool> SystemComponentNotInstalledDict = new Dictionary<string, bool>();
-
-            foreach (string systemComponent in Integrity.IntegrityHelper.SystemComponentNames)
-            {
-                bool systemComponentInstalled = false;
-
-                foreach (KeyValuePair<string, Dictionary<string, DateTime>> runningModule in allRunningFolders)
-                {
-                    allRunningFolders.TryGetValue(runningModule.Key, out Dictionary<string, DateTime> innerDict);
-                    if (systemComponent.Equals(innerDict.Keys.FirstOrDefault())){
-                        systemComponentInstalled = true;
-                        break;
-                    }
-                }
-
-                if (!systemComponentInstalled) { SystemComponentNotInstalledDict.Add(systemComponent, !systemComponentInstalled); };
-
-            }
-
-            if (SystemComponentNotInstalledDict.Count.Equals(0))
-            {
-                return true;
-            } else
-            {
-                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
-                {
-                    writer.WriteLine("== Some Platform System Components were found to not be installed on this server. All System Components must be installed in all servers of the environment. Please check the details below ==" + Environment.NewLine + Environment.NewLine +
-                        "* Steps to fix this:" + Environment.NewLine + 
-                        "\t 1. Validate if the System Components solution is for the Platform server version installed on the environment and if it includes the components listed below" + Environment.NewLine +
-                        "\t \t 1.1 Publish the correct System Component if point 1 is not met and republish the factory" + Environment.NewLine +
-                        "\t 2. Validate if all the System Components applications are deployed in a deployment zone that includes all servers of the environment. Please check the documentation in 2.1 for more details" + Environment.NewLine +
-                        "\t \t 2.1 https://success.outsystems.com/documentation/11/managing_the_applications_lifecycle/deploy_applications/selective_deployment_using_deployment_zones/" + Environment.NewLine + Environment.NewLine +
-                        "* Please check the list of System Component modules that were not found to be installed on this server:");
-
-                    foreach (KeyValuePair<string, bool> notInstalledComponent in SystemComponentNotInstalledDict)
-                    {
-                        writer.WriteLine("\t - " + notInstalledComponent.Key + " was not found in the Platform running folder");
-                    }
-                }
-
-                return false;
-            }
-        }
-
-        private static bool? CheckAppsConnectionStrings(Database.DatabaseType dbEngine, string outputDestination, string check)
-        {
-            bool equalConnectionString = false;
-            List<string> differentConnectionStrings = new List<string>();
-            string[] connectionStringList =  { _runtimeConnectionStringKey, _sessionConnectionStringKey, _loggingConnectingStringKey };
-            string pKey = Utils.CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath);
-
-            // Load connection string from each module in running folder
-            Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = Integrity.IntegrityHelper.GetModuleConnectionStrings(allRunningFolders, _appSettingsConfig, connectionStringList, pKey) ; // <module name>, [<connection string name>, <connection string value>]
-            Dictionary<string, string> platformConnectionStrings = Integrity.IntegrityHelper.GetPlatformConnectionStrings(pKey); // <connection name>, <connection string>
-           
-            platformConnectionStrings.TryGetValue("RuntimeConnection", out string platformRuntimeConnectionString);
-            Dictionary<string, string> platformRuntimeCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformRuntimeConnectionString);
-
-            platformConnectionStrings.TryGetValue("LoggingConnection", out string platformLoggingConnectionString);
-            Dictionary<string, string> platformLoggingCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformLoggingConnectionString);
-
-            platformConnectionStrings.TryGetValue("SessionConnection", out string platformSessionConnectionString);
-            Dictionary<string, string> platformSessionCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformSessionConnectionString);
-            
-            // Check each connection string and compare with what is defined on server.hsconf TBC
-            foreach (KeyValuePair<string, Dictionary<string,string>> moduleConnections in modulesConnectionStrings)
-            {
-                modulesConnectionStrings.TryGetValue(moduleConnections.Key, out Dictionary<string,string> innerConnections);
-
-                foreach (KeyValuePair<string,string> connection in innerConnections)
-                {
-                    Dictionary<string, string> moduleConnectionStringProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, connection.Value);
-                    
-                    if (connection.Key.Equals(_runtimeConnectionStringKey)) {
-                        equalConnectionString = platformRuntimeCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
-
-                        if (!equalConnectionString)
-                        {
-                            List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformRuntimeCSProperties);
-                            differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
-                                moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine+"-", connStringDiffs)));
-                        }
-
-                    } else if (connection.Key.Equals(_sessionConnectionStringKey))
-                    {
-                        equalConnectionString = platformSessionCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
-
-                        if (!equalConnectionString)
-                        {
-                            List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformSessionCSProperties);
-                            differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
-                                moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine + "-", connStringDiffs)));
-                        }
-
-                    } else if (connection.Key.Equals(_loggingConnectingStringKey))
-                    {
-                        equalConnectionString = platformLoggingCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
-
-                        if (!equalConnectionString)
-                        {
-                            List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformLoggingCSProperties);
-                            differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
-                                moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine + "-", connStringDiffs)));
-                        }
-                    }
-                }
-            }
-
-            if (differentConnectionStrings.Count.Equals(0))
-            {
-                return  true;
-            }
-            else
-            {
-                using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
-                {
-                    writer.WriteLine("== Module connection strings were found to be different than what was defined in Configuration Tool. Please check the details below ==");
-                    foreach (string error in differentConnectionStrings)
-                    {
-                        writer.WriteLine(error + Environment.NewLine);
-                    }
-                }
-
-                return false;
-            }
-        }
-
-        private static string GetUpdatedErrorMessages(string check)
-        {
-            switch (check)
-            {
-                case var _ when check.Equals(rpm_4012_espace_check):
-                    return String.Format("* Missing eSpace Ids in OSSYS_MODULE table: {0}", String.Join(", ", sqlResult.Select(row => row[0].ToString())));
-                case var _ when check.Equals(rpm_4012_extension_check):
-                    return String.Format("* Missing extension Ids in OSSYS_MODULE table: {0}", String.Join(", ", sqlResult.Select(row => row[0].ToString())));
-                case var _ when check.Equals(devs_Tenants_check):
-                    return String.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- User ID {row[0].ToString()} with tenant {row[1].ToString()}")));
-                case var _ when check.Equals(modulesLinkedToApp_check):
-                    return "List of modules with no application associated:" + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- Module ID: {row[0].ToString()}; eSpace ID: {row[1].ToString()}; Extension ID: {row[2].ToString()}"));
-                case var _ when check.Equals(duplicateUsernames_check):
-                    return "List of duplicate users found:" + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- Username '{row[0].ToString()}' with tenant {row[1].ToString()} was found {row[2].ToString()} times"));
-                default:
-                    return null;
-            }
         }
     }
+
+    private static bool? CheckAppsConnectionStrings(Database.DatabaseType dbEngine, string outputDestination, string check)
+    {
+        bool equalConnectionString = false;
+        List<string> differentConnectionStrings = new List<string>();
+        string[] connectionStringList = { _runtimeConnectionStringKey, _sessionConnectionStringKey, _loggingConnectingStringKey };
+        string pKey = Utils.CryptoUtils.GetPrivateKeyFromFile(Program.privateKeyFilepath);
+
+        // Load connection string from each module in running folder
+        Dictionary<string, Dictionary<string, string>> modulesConnectionStrings = Integrity.IntegrityHelper.GetModuleConnectionStrings(allRunningFolders, _appSettingsConfig, connectionStringList, pKey); // <module name>, [<connection string name>, <connection string value>]
+        Dictionary<string, string> platformConnectionStrings = Integrity.IntegrityHelper.GetPlatformConnectionStrings(pKey); // <connection name>, <connection string>
+
+        platformConnectionStrings.TryGetValue("RuntimeConnection", out string platformRuntimeConnectionString);
+        Dictionary<string, string> platformRuntimeCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformRuntimeConnectionString);
+
+        platformConnectionStrings.TryGetValue("LoggingConnection", out string platformLoggingConnectionString);
+        Dictionary<string, string> platformLoggingCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformLoggingConnectionString);
+
+        platformConnectionStrings.TryGetValue("SessionConnection", out string platformSessionConnectionString);
+        Dictionary<string, string> platformSessionCSProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, platformSessionConnectionString);
+
+        // Check each connection string and compare with what is defined on server.hsconf TBC
+        foreach (KeyValuePair<string, Dictionary<string, string>> moduleConnections in modulesConnectionStrings)
+        {
+            modulesConnectionStrings.TryGetValue(moduleConnections.Key, out Dictionary<string, string> innerConnections);
+
+            foreach (KeyValuePair<string, string> connection in innerConnections)
+            {
+                Dictionary<string, string> moduleConnectionStringProperties = Integrity.IntegrityHelper.ConnectionStringParser(dbEngine, connection.Value);
+
+                if (connection.Key.Equals(_runtimeConnectionStringKey))
+                {
+                    equalConnectionString = platformRuntimeCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
+
+                    if (!equalConnectionString)
+                    {
+                        List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformRuntimeCSProperties);
+                        differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
+                            moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine + "-", connStringDiffs)));
+                    }
+
+                }
+                else if (connection.Key.Equals(_sessionConnectionStringKey))
+                {
+                    equalConnectionString = platformSessionCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
+
+                    if (!equalConnectionString)
+                    {
+                        List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformSessionCSProperties);
+                        differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
+                            moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine + "-", connStringDiffs)));
+                    }
+
+                }
+                else if (connection.Key.Equals(_loggingConnectingStringKey))
+                {
+                    equalConnectionString = platformLoggingCSProperties.OrderBy(kvp => kvp.Key).SequenceEqual(moduleConnectionStringProperties.OrderBy(kvp => kvp.Key));
+
+                    if (!equalConnectionString)
+                    {
+                        List<string> connStringDiffs = Integrity.IntegrityHelper.ConnStringDifferenceFinder(moduleConnectionStringProperties, platformLoggingCSProperties);
+                        differentConnectionStrings.Add(String.Format("Module {0} {1} was found with a different connection string: " + Environment.NewLine + "-{2}",
+                            moduleConnections.Key /*module name*/, connection.Key /*connection name*/, String.Join(Environment.NewLine + "-", connStringDiffs)));
+                    }
+                }
+            }
+        }
+
+        if (differentConnectionStrings.Count.Equals(0))
+        {
+            return true;
+        }
+        else
+        {
+            using (TextWriter writer = new StreamWriter(File.Create(Path.Combine(outputDestination, check + ".txt"))))
+            {
+                writer.WriteLine("== Module connection strings were found to be different than what was defined in Configuration Tool. Please check the details below ==");
+                foreach (string error in differentConnectionStrings)
+                {
+                    writer.WriteLine(error + Environment.NewLine);
+                }
+            }
+
+            return false;
+        }
+    }
+
+    private static string GetUpdatedErrorMessages(string check)
+    {
+        switch (check)
+        {
+            case var _ when check.Equals(rpm_4012_espace_check):
+                return String.Format("* Missing eSpace Ids in OSSYS_MODULE table: {0}", String.Join(", ", sqlResult.Select(row => row[0].ToString())));
+            case var _ when check.Equals(rpm_4012_extension_check):
+                return String.Format("* Missing extension Ids in OSSYS_MODULE table: {0}", String.Join(", ", sqlResult.Select(row => row[0].ToString())));
+            case var _ when check.Equals(devs_Tenants_check):
+                return String.Format("* User Id of developers with wrong tenants: " + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- User ID {row[0].ToString()} with tenant {row[1].ToString()}")));
+            case var _ when check.Equals(modulesLinkedToApp_check):
+                return "List of modules with no application associated:" + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- Module ID: {row[0].ToString()}; eSpace ID: {row[1].ToString()}; Extension ID: {row[2].ToString()}"));
+            case var _ when check.Equals(duplicateUsernames_check):
+                return "List of duplicate users found:" + Environment.NewLine + String.Join(Environment.NewLine, sqlResult.Select(row => $"- Username '{row[0].ToString()}' with tenant {row[1].ToString()} was found {row[2].ToString()} times"));
+            default:
+                return null;
+        }
+    }
+}
 }

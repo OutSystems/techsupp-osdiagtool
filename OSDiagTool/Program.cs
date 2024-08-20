@@ -108,10 +108,8 @@ namespace OSDiagTool
                     if (args[0].ToLower().Equals("runcmdline"))
                     {
                         if (args.Length.Equals(3))
-                        { // One rune: runcmdline + saUser + saPwd
-
+                        { // One run: runcmdline + saUser + saPwd
                             OSDGTCmdLine.CmdLineRun(configurations, platformDBInfo.DBMS, sqlConnString, orclConnString, args[1].ToString(), args[2].ToString());
-
                         }
                         else
                         {
@@ -127,7 +125,6 @@ namespace OSDiagTool
             }
         }
 
-        /* REFACTOR */
         public static void OSDiagToolInitialization() {
 
             // Reading serverhsconf and private key files
@@ -180,7 +177,7 @@ namespace OSDiagTool
             }
         }
 
-        public static void ExportEventViewerAndServerLogs(CountdownEvent countdown = null /*used for multithread*/)
+        public static void ExportEventViewerAndServerLogs(bool onlyIISRequests = false, CountdownEvent countdown = null /*used for multithread*/)
         {
             try
             {
@@ -190,7 +187,7 @@ namespace OSDiagTool
                 Directory.CreateDirectory(_evtVwrLogsDest);
                 Directory.CreateDirectory(_windowsInfoDest);
                 welHelper.GenerateLogFiles(Path.Combine(_tempFolderPath, _evtVwrLogsDest));
-                ExecuteCommands();
+                ExecuteCommands(onlyIISRequests);
             }
             catch (Exception e)
             {
@@ -199,10 +196,7 @@ namespace OSDiagTool
             finally
             {
                 if (Program.useMultiThread) { countdown.Signal(); FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount); }
-            }
-
-            
-            
+            }            
         }                       
 
         public static void CopyIISAccessLogs(int iisLogsNrDays, CountdownEvent countdown = null) {
@@ -221,9 +215,6 @@ namespace OSDiagTool
             {
                 if (Program.useMultiThread) { countdown.Signal(); FileLogger.TraceLog("countdown current count: " + countdown.CurrentCount); }
             }
-            
-            
-
         }
 
         public static void DatabaseTroubleshootProgram(OSDiagToolConf.ConfModel.strConfModel configurations, DBConnector.SQLConnStringModel sqlConnString = null, DBConnector.OracleConnStringModel orclConnString = null) {
@@ -345,11 +336,18 @@ namespace OSDiagTool
             }
         }
 
-        public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps, CountdownEvent countdown = null) {
+        public static void CollectThreadDumpsProgram(bool getIisThreadDumps, bool getOsThreadDumps, CountdownEvent countdown = null, bool listIISRequests = false) {
 
             try
             {
                 FileLogger.TraceLog(string.Format("Initiating collection of thread dumps...(IIS thread dumps: {0} ; OutSystems Services thread dumps: {1})", getIisThreadDumps, getOsThreadDumps));
+
+                // Useful to capture list of IIS requests if we're collecting thread dumps
+                if (listIISRequests)
+                {
+                    ExecuteCommands(listIISRequests);
+                }
+
                 CollectThreadDumps(getIisThreadDumps, getOsThreadDumps); // evaluate if this method is really necessary
             }
             catch (Exception e)
@@ -397,32 +395,34 @@ namespace OSDiagTool
             _endFeedback = "File Location: " + _targetZipFile;
         }
 
-        /* REFACTOR */
-
-        private static void ExecuteCommands()
+        private static void ExecuteCommands(bool onlyIISrequests = false)
         {
             ThreadPool.SetMaxThreads(serverProcessorCount, serverProcessorCount);
             CountdownEvent cmdCountdown = new CountdownEvent(2);
+            IDictionary<string, CmdLineCommand> commands = new Dictionary<string, CmdLineCommand>();
 
-            IDictionary<string, CmdLineCommand> commands = new Dictionary<string, CmdLineCommand>
+            if (onlyIISrequests)
             {
-                { "appcmd " , new CmdLineCommand(string.Format("{0} list requests", _appCmdPath), Path.Combine(_tempFolderPath, "IISRequests.txt")) },
-                { "dir_outsystems", new CmdLineCommand(string.Format("dir /s /a \"{0}\"", _osInstallationFolder), Path.Combine(_windowsInfoDest, "dir_outsystems")) },
-                { "tasklist", new CmdLineCommand("tasklist /v", Path.Combine(_windowsInfoDest, "tasklist")) },
-                { "cpu_info", new CmdLineCommand("wmic cpu", Path.Combine(_windowsInfoDest, "cpu_info")) },
-                { "memory_info", new CmdLineCommand("wmic memphysical", Path.Combine(_windowsInfoDest, "memory_info")) },
-                { "mem_cache", new CmdLineCommand("wmic memcache", Path.Combine(_windowsInfoDest, "mem_cache")) },
-                { "net_protocol", new CmdLineCommand("wmic netprotocol", Path.Combine(_windowsInfoDest, "net_protocol")) },
-                { "env_info", new CmdLineCommand("wmic environment", Path.Combine(_windowsInfoDest, "env_info")) },
-                { "os_info", new CmdLineCommand("wmic os", Path.Combine(_windowsInfoDest, "os_info")) },
-                { "pagefile", new CmdLineCommand("wmic pagefile", Path.Combine(_windowsInfoDest, "pagefile")) },
-                { "partition", new CmdLineCommand("wmic partition", Path.Combine(_windowsInfoDest, "partition")) },
-                { "startup", new CmdLineCommand("wmic startup", Path.Combine(_windowsInfoDest, "startup")) },
-                { "app_evtx", new CmdLineCommand("WEVTUtil epl Application " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx") + "\"") },
-                { "sys_evtx", new CmdLineCommand("WEVTUtil epl System " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx") + "\"") },
-                { "sec_evtx", new CmdLineCommand("WEVTUtil epl Security " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx") + "\"") }
-
-            };
+                commands.Add("appcmd ", new CmdLineCommand(string.Format("{0} list requests", _appCmdPath), Path.Combine(_tempFolderPath, "IISRequests.txt")));
+     
+            } else
+            {
+                commands.Add("appcmd ", new CmdLineCommand(string.Format("{0} list requests", _appCmdPath), Path.Combine(_tempFolderPath, "IISRequests.txt")));
+                commands.Add("dir_outsystems", new CmdLineCommand(string.Format("dir /s /a \"{0}\"", _osInstallationFolder), Path.Combine(_windowsInfoDest, "dir_outsystems")));
+                commands.Add("tasklist", new CmdLineCommand("tasklist /v", Path.Combine(_windowsInfoDest, "tasklist")));
+                commands.Add("cpu_info", new CmdLineCommand("wmic cpu", Path.Combine(_windowsInfoDest, "cpu_info")));
+                commands.Add("memory_info", new CmdLineCommand("wmic memphysical", Path.Combine(_windowsInfoDest, "memory_info")));
+                commands.Add("mem_cache", new CmdLineCommand("wmic memcache", Path.Combine(_windowsInfoDest, "mem_cache")));
+                commands.Add("net_protocol", new CmdLineCommand("wmic netprotocol", Path.Combine(_windowsInfoDest, "net_protocol")));
+                commands.Add("env_info", new CmdLineCommand("wmic environment", Path.Combine(_windowsInfoDest, "env_info")));
+                commands.Add("os_info", new CmdLineCommand("wmic os", Path.Combine(_windowsInfoDest, "os_info")));
+                commands.Add("pagefile", new CmdLineCommand("wmic pagefile", Path.Combine(_windowsInfoDest, "pagefile")));
+                commands.Add("partition", new CmdLineCommand("wmic partition", Path.Combine(_windowsInfoDest, "partition")));
+                commands.Add("startup", new CmdLineCommand("wmic startup", Path.Combine(_windowsInfoDest, "startup")));
+                commands.Add("app_evtx", new CmdLineCommand("WEVTUtil epl Application " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Application.evtx") + "\""));
+                commands.Add("sys_evtx", new CmdLineCommand("WEVTUtil epl System " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\System.evtx") + "\""));
+                commands.Add("sec_evtx", new CmdLineCommand("WEVTUtil epl Security " + "\"" + Path.Combine(_tempFolderPath, _evtVwrLogsDest + @"\Security.evtx") + "\""));          
+            }
 
             foreach (KeyValuePair<string, CmdLineCommand> commandEntry in commands)
             {
@@ -436,7 +436,6 @@ namespace OSDiagTool
                 {
                     commandEntry.Value.Execute();
                 }
-                //Thread.Sleep(1000);
                 if (Program.useMultiThread)
                 {
                     cmdCountdown.Signal();
@@ -610,7 +609,6 @@ namespace OSDiagTool
             {
                 FileLogger.LogError("Error performing Platform Integrity Check: ", e.Message + e.StackTrace);
             }
-
         }
 
         private static string DateTimeToTimestamp(DateTime dateTime)

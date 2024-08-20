@@ -64,6 +64,7 @@ namespace OSDiagTool {
             if (configurations.osDiagToolConfigurations[OSDiagToolConfReader._l2_threadDumps][OSDiagToolConfReader._l3_iisW3wp]) {
 
                 EventLog.WriteEntry(osDiagToolEventSource, "Command Line run of OSDiagTool: Retrieving IIS Thread dumps;", EventLogEntryType.Information);
+                Program.ExportEventViewerAndServerLogs(onlyIISRequests: true);
                 Program.CollectThreadDumpsProgram(true, false);
 
             }
