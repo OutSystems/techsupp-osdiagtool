@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Data.SqlClient;
+using System.Data;
 using System.Windows.Forms;
 using System.Diagnostics;
 using Microsoft.Win32;
@@ -11,7 +12,6 @@ using OSDiagTool.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
 using System.Reflection;
 using System.Threading;
-using System;
 
 namespace OSDiagTool
 {
