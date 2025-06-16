@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System;
 using System.Net.Security;
 
-namespace OSDiagTool.Utils
+namespace OSDiagTool.Core.Utils
 {
     
     class NetworkUtils

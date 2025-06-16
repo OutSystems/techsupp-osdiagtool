@@ -5,7 +5,7 @@ using System.IO;
 using Microsoft.Diagnostics.Runtime;
 
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     class ThreadDumpCollector
     {

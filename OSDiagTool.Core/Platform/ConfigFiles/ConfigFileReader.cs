@@ -1,7 +1,6 @@
 ﻿using System.Xml.Linq;
-using System.IO;
 
-namespace OSDiagTool.Platform.ConfigFiles
+namespace OSDiagTool.Core.Platform.ConfigFiles
 {
     public class ConfigFileReader
     {

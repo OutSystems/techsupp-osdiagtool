@@ -5,7 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
-namespace OSDiagTool.Utils {
+namespace OSDiagTool.Core.Utils {
     class WinUtils {
 
         [Flags]

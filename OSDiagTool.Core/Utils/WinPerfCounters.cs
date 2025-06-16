@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace OSDiagTool {
-    class WinPerfCounters {
+namespace OSDiagTool.Core {
+    public class WinPerfCounters {
 
         private static string _aspNetCategory = "ASP.NET";
         private static string _iisQueueCounter = "Requests Queued";

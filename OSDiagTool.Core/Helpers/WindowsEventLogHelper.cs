@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     public class WindowsEventLogHelper
     {

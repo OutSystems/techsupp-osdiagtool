@@ -2,7 +2,7 @@
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     interface ISQLDBConnector
     {

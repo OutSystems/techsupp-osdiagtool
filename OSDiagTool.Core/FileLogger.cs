@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Reflection;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     public class FileLogger
     {

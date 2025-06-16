@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Xml.Linq;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     class OSServiceConfigFileParser
     {

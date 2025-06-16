@@ -5,8 +5,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace OSDiagTool.OSDiagToolConf {
-    class MetamodelTables {
+namespace OSDiagTool.Core.OSDiagToolConf {
+    public class MetamodelTables {
 
         // Allowed prefixes
         private static string _ossysPrefix = "ossys";

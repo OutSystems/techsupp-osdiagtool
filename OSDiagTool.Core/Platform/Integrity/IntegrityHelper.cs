@@ -1,11 +1,7 @@
-﻿using OSDiagTool.Platform.ConfigFiles;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using OSDiagTool.Core.Platform.ConfigFiles;
 using System.Text.RegularExpressions;
 
-namespace OSDiagTool.Platform.Integrity
+namespace OSDiagTool.Core.Platform.Integrity
 {
     class IntegrityHelper
     {

@@ -1,12 +1,10 @@
 ﻿using Microsoft.Win32;
 using Oracle.ManagedDataAccess.Client;
-using OSDiagTool.Platform.ConfigFiles;
-using System;
-using System.Collections.Generic;
+using OSDiagTool.Core.Platform.ConfigFiles;
 using System.Data;
 using System.Data.SqlClient;
 
-namespace OSDiagTool.Platform {
+namespace OSDiagTool.Core.Platform {
     public class PlatformUtils {
 
         public static string GetPlatformVersion(string osServerRegistry) {

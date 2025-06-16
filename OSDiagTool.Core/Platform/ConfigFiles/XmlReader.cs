@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace OSDiagTool.Platform.ConfigFiles
+namespace OSDiagTool.Core.Platform.ConfigFiles
 {
     public class XmlReader
     {

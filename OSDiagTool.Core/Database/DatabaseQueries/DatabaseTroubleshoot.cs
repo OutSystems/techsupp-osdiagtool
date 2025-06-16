@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
-using OSDiagTool.DatabaseExporter;
-using OSDiagTool.OSDiagToolConf;
+using OSDiagTool.Core.DatabaseExporter;
+using OSDiagTool.Core.OSDiagToolConf;
 
-namespace OSDiagTool.Database.DatabaseQueries {
+namespace OSDiagTool.Core.Database.DatabaseQueries {
     class DatabaseTroubleshoot {
 
         public static void DatabaseTroubleshooting(DatabaseType dbEngine, OSDiagToolConf.ConfModel.strConfModel configurations,string outputDestination, DBConnector.SQLConnStringModel SQLConnectionString = null,

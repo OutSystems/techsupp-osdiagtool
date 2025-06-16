@@ -4,7 +4,7 @@ using ICSharpCode.SharpZipLib.Zip;
 using System.IO;
 using System;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     public class FileSystemHelper
     {

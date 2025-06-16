@@ -1,10 +1,10 @@
 ﻿using System;
-using OSDiagTool.OSDiagToolConf;
+using OSDiagTool.Core.OSDiagToolConf;
 using System.Diagnostics;
 
 
 
-namespace OSDiagTool {
+namespace OSDiagTool.Core {
     class OSDGTCmdLine {
         // Cmd Line run does not export Platform Logs neither Metamodel
 

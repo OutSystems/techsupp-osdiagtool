@@ -1,5 +1,5 @@
 ﻿
-namespace OSDiagTool.Database
+namespace OSDiagTool.Core.Database
 {
     public enum DatabaseType
     {

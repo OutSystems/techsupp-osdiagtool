@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OSDiagTool.Platform.ConfigFiles
+namespace OSDiagTool.Core.Platform.ConfigFiles
 {
     public class ConfigFileInfo
     {

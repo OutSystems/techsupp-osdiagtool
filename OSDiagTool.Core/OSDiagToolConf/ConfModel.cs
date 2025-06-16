@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace OSDiagTool.OSDiagToolConf {
+namespace OSDiagTool.Core.OSDiagToolConf {
     public class ConfModel {
 
         public class strConfModel{

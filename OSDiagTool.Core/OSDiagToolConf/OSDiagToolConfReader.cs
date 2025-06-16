@@ -6,7 +6,7 @@ using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using System.Reflection;
 
-namespace OSDiagTool.OSDiagToolConf {
+namespace OSDiagTool.Core.OSDiagToolConf {
     public class OSDiagToolConfReader {
 
         private static string _osDGTConfFile = "OSDGTool.exe.config";

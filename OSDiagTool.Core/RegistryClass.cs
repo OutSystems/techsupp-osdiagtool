@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.IO;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     class RegistryClass
     {

@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 using System.Text.RegularExpressions;
 
-namespace OSDiagTool.DatabaseExporter {
+namespace OSDiagTool.Core.DatabaseExporter {
     class CSVExporter {
         
         public static void SQLToCSVExport(Database.DatabaseType dbEngine, string tableName, string csvFilePath, int queryTimeout, string query, SqlConnection SqlConnection = null, OracleConnection Orclconnection = null) {

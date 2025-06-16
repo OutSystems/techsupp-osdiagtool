@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace OSDiagTool.Platform {
+namespace OSDiagTool.Core.Platform {
     class PlatformFilesHelper {
 
         private static string appPoolConfigPath = @"%SYSTEMDRIVE%\inetpub\temp\appPools";

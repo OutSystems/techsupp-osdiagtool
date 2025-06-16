@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OSDiagTool.Platform.Integrity
+namespace OSDiagTool.Core.Platform.Integrity
 {
     public class IntegrityModel
     {

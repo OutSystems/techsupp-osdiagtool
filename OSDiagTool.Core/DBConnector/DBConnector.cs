@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 
 
-namespace OSDiagTool.DBConnector
+namespace OSDiagTool.Core.DBConnector
 {
     public class SLQDBConnector : ISQLDBConnector
     {
@@ -47,7 +47,7 @@ namespace OSDiagTool.DBConnector
     }
 
 
-    class OracleDBConnector : IOracleDBConnector
+    public class OracleDBConnector : IOracleDBConnector
     {
 
         public OracleConnection OracleOpenConnection(DBConnector.OracleConnStringModel OracleConnectionString)

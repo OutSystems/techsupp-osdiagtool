@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OSDiagTool.OSDiagToolConf {
-    class OSDiagToolHelper {
+namespace OSDiagTool.Core.OSDiagToolConf {
+    public class OSDiagToolHelper {
 
         public static int CountSteps(Dictionary<string, bool> configurations) {
 

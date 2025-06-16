@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
-using OSDiagTool.DatabaseExporter;
-using System.IO;
+﻿using OSDiagTool.Core.DatabaseExporter;
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 
-namespace OSDiagTool.Platform {
+namespace OSDiagTool.Core.Platform {
     class LogExporter {
 
         public static void PlatformLogExporter(Database.DatabaseType dbEngine, List<string> tableNames, OSDiagToolConf.ConfModel.strConfModel configurations, string outputDestination, int queryTimeout, DBConnector.SQLConnStringModel SQLConnectionString = null,

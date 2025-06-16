@@ -1,4 +1,4 @@
-﻿namespace OSDiagTool.Database.DatabaseQueries {
+﻿namespace OSDiagTool.Core.Database.DatabaseQueries {
     class OracleQueries {
 
         // Use string.format to append parameters // Sid is always the 1st column

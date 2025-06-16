@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.IO;
+﻿using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
-using OSDiagTool.Platform.ConfigFiles;
-using OSDiagTool.Utils;
+using OSDiagTool.Core.Platform.ConfigFiles;
+using OSDiagTool.Core.Utils;
 
-namespace OSDiagTool.Platform
+namespace OSDiagTool.Core.Platform
 {
     class PlatformDiagnostic
     {

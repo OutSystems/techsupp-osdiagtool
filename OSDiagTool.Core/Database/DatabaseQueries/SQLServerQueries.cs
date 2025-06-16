@@ -1,4 +1,4 @@
-﻿namespace OSDiagTool.Database.DatabaseQueries {
+﻿namespace OSDiagTool.Core.Database.DatabaseQueries {
     class SQLServerQueries {
 
         // Use string.format to append parameters

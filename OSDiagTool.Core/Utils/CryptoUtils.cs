@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.IO;
 using System.Xml.Linq;
 
-namespace OSDiagTool.Utils
+namespace OSDiagTool.Core.Utils
 {
 
     /*

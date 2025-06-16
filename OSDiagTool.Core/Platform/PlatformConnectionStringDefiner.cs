@@ -1,7 +1,7 @@
-﻿using OSDiagTool.Platform.ConfigFiles;
-using OSDiagTool.Utils;
+﻿using OSDiagTool.Core.Platform.ConfigFiles;
+using OSDiagTool.Core.Utils;
 
-namespace OSDiagTool.Platform {
+namespace OSDiagTool.Core.Platform {
     public class PlatformConnectionStringDefiner {
 
         public DBConnector.SQLConnStringModel SQLConnString { get; set; }

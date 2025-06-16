@@ -3,7 +3,7 @@ using System.Xml.Linq;
 using System.Linq;
 using System.IO;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     class IISHelper
     {

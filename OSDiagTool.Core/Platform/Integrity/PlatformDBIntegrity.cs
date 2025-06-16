@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using OSDiagTool.DBConnector;
+﻿using OSDiagTool.Core.DBConnector;
 
-namespace OSDiagTool.Platform
+namespace OSDiagTool.Core.Platform
 {
     public class PlatformDBIntegrity
     {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace OSDiagTool.Platform
+namespace OSDiagTool.Core.Platform
 {
     public class ConnectionList
     {

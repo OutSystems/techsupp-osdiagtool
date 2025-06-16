@@ -1,5 +1,5 @@
 ﻿
-namespace OSDiagTool.DBConnector
+namespace OSDiagTool.Core.DBConnector
 {
     public class SQLConnStringModel
     {

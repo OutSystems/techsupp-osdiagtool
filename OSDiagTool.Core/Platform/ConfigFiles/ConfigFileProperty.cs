@@ -1,6 +1,6 @@
-﻿using OSDiagTool.Utils;
+﻿using OSDiagTool.Core.Utils;
 
-namespace OSDiagTool.Platform.ConfigFiles
+namespace OSDiagTool.Core.Platform.ConfigFiles
 {
     public class ConfigFileProperty
     {

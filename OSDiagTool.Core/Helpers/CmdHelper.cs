@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     public class CmdHelper
     {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 
-namespace OSDiagTool.DBConnector
+namespace OSDiagTool.Core.DBConnector
 {
     class DBReader
     {

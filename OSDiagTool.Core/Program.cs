@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Data.SqlClient;
 using Microsoft.Win32;
-using OSDiagTool.Platform.ConfigFiles;
-using OSDiagTool.DatabaseExporter;
-using OSDiagTool.OSDiagToolConf;
+using OSDiagTool.Core.Platform.ConfigFiles;
+using OSDiagTool.Core.DatabaseExporter;
+using OSDiagTool.Core.OSDiagToolConf;
 using Oracle.ManagedDataAccess.Client;
 using System.Reflection;
-using System.Threading;
-using System;
 
-namespace OSDiagTool
+namespace OSDiagTool.Core
 {
     public class Program
     {
@@ -50,7 +45,7 @@ namespace OSDiagTool
         public static string privateKeyFilepath;
         public static string platformConfigurationFilepath;
         public static string osPlatformVersion;
-        public static OSDiagTool.Database.DatabaseType dbEngine;
+        public static OSDiagTool.Core.Database.DatabaseType dbEngine;
         public static string _endFeedback;
         public static bool separateLogCatalog;
         public static bool useMultiThread;
@@ -591,7 +586,7 @@ namespace OSDiagTool
             {
                 FileLogger.TraceLog("Performing Platform Integrity Check");
 
-                OSDiagTool.Platform.PlatformDBIntegrity.RunIntegrityCheck(dbEngine, configurations, platDBIntCheckPath, sqlConnString, oracleConnString, oracleAdminSchema);
+                OSDiagTool.Core.Platform.PlatformDBIntegrity.RunIntegrityCheck(dbEngine, configurations, platDBIntCheckPath, sqlConnString, oracleConnString, oracleAdminSchema);
 
             } catch (Exception e)
             {

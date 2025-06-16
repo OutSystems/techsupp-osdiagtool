@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 
-namespace OSDiagTool.DBConnector
+namespace OSDiagTool.Core.DBConnector
 {
     public class SqlCommandExecutor : IDatabaseCommand
     {
